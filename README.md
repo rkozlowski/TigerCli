@@ -8,15 +8,19 @@ TigerCli is still evolving. The core direction is deliberate, but docs and examp
 
 ## What It Looks Like
 
-Structured output — `CliTable` list and details presets ([more presets](docs/examples/cli-table-presets.html), generated from real rendering):
+Structured output — `CliTable` list and details presets ([more presets](docs/guides/cli-table.md), generated from real rendering):
 
 ![CliTable list and details presets](docs/examples/png/cli-table-presets-alpha-terminal.png)
 
-Semi-interactive prompts — the framework-owned select dialog ([storyboards](docs/examples/tui-storyboards.html)):
+Semi-interactive prompts — the framework-owned select dialog ([prompt guide](docs/guides/semi-interactive-prompts.md)):
 
 ![Select prompt](docs/examples/png/tui-select-initial.png)
 
 These images are generated documentation artifacts, not screenshots: real TigerCli rendering captured through the render pipeline and drift-tested against the code. See [docs/examples/](docs/examples/README.md).
+
+Activity dialogs can show live progress while the same operation remains script-safe in non-interactive mode.
+
+![FolderCopy activity dialog](docs/examples/folder-copy/folder-copy-activity.webp)
 
 ## What TigerCli Provides
 
