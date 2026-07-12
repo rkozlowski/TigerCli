@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+
+  <data name="Parser test exit codes" xml:space="preserve"><value>Parser test exit codes</value></data>
+  <data name="OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Operation completed successfully." xml:space="preserve"><value>Operation completed successfully.</value></data>
+  <data name="Internal error" xml:space="preserve"><value>Internal error</value></data>
+  <data name="Internal parser-test failure." xml:space="preserve"><value>Internal parser-test failure.</value></data>
+  <data name="Invalid arguments" xml:space="preserve"><value>Invalid arguments</value></data>
+  <data name="Invalid command-line arguments." xml:space="preserve"><value>Invalid command-line arguments.</value></data>
+  <data name="Missing required argument" xml:space="preserve"><value>Missing required argument</value></data>
+  <data name="A required positional argument was not provided." xml:space="preserve"><value>A required positional argument was not provided.</value></data>
+  <data name="Validation error" xml:space="preserve"><value>Validation error</value></data>
+  <data name="Validation failed." xml:space="preserve"><value>Validation failed.</value></data>
+  <data name="Intentional failure" xml:space="preserve"><value>Intentional failure</value></data>
+  <data name="The command intentionally failed." xml:space="preserve"><value>The command intentionally failed.</value></data>
+  <data name="Unhandled exception" xml:space="preserve"><value>Unhandled exception</value></data>
+  <data name="Unhandled exception was caught by TigerCli." xml:space="preserve"><value>Unhandled exception was caught by TigerCli.</value></data>
+  <data name="Interactive input not allowed" xml:space="preserve"><value>Interactive input not allowed</value></data>
+  <data name="Interactive input is not allowed or prompt input was canceled." xml:space="preserve"><value>Interactive input is not allowed or prompt input was canceled.</value></data>
+
+  <data name="Prompt smoke modes" xml:space="preserve"><value>Prompt smoke modes</value></data>
+  <data name="Fast" xml:space="preserve"><value>Fast</value></data>
+  <data name="Normal" xml:space="preserve"><value>Normal</value></data>
+  <data name="Careful" xml:space="preserve"><value>Careful</value></data>
+
+  <data name="Prompt smoke features" xml:space="preserve"><value>Prompt smoke features</value></data>
+  <data name="None" xml:space="preserve"><value>None</value></data>
+  <data name="Logging" xml:space="preserve"><value>Logging</value></data>
+  <data name="Metrics" xml:space="preserve"><value>Metrics</value></data>
+  <data name="Trace" xml:space="preserve"><value>Trace</value></data>
+
+  <data name="App_Description" xml:space="preserve"><value>[green]TigerCli command parser manual test app.[/]</value></data>
+  <data name="World" xml:space="preserve"><value>World</value></data>
+  <data name="Hello, [White]{0}[/]!" xml:space="preserve"><value>Hello, [White]{0}[/]!</value></data>
+  <data name="interaction-mode={0}" xml:space="preserve"><value>interaction-mode={0}</value></data>
+  <data name="projects sp-add connection={0} project={1} schema={2}" xml:space="preserve"><value>projects sp-add connection={0} project={1} schema={2}</value></data>
+  <data name="name={0}; mode={1}; features={2}" xml:space="preserve"><value>name={0}; mode={1}; features={2}</value></data>
+  <data name="connection={0}; project={1}" xml:space="preserve"><value>connection={0}; project={1}</value></data>
+  <data name="Intentional typed failure." xml:space="preserve"><value>Intentional typed failure.</value></data>
+  <data name="Returning raw code {0}" xml:space="preserve"><value>Returning raw code {0}</value></data>
+  <data name="Cmd_Echo_Description" xml:space="preserve"><value>Echoes a message.</value></data>
+  <data name="Cmd_Mode_Description" xml:space="preserve"><value>Prints the effective interaction mode.</value></data>
+  <data name="Cmd_ProjectsSpAdd_Description" xml:space="preserve"><value>Adds a stored procedure to a project.</value></data>
+  <data name="Cmd_PromptSmoke_Description" xml:space="preserve"><value>Prompts missing simple values.</value></data>
+  <data name="Cmd_ProviderSmoke_Description" xml:space="preserve"><value>Prompts provider-backed connection and project values.</value></data>
+  <data name="Cmd_Fail_Description" xml:space="preserve"><value>Returns a typed failure code.</value></data>
+  <data name="Cmd_Throw_Description" xml:space="preserve"><value>Throws an exception to test UnhandledException mapping.</value></data>
+  <data name="Cmd_Raw_Description" xml:space="preserve"><value>Returns a raw integer exit code.</value></data>
+
+  <data name="Opt_Default_Name_Description" xml:space="preserve"><value>Name to greet.</value></data>
+  <data name="Opt_Echo_Message_Description" xml:space="preserve"><value>Message to echo.</value></data>
+  <data name="Arg_PromptSmoke_Name_Description" xml:space="preserve"><value>Name to process.</value></data>
+  <data name="Opt_PromptSmoke_Mode_Description" xml:space="preserve"><value>Mode to use.</value></data>
+  <data name="Opt_PromptSmoke_Features_Description" xml:space="preserve"><value>Optional features.</value></data>
+  <data name="Arg_ProjectsSpAdd_Connection_Description" xml:space="preserve"><value>Connection name.</value></data>
+  <data name="Arg_ProjectsSpAdd_Project_Description" xml:space="preserve"><value>Project name.</value></data>
+  <data name="Opt_ProjectsSpAdd_Schema_Description" xml:space="preserve"><value>Schema name.</value></data>
+  <data name="Arg_ProviderSmoke_Connection_Description" xml:space="preserve"><value>Connection to use.</value></data>
+  <data name="Arg_ProviderSmoke_Project_Description" xml:space="preserve"><value>Project to use.</value></data>
+  <data name="Opt_Raw_Code_Description" xml:space="preserve"><value>Raw integer code to return.</value></data>
+
+  <data name="Provider_Connection_Local_Label" xml:space="preserve"><value>Local</value></data>
+  <data name="Provider_Connection_Demo_Label" xml:space="preserve"><value>Demo</value></data>
+  <data name="Provider_Project_Billing_Label" xml:space="preserve"><value>Billing</value></data>
+  <data name="Provider_Project_Inventory_Label" xml:space="preserve"><value>Inventory</value></data>
+  <data name="Provider_Project_Sandbox_Label" xml:space="preserve"><value>Sandbox</value></data>
+  <data name="Provider_Project_Training_Label" xml:space="preserve"><value>Training</value></data>
+</root>

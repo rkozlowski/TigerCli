@@ -1,0 +1,47 @@
+artifact: frame-and-blocks.png
+canonical-os: Windows 11
+generated-os: Microsoft Windows 10.0.26200
+dotnet: .NET 10.0.9
+skiasharp: 4.148.0
+terminal-font: Cascadia Mono
+title-font: Cascadia Mono
+columns: 120
+rows: 35
+chrome: FrameAndTitle
+title: frame-and-blocks
+--- visible text ---
+Single frame
+┌───────────────────┬───────────┬───────────┐
+│Frame              │Outer      │Inner      │
+├───────────────────┼───────────┼───────────┤
+│corners + junctions│SingleFrame│SingleFrame│
+├───────────────────┼───────────┼───────────┤
+│row separators     │═ ║ ╬      │─ │ ┼      │
+└───────────────────┴───────────┴───────────┘
+
+Double frame
+╔═══════════════════╦═══════════╦═══════════╗
+║Frame              ║Outer      ║Inner      ║
+╠═══════════════════╬═══════════╬═══════════╣
+║corners + junctions║DoubleFrame║DoubleFrame║
+╠═══════════════════╬═══════════╬═══════════╣
+║row separators     ║═ ║ ╬      ║─ │ ┼      ║
+╚═══════════════════╩═══════════╩═══════════╝
+
+Mixed frame
+╔═══════════════════════════════════════════╗
+║Frame              │Outer      │Inner      ║
+║───────────────────┼───────────┼───────────║
+║corners + junctions│DoubleFrame│SingleFrame║
+║───────────────────┼───────────┼───────────║
+║row separators     │═ ║ ╬      │─ │ ┼      ║
+╚═══════════════════════════════════════════╝
+
+Shades    ░░░░░░ ▒▒▒▒▒▒ ▓▓▓▓▓▓ ██████
+Progress  ██████████████░░░░░░░░░░ 56%
+Styles    normal bold italic bold+italic underline
+
+┌───────┬────────────────────────────┐
+│ Name: │ Frame diagnostics          │
+│ Url:  │ https://example.com/frames │
+└───────┴────────────────────────────┘

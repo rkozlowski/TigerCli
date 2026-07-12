@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- App identity/product metadata: the source of truth for a normal executable app.
+         <AssemblyName> is both the produced executable name and the TigerCli command name. -->
+    <AssemblyName>roi-cities</AssemblyName>
+    <RootNamespace>RoiCities.Extended</RootNamespace>
+    <Product>ROI Cities</Product>
+    <Description>Cities of the Republic of Ireland.</Description>
+    <Version>1.0.0</Version>
+    <!-- Keep the informational version deterministic so the version output stays stable. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ItTiger.TigerCli\ItTiger.TigerCli.csproj" />
+  </ItemGroup>
+
+</Project>

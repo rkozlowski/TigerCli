@@ -1,0 +1,40 @@
+# Repository line ending policy
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.md text eol=crlf
+*.json text eol=crlf
+*.xml text eol=crlf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Generated documentation artifacts (internal/DocSamples) are written LF-only and compared
+# byte-for-byte by the drift test; keep them LF in the working tree too.
+docs/examples/**/*.html text eol=lf
+docs/examples/**/*.css text eol=lf
+docs/examples/**/*.txt text eol=lf
+
+# Common binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.tif binary
+*.tiff binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.7z binary
+*.gz binary
+*.tar binary
+*.dll binary
+*.exe binary
+*.pdb binary
+*.nupkg binary
+*.snk binary
+*.docx binary
+*.pptx binary
+*.xlsx binary

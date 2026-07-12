@@ -1,0 +1,78 @@
+namespace ItTiger.TigerCli.Commands;
+
+/// <summary>
+/// Resolves a <see cref="TigerCliExitKind"/> to a process exit code using the layered exit model.
+/// Configuration always starts from a mandatory outcome baseline (a success code and an error code)
+/// and may add category, range, and kind overrides. Resolution uses the most specific configured
+/// layer: kind → range → category → outcome baseline.
+/// </summary>
+internal sealed class TigerCliExitCodePolicy
+{
+    private readonly int _successCode;
+    private readonly int _errorCode;
+    private readonly Dictionary<TigerCliExitKind, int> _kindOverrides = new();
+    private readonly Dictionary<TigerCliExitKind, int> _rangeOverrides = new();
+    private readonly Dictionary<TigerCliExitCategory, int> _categoryOverrides = new();
+
+    public Type? DocumentedExitCodeType { get; }
+
+    /// <summary>
+    /// Creates a policy with the mandatory outcome baseline. The parameterless defaults
+    /// (<c>Success = 0</c>, <c>Error = -1</c>) reproduce the framework's built-in behavior for apps
+    /// that never call <c>UseExitCodes</c>.
+    /// </summary>
+    public TigerCliExitCodePolicy(int successCode = 0, int errorCode = -1, Type? documentedExitCodeType = null)
+    {
+        _successCode = successCode;
+        _errorCode = errorCode;
+        DocumentedExitCodeType = documentedExitCodeType;
+    }
+
+    public int Resolve(TigerCliExitKind kind)
+    {
+        if (_kindOverrides.TryGetValue(kind, out var kindCode))
+            return kindCode;
+
+        if (_rangeOverrides.TryGetValue(kind, out var rangeCode))
+            return rangeCode;
+
+        var category = TigerCliExitClassification.CategoryOf(kind);
+        if (_categoryOverrides.TryGetValue(category, out var categoryCode))
+            return categoryCode;
+
+        return TigerCliExitClassification.OutcomeOf(category) == TigerCliExitOutcome.Success
+            ? _successCode
+            : _errorCode;
+    }
+
+    public void SetKind(TigerCliExitKind kind, int exitCode) => _kindOverrides[kind] = exitCode;
+
+    public void SetCategory(TigerCliExitCategory category, int exitCode) => _categoryOverrides[category] = exitCode;
+
+    /// <summary>
+    /// Maps the inclusive band of framework kinds whose declared value is in
+    /// <c>[start, end]</c> to consecutive app exit codes starting at <paramref name="firstExitCode"/>.
+    /// The band is bounded strictly by the explicit start and end, so kinds added to
+    /// <see cref="TigerCliExitKind"/> later cannot silently enter an existing range.
+    /// </summary>
+    public void SetRange(TigerCliExitKind start, TigerCliExitKind end, int firstExitCode)
+    {
+        if (!Enum.IsDefined(start))
+            throw new ArgumentOutOfRangeException(nameof(start), start, "Range start is not a defined TigerCliExitKind.");
+        if (!Enum.IsDefined(end))
+            throw new ArgumentOutOfRangeException(nameof(end), end, "Range end is not a defined TigerCliExitKind.");
+        if ((int)start > (int)end)
+            throw new ArgumentException($"Range start '{start}' ({(int)start}) must not come after end '{end}' ({(int)end}).", nameof(start));
+
+        var startValue = (int)start;
+        var endValue = (int)end;
+
+        var kinds = Enum.GetValues<TigerCliExitKind>()
+            .Where(k => (int)k >= startValue && (int)k <= endValue)
+            .OrderBy(k => (int)k)
+            .ToArray();
+
+        for (var i = 0; i < kinds.Length; i++)
+            _rangeOverrides[kinds[i]] = firstExitCode + i;
+    }
+}

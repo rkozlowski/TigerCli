@@ -1,0 +1,20 @@
+artifact: tui-multi-select-toggled.png
+canonical-os: Windows 11
+generated-os: Microsoft Windows 10.0.26200
+dotnet: .NET 10.0.9
+skiasharp: 4.148.0
+terminal-font: Cascadia Mono
+title-font: Cascadia Mono
+columns: 120
+rows: 8
+chrome: FrameAndTitle
+title: Choose features
+--- visible text ---
+Choose features
+╔═════════════╗
+║[■]  Logging ║
+║[■]  Metrics ║
+║[ ]  Trace   ║
+║[ ]  Audit   ║
+╚═════════════╝
+↑↓ Move   Space Toggle; + All; - None; * Invert; Enter Confirm   Esc Cancel

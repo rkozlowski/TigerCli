@@ -1,0 +1,46 @@
+<Project>
+
+  <!--
+    Shared version, company, and repository metadata for the TigerCli libraries:
+    ItTiger.Core, ItTiger.TigerCli, ItTiger.TigerCli.PngSink.
+    Imported explicitly by those project files; samples and tests do not import it.
+    Package-specific metadata (PackageId, Description) stays in each packable project.
+  -->
+
+  <PropertyGroup>
+    <Version>0.8.0</Version>
+    <AssemblyVersion>0.8.0.0</AssemblyVersion>
+    <FileVersion>0.8.0.0</FileVersion>
+    <UtcBuildTimestamp>$([System.DateTime]::UtcNow.ToString('yyyyMMdd.HHmmss'))</UtcBuildTimestamp>
+    <InformationalVersion>$(Version)+$(UtcBuildTimestamp)</InformationalVersion>
+    <!-- Keep InformationalVersion exactly Version+timestamp; without this the SDK appends the git SHA. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+    <Company>IT Tiger</Company>
+    <Authors>IT Tiger</Authors>
+    <Copyright>Copyright (c) $([System.DateTime]::UtcNow.Year) IT Tiger</Copyright>
+    <NeutralLanguage>en-US</NeutralLanguage>
+
+    <RepositoryUrl>https://github.com/rkozlowski/TigerCli</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://www.ittiger.net/projects/tigercli/</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Symbol packages for the packable projects (ItTiger.Core, ItTiger.TigerCli). -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <!-- Surface links at runtime so TigerCli app metadata (help footer, version output) can read them. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>Documentation</_Parameter1>
+      <_Parameter2>$(PackageProjectUrl)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryUrl</_Parameter1>
+      <_Parameter2>$(RepositoryUrl)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

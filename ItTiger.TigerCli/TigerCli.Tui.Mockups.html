@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TigerCli TUI Mockups</title>
+<style>
+body {
+background-color: #1e1e1e;
+color: white;
+font-family: Calibri, Verdana, Arial, sans-serif;
+}
+pre {
+font-family: Consolas, monospace;
+font-size: 16px;
+}
+.dialog {
+	background-color: #000080;
+	color: #00FFFF;
+}
+.text {	
+	color: #C0C0C0;
+}
+.scroll-ind {
+	background-color: #000080;
+	color: #C0C0C0;
+}
+.text-input {
+	background-color: #202020;
+	color: #E0E0E0; 
+}
+.cursor {    
+    color: #FFFFFF;
+}
+.item {	
+	color: #C0C0C0;
+}
+.selected-item
+{
+	color: #FFFFFF;
+	background-color: #00A000;
+}
+.scroll-bar {
+	background-color: #000080;
+	color: #C0C0C0;
+}
+.status {
+	background-color: #404040;
+	color: #C0C0C0;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Text Input</h2>
+
+<div>
+<pre>
+
+<span class="dialog">╔═════════════════════════════╗
+║ <span class="text">Server name:</span>                ║
+║<span class="scroll-ind"> </span><span class="text-input">my-server-1<span class="cursor">_</span>               </span><span class="scroll-ind"> </span>║
+╚═════════════════════════════╝</span>
+
+</pre>
+<div>
+
+
+<h2>Long Text Input (Scrolling)</h2>
+
+<div>
+<pre>
+
+<span class="dialog">╔═════════════════════════════╗
+║ <span class="text">Description:</span>                ║
+║<span class="scroll-ind">◄</span><span class="text-input">ery long text entered here<span class="cursor">_</span></span><span class="scroll-ind">►</span>║
+╚═════════════════════════════╝</span>
+
+</pre>
+<div>
+
+<h2>Secret Input</h2>
+
+<div>
+<pre>
+
+<span class="dialog">╔═════════════════════════════╗
+║ <span class="text">Password:</span>                   ║
+║<span class="scroll-ind"> </span><span class="text-input">••••••••••••<span class="cursor">_</span>              </span><span class="scroll-ind"> </span>║
+╚═════════════════════════════╝</span>
+
+</pre>
+<div>
+
+
+
+
+
+
+<h2>Select</h2>
+
+
+<div>
+<pre>
+Choose your color:
+<span class="dialog">╔════════════════════╗
+║<span class="item"> Red                </span>║
+║<span class="selected-item"> Green              </span>║
+║<span class="item"> Blue               </span>║
+║<span class="item"> Yellow             </span>║
+╚════════════════════╝</span>
+
+</pre>
+<div>
+
+
+<h2>Select with a scroll bar</h2>
+
+
+<div>
+<pre>
+Select a database:
+<span class="dialog">╔═════════════════════╗
+║<span class="item"> AdventureWorks      </span><span class="scroll-bar">▲</span>
+║<span class="item"> Library             </span><span class="scroll-bar">█</span>
+║<span class="item"> Sakila              </span><span class="scroll-bar">█</span>
+║<span class="selected-item"> StackOverflow       </span><span class="scroll-bar">█</span>
+║<span class="item"> TestDb1             </span><span class="scroll-bar">│</span>
+║<span class="item"> TestDb2             </span><span class="scroll-bar">│</span>
+║<span class="item"> TestDbWithAVeryLong…</span><span class="scroll-bar">▼</span>
+╚═════════════════════╝</span>
+
+</pre>
+<div>
+
+<h2>Multi-choice select with a scroll bar</h2>
+
+
+<div>
+<pre>
+Select fruits you like:
+<span class="dialog">╔════════════════╗
+║<span class="item"> [ ] Banana     </span><span class="scroll-bar">▲</span>
+║<span class="item"> [ ] Blueberry  </span><span class="scroll-bar">│</span>
+║<span class="item"> [■] Blackberry </span><span class="scroll-bar">█</span>
+║<span class="item"> [ ] Grape      </span><span class="scroll-bar">█</span>
+║<span class="selected-item"> [■] Mango      </span><span class="scroll-bar">█</span>
+║<span class="item"> [■] Orange     </span><span class="scroll-bar">█</span>
+║<span class="item"> [ ] Pineapple  </span><span class="scroll-bar">│</span>
+║<span class="item"> [ ] Raspberry  </span><span class="scroll-bar">▼</span>
+╚════════════════╝</span>
+<span class="status">Space - Select; Enter - Confirm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+</pre>
+<div>
+
+</body>
+</html>
+

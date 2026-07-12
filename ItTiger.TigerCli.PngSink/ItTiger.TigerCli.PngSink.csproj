@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Version.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Shares assembly/version metadata via Version.props, but is not published as a NuGet package. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ItTiger.TigerCli.PngSink.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="4.148.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.148.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ItTiger.TigerCli\ItTiger.TigerCli.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\*.png" />
+    <EmbeddedResource Include="Fonts\*.ttf" />
+    <None Update="Assets\*.png" Pack="true" PackagePath="assets\%(Filename)%(Extension)" />
+    <None Include="Fonts\OFL.txt" Pack="true" PackagePath="fonts\OFL.txt" />
+    <None Include="Fonts\CASCADIA-LICENSE.txt" Pack="true" PackagePath="fonts\CASCADIA-LICENSE.txt" />
+    <None Include="Fonts\SOURCE.md" Pack="true" PackagePath="fonts\SOURCE.md" />
+  </ItemGroup>
+
+</Project>

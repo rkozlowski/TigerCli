@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting started — ROI Cities — TigerCli examples</title>
+<link rel="stylesheet" href="assets/tigercli.css">
+</head>
+<body>
+<main>
+<h1>Getting started — ROI Cities</h1>
+<p class="intro">The two example apps from docs/getting-started.md, captured from real runs and real rendering with the TigerBlue theme: the basic app's script-safe shape, and the extended app's provider-backed prompting, command menu, and typed exit codes.</p>
+<section>
+<h2>Basic — generated help (--help)</h2>
+<p>Metadata-driven help for the basic app: description, the two commands, and the built-in framework options.</p>
+<pre class="tc-source">roi-cities --help</pre>
+<pre class="tigercli">roi-cities
+  Cities of the Republic of Ireland.
+
+<span style="color:#00FFFF">Usage:</span>
+  roi-cities &lt;command&gt; [options]
+
+<span style="color:#00FFFF">Commands:</span>
+  list  Lists the cities.
+  show  Shows details for one city.
+
+<span style="color:#00FFFF">Options:</span>
+  -h, --help
+      Show help
+  --help-errors
+      Show exit-code help
+  --non-interactive
+      Disable interactive prompts
+  --theme &lt;theme&gt;
+      Select the UI theme by name
+      dark | light | tiger-blue
+  --culture &lt;culture&gt;
+      Select UI culture for framework strings
+</pre>
+</section>
+<section>
+<h2>Basic — list command</h2>
+<p>The list command projects the city store through a CliList: one column per field, the name styled as the identity key.</p>
+<pre class="tc-source">roi-cities list</pre>
+<pre class="tigercli"><span style="color:#00FF00; background-color:#000000">                     Cities of Ireland                     </span>
+<span style="color:#808080; background-color:#00005F">┌</span><span style="color:#808080; background-color:#00005F">───────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">───────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">────────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">─────────</span><span style="color:#808080; background-color:#00005F">┐</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F">   Name    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F">  County   </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Province </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Population </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F">  River  </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">├</span><span style="color:#808080; background-color:#00005F">───────────</span><span style="color:#808080; background-color:#00005F">┼</span><span style="color:#808080; background-color:#00005F">───────────</span><span style="color:#808080; background-color:#00005F">┼</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┼</span><span style="color:#808080; background-color:#00005F">────────────</span><span style="color:#808080; background-color:#00005F">┼</span><span style="color:#808080; background-color:#00005F">─────────</span><span style="color:#808080; background-color:#00005F">┤</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Dublin    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Dublin    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Leinster </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 592,713    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Liffey  </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Cork      </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Cork      </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Munster  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 222,526    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Lee     </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Limerick  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Limerick  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Munster  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 102,287    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Shannon </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Waterford </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Waterford </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Munster  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 60,079     </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Suir    </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Galway    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Galway    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Connacht </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 85,910     </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Corrib  </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Kilkenny  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Kilkenny  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Leinster </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 27,184     </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Nore    </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">└</span><span style="color:#808080; background-color:#00005F">───────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">───────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">────────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">─────────</span><span style="color:#808080; background-color:#00005F">┘</span>
+</pre>
+</section>
+<section>
+<h2>Basic — show command</h2>
+<p>The show command renders one city as a CliDetails label/value view.</p>
+<pre class="tc-source">roi-cities show Galway</pre>
+<pre class="tigercli"><span style="color:#00FF00; background-color:#000000">          Galway          </span>
+<span style="color:#808080; background-color:#00005F">┌</span><span style="color:#808080; background-color:#00005F">─────────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┐</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Name:       </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Galway   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> County:     </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Galway   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Province:   </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Connacht </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Population: </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 85,910   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> River:      </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Corrib   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">└</span><span style="color:#808080; background-color:#00005F">─────────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┘</span>
+</pre>
+</section>
+<section>
+<h2>Basic — a missing city is prompted</h2>
+<p>Run semi-interactively with the city argument missing, show asks for it with a text input instead of failing.</p>
+<pre class="tc-source">roi-cities show</pre>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#00005F">╔</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">════════════════════════════════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╗</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                       </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">City name, e.g. Galway.                                       </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                       </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> </span><span style="color:#FFFFFF; background-color:#4E4E4E">                                                            </span><span style="color:#C0C0C0; background-color:#00005F"> </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                       </span>
+<span style="color:#C0C0C0; background-color:#00005F">╚</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">════════════════════════════════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╝</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                       </span>
+<span style="color:#C0C0C0; background-color:#4E4E4E">A value is required.                                                                                                    </span>
+</pre>
+</section>
+<section>
+<h2>Basic — --non-interactive fails cleanly</h2>
+<p>The same missing argument under --non-interactive: no prompt, an error on stderr, and a non-zero exit code — automation never hangs on a question.</p>
+<pre class="tc-source">roi-cities show --non-interactive</pre>
+<pre class="tigercli"><span style="color:#FF0000">Error:</span> Missing required argument: &lt;city&gt;
+</pre>
+</section>
+<section>
+<h2>Extended — command menu</h2>
+<p>With UseCommandMenu enabled, running the app bare opens a picker over the registered commands; the selected command then runs through the normal pipeline.</p>
+<pre class="tc-source">roi-cities</pre>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#000000">Select a command                                                                                                        </span>
+<span style="color:#C0C0C0; background-color:#00005F">╔</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">═══════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╗</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#000000; background-color:#00FF00"> list  Lists the cities.             </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> show  Shows details for one city. </span><span style="color:#808080; background-color:#00005F">  </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">╚</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">═══════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╝</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                </span>
+<span style="color:#C0C0C0; background-color:#4E4E4E">↑↓ Move   Enter Select   Esc Cancel                                                                                     </span>
+</pre>
+</section>
+<section>
+<h2>Extended — provider-backed city select</h2>
+<p>The show selector is provider-backed in the extended app: a missing city becomes a select over the store's cities instead of a free-text input.</p>
+<pre class="tc-source">roi-cities show</pre>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#000000">City name, e.g. Galway.                                                                                                 </span>
+<span style="color:#C0C0C0; background-color:#00005F">╔</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">═══════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╗</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#000000; background-color:#00FF00"> Dublin (Leinster)   </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> Cork (Munster)      </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> Limerick (Munster)  </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> Waterford (Munster) </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> Galway (Connacht)   </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F"> Kilkenny (Leinster) </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#00005F">╚</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">═══════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╝</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                                                                                </span>
+<span style="color:#C0C0C0; background-color:#4E4E4E">↑↓ Move   Enter Select   Esc Cancel                                                                                     </span>
+</pre>
+</section>
+<section>
+<h2>Extended — generated help (--help)</h2>
+<p>The extended app's help adds the display name, version metadata, and the exit-code hint from the typed exit-code registration.</p>
+<pre class="tc-source">roi-cities --help</pre>
+<pre class="tigercli">roi-cities
+  Cities of the Republic of Ireland.
+
+<span style="color:#00FFFF">Usage:</span>
+  roi-cities [options]
+  roi-cities &lt;command&gt; [options]
+
+<span style="color:#00FFFF">Commands:</span>
+  list  Lists the cities.
+  show  Shows details for one city.
+
+<span style="color:#00FFFF">Options:</span>
+  -h, --help
+      Show help
+  --version
+      Show version
+  --version-full
+      Show product version
+  --help-errors
+      Show exit-code help
+  --non-interactive
+      Disable interactive prompts
+  --theme &lt;theme&gt;
+      Select the UI theme by name
+      dark | light | tiger-blue
+  --culture &lt;culture&gt;
+      Select UI culture for framework strings
+
+For a list of exit codes, use --help-errors.
+</pre>
+</section>
+<section>
+<h2>Extended — exit-code help (--help-errors)</h2>
+<p>Typed exit codes documented from the app's RoiCitiesExitCode enum.</p>
+<pre class="tc-source">roi-cities --help-errors</pre>
+<pre class="tigercli"><span style="color:#00FFFF">Exit codes:</span>
+  roi-cities exit codes
+
+  0   OK
+      Operation completed successfully.
+
+  1   City not found
+      The requested city is not in the city store.
+
+  2   Invalid arguments
+      Invalid command-line arguments.
+
+  3   Missing required argument
+      A required argument was not provided.
+
+  4   Validation error
+      A supplied value failed validation.
+
+  5   Interactive input not allowed
+      Interaction was required but not allowed, e.g. under --non-interactive.
+
+  6   Cancelled
+      An interactive prompt was cancelled.
+
+  70  Internal error
+      Unexpected internal failure.
+
+</pre>
+</section>
+<footer>Generated by internal/DocSamples from real TigerCli rendering. Do not edit by hand — regenerate with: dotnet run --project internal/DocSamples</footer>
+</main>
+</body>
+</html>

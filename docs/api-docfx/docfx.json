@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../..",
+          "files": [
+            "ItTiger.TigerCli/ItTiger.TigerCli.csproj",
+            "ItTiger.Core/ItTiger.Core.csproj",
+            "ItTiger.TigerCli.PngSink/ItTiger.TigerCli.PngSink.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "shouldSkipMarkup": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml",
+          "toc.yml",
+          "index.md"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appName": "TigerCli",
+      "_appTitle": "TigerCli API Reference",
+      "_enableSearch": true
+    }
+  }
+}

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+
+  <data name="Help_Usage" xml:space="preserve"><value>Użycie:</value></data>
+  <data name="Help_Commands" xml:space="preserve"><value>Polecenia:</value></data>
+  <data name="Help_Arguments" xml:space="preserve"><value>Argumenty:</value></data>
+  <data name="Help_Options" xml:space="preserve"><value>Opcje:</value></data>
+  <data name="Help_Notes" xml:space="preserve"><value>Uwagi:</value></data>
+  <data name="Help_ExitCodes" xml:space="preserve"><value>Kody zakończenia:</value></data>
+  <data name="Help_DefaultMarker" xml:space="preserve"><value>(domyślne)</value></data>
+  <data name="Help_DefaultCommand" xml:space="preserve"><value>Polecenie domyślne:</value></data>
+  <data name="Help_Aliases" xml:space="preserve"><value>Aliasy:</value></data>
+  <data name="Help_AliasTargetMarker" xml:space="preserve"><value>→ {0}</value></data>
+  <data name="Help_AliasFor" xml:space="preserve"><value>Alias polecenia: {0}</value></data>
+  <data name="Help_Required" xml:space="preserve"><value>Wymagane.</value></data>
+  <data name="Help_Repeatable" xml:space="preserve"><value>Powtarzalne.</value></data>
+  <data name="Help_Examples" xml:space="preserve"><value>Przykłady: {0} x=1, {0} y "wartość"</value></data>
+  <data name="Help_Default" xml:space="preserve"><value>Domyślnie: {0}</value></data>
+  <data name="Help_PromptedValues" xml:space="preserve"><value>Wartości promptowane:</value></data>
+  <data name="Help_PromptedValue" xml:space="preserve"><value>Pobierane przez prompt, gdy wymagane.</value></data>
+  <data name="Help_PromptedSecretValue" xml:space="preserve"><value>Wartość tajna; pobierana przez prompt, gdy wymagana.</value></data>
+  <data name="Help_PromptedCommandLineNotAllowed" xml:space="preserve"><value>Nie można podać w wierszu polecenia.</value></data>
+  <data name="Help_Placeholder_Command" xml:space="preserve"><value>polecenie</value></data>
+  <data name="Help_Placeholder_Options" xml:space="preserve"><value>opcje</value></data>
+  <data name="Help_Placeholder_Value" xml:space="preserve"><value>wartość</value></data>
+  <data name="Help_Builtin_Help_Desc" xml:space="preserve"><value>Wyświetl pomoc</value></data>
+  <data name="Help_Builtin_Version_Desc" xml:space="preserve"><value>Wyświetl wersję</value></data>
+  <data name="Help_Builtin_VersionFull_Desc" xml:space="preserve"><value>Wyświetl wersję produktu</value></data>
+  <data name="Help_Builtin_HelpErrors_Desc" xml:space="preserve"><value>Wyświetl pomoc kodów zakończenia</value></data>
+  <data name="Help_Builtin_NonInteractive_Desc" xml:space="preserve"><value>Wyłącz interakcję</value></data>
+  <data name="Help_Builtin_Culture_Desc" xml:space="preserve"><value>Wybierz język tekstów ramowych</value></data>
+  <data name="Help_Builtin_Culture_ValuePlaceholder" xml:space="preserve"><value>kultura</value></data>
+  <data name="Help_Builtin_Theme_Desc" xml:space="preserve"><value>Wybierz motyw interfejsu wg nazwy</value></data>
+  <data name="Help_Builtin_Theme_ValuePlaceholder" xml:space="preserve"><value>motyw</value></data>
+  <data name="Help_Hint_ExitCodes" xml:space="preserve"><value>Aby zobaczyć listę kodów zakończenia, użyj --help-errors.</value></data>
+  <data name="Help_Hint_NoExitCodeEnum" xml:space="preserve"><value>Brak skonfigurowanej listy kodów zakończenia.</value></data>
+  <data name="App_VersionLine" xml:space="preserve"><value>{0} wersja {1}</value></data>
+  <data name="App_ProductVersionLine" xml:space="preserve"><value>{0} wersja produktu {1}</value></data>
+  <data name="AppLink_Website" xml:space="preserve"><value>Strona WWW</value></data>
+  <data name="AppLink_SourceCode" xml:space="preserve"><value>Kod źródłowy</value></data>
+  <data name="AppLink_Documentation" xml:space="preserve"><value>Dokumentacja</value></data>
+
+  <data name="Error_Prefix" xml:space="preserve"><value>Błąd:</value></data>
+  <data name="Error_UnknownOption" xml:space="preserve"><value>Nieznana opcja: '{0}'</value></data>
+  <data name="Error_UnexpectedArgument" xml:space="preserve"><value>Nieoczekiwany argument: '{0}'</value></data>
+  <data name="Error_UnexpectedPositional" xml:space="preserve"><value>Nieoczekiwany argument pozycyjny po opcjach: {0}</value></data>
+  <data name="Error_OptionRequiresValue" xml:space="preserve"><value>Opcja '{0}' wymaga wartości.</value></data>
+  <data name="Error_OptionRequiresKVP" xml:space="preserve"><value>Opcja '{0}' wymaga pary klucz-wartość (klucz=wartość lub klucz wartość).</value></data>
+  <data name="Error_MissingArgument" xml:space="preserve"><value>Brak wymaganego argumentu: &lt;{0}&gt;</value></data>
+  <data name="Error_MissingOption" xml:space="preserve"><value>Brak wymaganej opcji: {0}</value></data>
+  <data name="Error_OptionCommandLineValueNotAllowed" xml:space="preserve"><value>Opcji '{0}' nie można podać w wierszu polecenia.</value></data>
+  <data name="Error_InvalidValue" xml:space="preserve"><value>Nieprawidłowa wartość opcji {0}: {1}.</value></data>
+  <data name="Error_ForbiddenValue" xml:space="preserve"><value>Niedozwolona wartość opcji {0}: {1}.</value></data>
+  <data name="Error_ValidationWrapper" xml:space="preserve"><value>Błąd walidacji: {0}</value></data>
+  <data name="Error_ExactlyOneOfTwo" xml:space="preserve"><value>Należy podać dokładnie jedną z opcji: {0} lub {1}.</value></data>
+  <data name="Error_ExactlyOneOfMany" xml:space="preserve"><value>Należy podać dokładnie jedną z opcji: {0} lub {1}.</value></data>
+  <data name="Error_NonInteractiveWithFullInteractive" xml:space="preserve"><value>Opcji --non-interactive nie można używać z poleceniami FullInteractive.</value></data>
+  <data name="Prompt_Cancelled" xml:space="preserve"><value>Anulowano.</value></data>
+  <data name="Error_PromptNoChoices" xml:space="preserve"><value>Brak dostępnych opcji dla {0}.</value></data>
+  <data name="Error_PromptProviderFailed" xml:space="preserve"><value>Dostawca wartości zgłosił błąd dla {0}: {1}</value></data>
+  <data name="Error_InvalidProviderValue" xml:space="preserve"><value>Nieprawidłowa wartość dla {0}: {1} nie jest dostępną opcją.</value></data>
+  <data name="Error_MultiSelectRequiresSelection" xml:space="preserve"><value>Musisz wybrać co najmniej jedną wartość dla {0}.</value></data>
+  <data name="Error_EditTargetNotFound" xml:space="preserve"><value>Nie można znaleźć „{0}” do edycji.</value></data>
+  <data name="Error_OptionPromptDependencyCycle" xml:space="preserve"><value>Wykryto cykliczną zależność promptowania opcji: {0}.</value></data>
+  <data name="Error_UnsupportedCulture" xml:space="preserve"><value>Nieobsługiwana wartość --culture '{0}'. Obsługiwane: {1}.</value></data>
+  <data name="Error_UnsupportedTheme" xml:space="preserve"><value>Nieobsługiwana wartość --theme '{0}'. Dostępne: {1}.</value></data>
+  <data name="Error_UnsupportedThemeEnvironment" xml:space="preserve"><value>Nieprawidłowa wartość TIGERCLI_THEME '{0}'. Dostępne motywy: {1}.</value></data>
+  <data name="Error_CommandMenuRequiresInteractive" xml:space="preserve"><value>Menu poleceń wymaga sesji interaktywnej i nie może działać z --non-interactive.</value></data>
+
+  <data name="CommandMenu_Title" xml:space="preserve"><value>Wybierz polecenie</value></data>
+  <data name="CommandMenu_Empty" xml:space="preserve"><value>Brak dostępnych poleceń.</value></data>
+  <data name="CommandMenu_GroupMarker" xml:space="preserve"><value>›</value></data>
+  <data name="CommandMenu_AliasMarker" xml:space="preserve"><value>→ {0}</value></data>
+
+  <data name="PromptValidation_Required" xml:space="preserve"><value>Wartość jest wymagana.</value></data>
+  <data name="PromptValidation_MinLength" xml:space="preserve"><value>Wpisz co najmniej {0} znaków.</value></data>
+  <data name="PromptValidation_MaxLength" xml:space="preserve"><value>Wpisz nie więcej niż {0} znaków.</value></data>
+  <data name="PromptValidation_Integer" xml:space="preserve"><value>Wpisz poprawną liczbę całkowitą.</value></data>
+  <data name="PromptValidation_MinValue" xml:space="preserve"><value>Wartość musi wynosić co najmniej {0}.</value></data>
+  <data name="PromptValidation_MaxValue" xml:space="preserve"><value>Wartość może wynosić co najwyżej {0}.</value></data>
+  <data name="PromptValidation_ValueRange" xml:space="preserve"><value>Wartość musi być z zakresu od {0} do {1}.</value></data>
+
+  <data name="Tui_Confirm_Yes" xml:space="preserve"><value>Tak</value></data>
+  <data name="Tui_Confirm_No" xml:space="preserve"><value>Nie</value></data>
+  <data name="Tui_Confirm_Cancel_Message" xml:space="preserve"><value>Anulować tę operację?</value></data>
+  <data name="Tui_Confirm_Abort_Message" xml:space="preserve"><value>Przerwać tę operację?</value></data>
+  <data name="Tui_Select_EmptyState" xml:space="preserve"><value>Brak dostępnych elementów</value></data>
+  <data name="Tui_Select_NoSelection" xml:space="preserve"><value>[Muted](Brak)[/]</value></data>
+  <data name="Tui_TextInput_Hint" xml:space="preserve"><value>Wpisz tekst   Enter Zatwierdź   Esc Anuluj</value></data>
+  <data name="Tui_Select_Hint" xml:space="preserve"><value>↑↓ Wybór   Enter Wybierz   Esc Anuluj</value></data>
+  <data name="Tui_MultiSelect_Hint" xml:space="preserve"><value>↑↓ Wybór   Spacja Przełącz; + Wszystkie; - Żadne; * Odwróć; Enter Potwierdź   Esc Anuluj</value></data>
+  <data name="Tui_ButtonGroup_Hint" xml:space="preserve"><value>← → Zmień   Enter Aktywuj</value></data>
+  <data name="Tui_FolderSelect_Hint" xml:space="preserve"><value>↑↓ Wybór   Enter Zatwierdź   Spacja/→ Otwórz   ←/Backspace W górę   Esc Anuluj</value></data>
+  <data name="Tui_FolderSelect_PathHint" xml:space="preserve"><value>Wpisz ścieżkę   Enter Zatwierdź   Tab Dalej</value></data>
+  <data name="Tui_FolderSelect_ListHint" xml:space="preserve"><value>↑↓ Wybór   Enter Otwórz   Tab Dalej   Esc Anuluj</value></data>
+  <data name="Tui_FolderSelect_ButtonHint" xml:space="preserve"><value>← → Zmień   Enter Aktywuj   Tab Dalej</value></data>
+  <data name="Tui_FolderSelect_InvalidPathEntered" xml:space="preserve"><value>Wprowadzono nieprawidłową ścieżkę</value></data>
+  <data name="Tui_FolderSelect_Empty" xml:space="preserve"><value>Brak dostępnych folderów</value></data>
+  <data name="Tui_FolderSelect_Root" xml:space="preserve"><value>Komputer</value></data>
+  <data name="Tui_MessageBox_Hint" xml:space="preserve"><value>← → Zmień   Enter/Spacja Wybierz   Esc Anuluj</value></data>
+  <data name="Tui_Button_Ok" xml:space="preserve"><value>OK</value></data>
+  <data name="Tui_Button_Cancel" xml:space="preserve"><value>Anuluj</value></data>
+  <data name="Tui_Button_Abort" xml:space="preserve"><value>Przerwij</value></data>
+  <data name="Tui_Button_Retry" xml:space="preserve"><value>Ponów</value></data>
+  <data name="Tui_Button_Ignore" xml:space="preserve"><value>Ignoruj</value></data>
+  <data name="Tui_Activity_Cancelling" xml:space="preserve"><value>Anulowanie…</value></data>
+  <data name="Tui_Activity_Aborting" xml:space="preserve"><value>Przerywanie…</value></data>
+  <data name="Tui_Activity_Hint" xml:space="preserve"><value>Esc Anuluj</value></data>
+  <data name="Tui_Activity_Hint_Abort" xml:space="preserve"><value>Esc Przerwij</value></data>
+  <data name="Tui_Loading_Options" xml:space="preserve"><value>Ładowanie opcji…</value></data>
+  <data name="Tui_Loading_Hint" xml:space="preserve"><value>Esc Anuluj</value></data>
+</root>

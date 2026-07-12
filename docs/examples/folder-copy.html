@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folder Copy sample — TigerCli examples</title>
+<link rel="stylesheet" href="assets/tigercli.css">
+</head>
+<body>
+<main>
+<h1>Folder Copy sample</h1>
+<p class="intro">The Folder Copy real-operation sample (docs/examples/folder-copy.md), captured from real runs and real rendering with the TigerBlue theme: the generated help, and the copy activity dialog driven through the sample's own spec and progress mapping by a deterministic storyboard.</p>
+<section>
+<h2>Generated help (--help)</h2>
+<p>Metadata-driven help for the single-default-command app: name and description come from the project file via UseAssemblyMetadata, plus the two required folder options.</p>
+<pre class="tc-source">folder-copy --help</pre>
+<pre class="tigercli">folder-copy
+  Recursively copies the contents of one folder into another.
+
+<span style="color:#00FFFF">Usage:</span>
+  folder-copy [options]
+
+<span style="color:#00FFFF">Options:</span>
+  -s, --source &lt;value&gt;
+      Source folder to copy from.
+      Required.
+  -d, --destination &lt;value&gt;
+      Destination folder to copy into.
+      Required.
+  -h, --help
+      Show help
+  --help-errors
+      Show exit-code help
+  --non-interactive
+      Disable interactive prompts
+  --theme &lt;theme&gt;
+      Select the UI theme by name
+      dark | light | tiger-blue
+  --culture &lt;culture&gt;
+      Select UI culture for framework strings
+</pre>
+</section>
+<section>
+<h2>Copy activity dialog (mid-copy)</h2>
+<p>The rich copy activity dialog, captured mid-copy from the sample's own activity spec on a scripted TestShell with a manual clock: the current file with its own progress bar, the files-copied and total-size bars (all ProgressBarStyle.Dash), and the elapsed/ETA line. The bracketed glyph on the top border is the activity spinner overlay; Esc maps to the Cancel button.</p>
+<pre class="tc-source">folder-copy --source C:\Trip --destination D:\Backup</pre>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#00005F">╔</span><span style="color:#C0C0C0; background-color:#00005F">[</span><span style="color:#C0C0C0; background-color:#00005F">⠴</span><span style="color:#C0C0C0; background-color:#00005F">]</span><span style="color:#C0C0C0; background-color:#00005F">══════════════════════════════════════════════════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╗</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">                     Copying 6 files (56.0 MB) to D:\Backup…                      </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">        File: video\family-picnic.mp4                                             </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">     Current: </span><span style="color:#00FFFF; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#808080; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#C0C0C0; background-color:#00005F"> 48.0%                    </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">       Files: </span><span style="color:#00FFFF; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#808080; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#C0C0C0; background-color:#00005F"> 66.7% </span><span style="color:#00FF00; background-color:#00005F">4/6</span><span style="color:#C0C0C0; background-color:#00005F">                </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">  Total size: </span><span style="color:#00FFFF; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#808080; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰</span><span style="color:#C0C0C0; background-color:#00005F"> 75.9% </span><span style="color:#00FF00; background-color:#00005F">42.5/56.0MB</span><span style="color:#C0C0C0; background-color:#00005F">        </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">     Elapsed: </span><span style="color:#808080; background-color:#00005F">0:05 • ETA 0:01</span><span style="color:#C0C0C0; background-color:#00005F">                                                     </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">╚</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">════════════════════════════════════════════════════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╝</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#000000; background-color:#00FF00">[</span><span style="color:#005FD7; background-color:#00FF00">▸</span><span style="color:#000000; background-color:#00FF00"> Cancel </span><span style="color:#005FD7; background-color:#00FF00">◂</span><span style="color:#000000; background-color:#00FF00">]</span><span style="color:#C0C0C0; background-color:#000000">                                                                                                            </span>
+<span style="color:#C0C0C0; background-color:#4E4E4E">Esc Cancel                                                                                                              </span>
+</pre>
+</section>
+<footer>Generated by internal/DocSamples from real TigerCli rendering. Do not edit by hand — regenerate with: dotnet run --project internal/DocSamples</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CliDetails — TigerCli examples</title>
+<link rel="stylesheet" href="assets/tigercli.css">
+</head>
+<body>
+<main>
+<h1>CliDetails</h1>
+<p class="intro">Single-record show/details output rendered through HtmlSink with the TigerBlue theme.</p>
+<section>
+<h2>Device details (Details preset)</h2>
+<p>CliDetails renders one record as label/value rows. AddKey, AddPath, and AddLink carry the semantic roles; a null value renders the missing-value display (AddOptional would omit the row instead).</p>
+<pre class="tigercli"><span style="color:#808080; background-color:#00005F">┌</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">─────────────────────────────────────</span><span style="color:#808080; background-color:#00005F">┐</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Id:      </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> cam-042                             </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Name:    </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Loading dock camera                 </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Status:  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#00FF00; background-color:#00005F"> Online                              </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Storage: </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#5F8787; background-color:#00005F"> C:\media\incoming                   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Url:     </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#0000FF; background-color:#00005F"> </span><a class="tc-underline tc-link" href="https://example.com/devices/cam-042" style="color:#0000FF; background-color:#00005F">https://example.com/devices/cam-042</a><span style="color:#0000FF; background-color:#00005F"> </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Notes:   </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> </span><span style="color:#808080; background-color:#00005F">(not set)</span><span style="color:#C0C0C0; background-color:#00005F">                           </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">└</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">─────────────────────────────────────</span><span style="color:#808080; background-color:#00005F">┘</span>
+</pre>
+</section>
+<section>
+<h2>The same record with the DetailsCondensed preset</h2>
+<p>Preset choice is one line; the record definition is unchanged.</p>
+<pre class="tigercli"><span style="color:#FFFFFF; background-color:#000000">Id:     </span><span style="color:#5FFF00; background-color:#000000"> cam-042                            </span>
+<span style="color:#FFFFFF; background-color:#000000">Name:   </span><span style="color:#C0C0C0; background-color:#000000"> Loading dock camera                </span>
+<span style="color:#FFFFFF; background-color:#000000">Status: </span><span style="color:#00FF00; background-color:#000000"> Online                             </span>
+<span style="color:#FFFFFF; background-color:#000000">Storage:</span><span style="color:#5F8787; background-color:#000000"> C:\media\incoming                  </span>
+<span style="color:#FFFFFF; background-color:#000000">Url:    </span><span style="color:#0000FF; background-color:#000000"> </span><a class="tc-underline tc-link" href="https://example.com/devices/cam-042" style="color:#0000FF; background-color:#000000">https://example.com/devices/cam-042</a>
+<span style="color:#FFFFFF; background-color:#000000">Notes:  </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#808080; background-color:#000000">(not set)</span><span style="color:#C0C0C0; background-color:#000000">                          </span>
+</pre>
+</section>
+<footer>Generated by internal/DocSamples from real TigerCli rendering. Do not edit by hand — regenerate with: dotnet run --project internal/DocSamples</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,23 @@
+artifact: roi-cities-basic-list.png
+canonical-os: Windows 11
+generated-os: Microsoft Windows 10.0.26200
+dotnet: .NET 10.0.9
+skiasharp: 4.148.0
+terminal-font: Cascadia Mono
+title-font: Cascadia Mono
+columns: 120
+rows: 11
+chrome: FrameAndTitle
+title: roi-cities list
+--- visible text ---
+                     Cities of Ireland
+┌───────────┬───────────┬──────────┬────────────┬─────────┐
+│   Name    │  County   │ Province │ Population │  River  │
+├───────────┼───────────┼──────────┼────────────┼─────────┤
+│ Dublin    │ Dublin    │ Leinster │ 592,713    │ Liffey  │
+│ Cork      │ Cork      │ Munster  │ 222,526    │ Lee     │
+│ Limerick  │ Limerick  │ Munster  │ 102,287    │ Shannon │
+│ Waterford │ Waterford │ Munster  │ 60,079     │ Suir    │
+│ Galway    │ Galway    │ Connacht │ 85,910     │ Corrib  │
+│ Kilkenny  │ Kilkenny  │ Leinster │ 27,184     │ Nore    │
+└───────────┴───────────┴──────────┴────────────┴─────────┘

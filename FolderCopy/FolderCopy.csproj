@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>folder-copy</AssemblyName>
+    <RootNamespace>FolderCopy</RootNamespace>
+    <Description>Recursively copies the contents of one folder into another.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ItTiger.TigerCli\ItTiger.TigerCli.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The documentation generator captures the real activity dialog spec (internal seams on
+         FolderCopyCommand) so the committed Folder Copy artifacts cannot drift from the sample. -->
+    <InternalsVisibleTo Include="DocSamples" />
+  </ItemGroup>
+
+</Project>

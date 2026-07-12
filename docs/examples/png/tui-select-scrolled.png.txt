@@ -1,0 +1,20 @@
+artifact: tui-select-scrolled.png
+canonical-os: Windows 11
+generated-os: Microsoft Windows 10.0.26200
+dotnet: .NET 10.0.9
+skiasharp: 4.148.0
+terminal-font: Cascadia Mono
+title-font: Cascadia Mono
+columns: 120
+rows: 8
+chrome: FrameAndTitle
+title: Choose device
+--- visible text ---
+Choose device
+╔═════════╗
+║ cam-009 ▲
+║ cam-010 │
+║ cam-011 █
+║ cam-012 ▼
+╚═════════╝
+↑↓ Move   Enter Select   Esc Cancel

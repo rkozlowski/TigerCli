@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frame and block diagnostics — TigerCli examples</title>
+<link rel="stylesheet" href="assets/tigercli.css">
+</head>
+<body>
+<main>
+<h1>Frame and block diagnostics</h1>
+<p class="intro">Box-drawing frames, block elements, and decoration-isolation checks rendered through HtmlSink; the PNG companion shows the same grids through PngSink.</p>
+<section>
+<h2>Single-line frame</h2>
+<p>Outer frame, header rule, and record/element separators all single-line: ┌ ┬ ┐ ├ ┼ ┤ └ ┴ ┘ junctions must join without gaps.</p>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#000000">Single frame                                 </span>
+<span style="color:#C0C0C0; background-color:#000000">┌</span><span style="color:#C0C0C0; background-color:#000000">───────────────────</span><span style="color:#C0C0C0; background-color:#000000">┬</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┬</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┐</span>
+<span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">Frame              </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">Outer      </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">Inner      </span><span style="color:#C0C0C0; background-color:#000000">│</span>
+<span style="color:#C0C0C0; background-color:#000000">├</span><span style="color:#C0C0C0; background-color:#000000">───────────────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┤</span>
+<span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">corners + junctions</span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">SingleFrame</span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">SingleFrame</span><span style="color:#C0C0C0; background-color:#000000">│</span>
+<span style="color:#C0C0C0; background-color:#000000">├</span><span style="color:#C0C0C0; background-color:#000000">───────────────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┤</span>
+<span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">row separators     </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">═ ║ ╬      </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">─ │ ┼      </span><span style="color:#C0C0C0; background-color:#000000">│</span>
+<span style="color:#C0C0C0; background-color:#000000">└</span><span style="color:#C0C0C0; background-color:#000000">───────────────────</span><span style="color:#C0C0C0; background-color:#000000">┴</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┴</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┘</span>
+</pre>
+</section>
+<section>
+<h2>Double-line frame</h2>
+<p>The same table with double-line frames throughout (╔ ╦ ╗ ╠ ╬ ╣ ╚ ╩ ╝).</p>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#000000">Double frame                                 </span>
+<span style="color:#C0C0C0; background-color:#000000">╔</span><span style="color:#C0C0C0; background-color:#000000">═══════════════════</span><span style="color:#C0C0C0; background-color:#000000">╦</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╦</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╗</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">Frame              </span><span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">Outer      </span><span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">Inner      </span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">╠</span><span style="color:#C0C0C0; background-color:#000000">═══════════════════</span><span style="color:#C0C0C0; background-color:#000000">╬</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╬</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╣</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">corners + junctions</span><span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">DoubleFrame</span><span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">DoubleFrame</span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">╠</span><span style="color:#C0C0C0; background-color:#000000">═══════════════════</span><span style="color:#C0C0C0; background-color:#000000">╬</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╬</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╣</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">row separators     </span><span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">═ ║ ╬      </span><span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">─ │ ┼      </span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">╚</span><span style="color:#C0C0C0; background-color:#000000">═══════════════════</span><span style="color:#C0C0C0; background-color:#000000">╩</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╩</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╝</span>
+</pre>
+</section>
+<section>
+<h2>Mixed frame (double outer, single inner)</h2>
+<p>Double outer frame joined to single inner rules (╒-style transition junctions).</p>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#000000">Mixed frame                                  </span>
+<span style="color:#C0C0C0; background-color:#000000">╔</span><span style="color:#C0C0C0; background-color:#000000">═══════════════════</span><span style="color:#C0C0C0; background-color:#000000">═</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">═</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╗</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">Frame              </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">Outer      </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">Inner      </span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">───────────────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">corners + junctions</span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">DoubleFrame</span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">SingleFrame</span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">───────────────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">┼</span><span style="color:#C0C0C0; background-color:#000000">───────────</span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">║</span><span style="color:#C0C0C0; background-color:#000000">row separators     </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">═ ║ ╬      </span><span style="color:#C0C0C0; background-color:#000000">│</span><span style="color:#C0C0C0; background-color:#000000">─ │ ┼      </span><span style="color:#C0C0C0; background-color:#000000">║</span>
+<span style="color:#C0C0C0; background-color:#000000">╚</span><span style="color:#C0C0C0; background-color:#000000">═══════════════════</span><span style="color:#C0C0C0; background-color:#000000">═</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">═</span><span style="color:#C0C0C0; background-color:#000000">═══════════</span><span style="color:#C0C0C0; background-color:#000000">╝</span>
+</pre>
+</section>
+<section>
+<h2>Block elements and text styles</h2>
+<p>Shade/block characters and a progress-bar run must render as continuous fills; the styles line verifies normal, bold, italic, bold+italic, and underline.</p>
+<pre class="tigercli"><span style="color:#C0C0C0; background-color:#000000">Shades    ░░░░░░ ▒▒▒▒▒▒ ▓▓▓▓▓▓ ██████             </span>
+<span style="color:#C0C0C0; background-color:#000000">Progress  ██████████████░░░░░░░░░░ 56%            </span>
+<span style="color:#C0C0C0; background-color:#000000">Styles    normal </span><span class="tc-bold" style="color:#C0C0C0; background-color:#000000">bold</span><span style="color:#C0C0C0; background-color:#000000"> </span><span class="tc-italic" style="color:#C0C0C0; background-color:#000000">italic</span><span style="color:#C0C0C0; background-color:#000000"> </span><span class="tc-bold tc-italic" style="color:#C0C0C0; background-color:#000000">bold+italic</span><span style="color:#C0C0C0; background-color:#000000"> </span><span class="tc-underline" style="color:#C0C0C0; background-color:#000000">underline</span>
+</pre>
+</section>
+<section>
+<h2>Link against frame separators</h2>
+<p>The Url value is a link (underlined, and an anchor here): the underline must stay on the value only — never on the frame glyphs, separators, or cell padding.</p>
+<pre class="tigercli"><span style="color:#808080; background-color:#00005F">┌</span><span style="color:#808080; background-color:#00005F">───────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">────────────────────────────</span><span style="color:#808080; background-color:#00005F">┐</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Name: </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Frame diagnostics          </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Url:  </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#0000FF; background-color:#00005F"> </span><a class="tc-underline tc-link" href="https://example.com/frames" style="color:#0000FF; background-color:#00005F">https://example.com/frames</a><span style="color:#0000FF; background-color:#00005F"> </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">└</span><span style="color:#808080; background-color:#00005F">───────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">────────────────────────────</span><span style="color:#808080; background-color:#00005F">┘</span>
+</pre>
+</section>
+<footer>Generated by internal/DocSamples from real TigerCli rendering. Do not edit by hand — regenerate with: dotnet run --project internal/DocSamples</footer>
+</main>
+</body>
+</html>

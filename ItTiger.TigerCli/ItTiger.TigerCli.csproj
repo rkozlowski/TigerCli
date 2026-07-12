@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Version.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>ItTiger.TigerCli</PackageId>
+    <Description>An opinionated .NET framework for building script-safe, command-driven CLI/TUI applications. Provides command parsing with metadata-driven help, framework-owned non-interactive and semi-interactive modes, structured terminal output (CliTable, CliGrid, CliList, CliDetails), typed exit codes, and localization support.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ItTiger.Core\ItTiger.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lets the test assembly exercise internal plumbing directly without widening the public API:
+         process/system cancellation (TigerCliLifetime, TigerCliProcessCancellation,
+         TigerCliApp.ProcessCancellationEnabled), localized resource lookup (TigerCliResources),
+         ANSI/title helpers (AnsiSgr, TerminalTitleSession, TerminalTitleScope, StringLinesSink).
+         These are low-level internals; exposing them publicly would commit to plumbing API, so the
+         test seam is kept here rather than broadened. Public extensibility for custom inline controls
+         is provided via ICliAppShell + TigerTui.DefaultShell/RunDialogAsync/RunControlAsync. -->
+    <InternalsVisibleTo Include="ItTiger.TigerCli.Tests" />
+  </ItemGroup>
+
+</Project>
