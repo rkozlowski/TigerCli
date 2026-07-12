@@ -142,3 +142,14 @@ Tests live in `ItTiger.TigerCli.Tests/`. Documentation lives in `docs/`.
 ## License
 
 See [LICENSE](LICENSE) for details.
+
+## Copyright & Project Sponsor
+
+<p align="left">
+  <img src="docs/assets/ItTiger-head.png" alt="IT Tiger Logo" width="120"/>
+</p>
+
+TigerCli is an open-source project by **IT Tiger**  
+🔗 https://www.ittiger.net/
+
+TigerCli project page: https://www.ittiger.net/projects/tigercli/
