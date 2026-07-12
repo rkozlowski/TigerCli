@@ -6,6 +6,20 @@ It is built for CLI apps that need predictable automation behavior, structured t
 
 TigerCli is still evolving. The core direction is deliberate, but docs and examples are being productized as the framework grows out of real TigerWrap and `tiger-sqlcmd` needs.
 
+## Install
+
+Install the main TigerCli package:
+
+```bash
+dotnet add package ItTiger.TigerCli --version 0.8.0
+```
+
+`ItTiger.Core` is also available separately for shared support utilities:
+
+```bash
+dotnet add package ItTiger.Core --version 0.8.0
+```
+
 ## What It Looks Like
 
 Structured output — `CliTable` list and details presets ([more presets](docs/guides/cli-table.md), generated from real rendering):
