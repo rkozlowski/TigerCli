@@ -9,7 +9,7 @@ namespace ItTiger.TigerCli.Commands;
 /// Structured help rendering: composes help output as a document of separate frameless
 /// <see cref="CliGrid"/> blocks rendered through the normal measure/render pipeline. This slice
 /// covers the title block (app/command title plus optional description) and heading-plus-lines
-/// sections (Usage); later sections migrate onto the same block shapes.
+/// sections (Usage and exit codes); later sections migrate onto the same block shapes.
 /// </summary>
 /// <remarks>
 /// All inputs are trusted, already-composed markup strings (escaped by the caller where needed),
@@ -35,6 +35,52 @@ internal static class TigerCliHelpRenderer
     /// </summary>
     public static void RenderSection(string headingMarkup, IReadOnlyList<string> lineMarkups)
         => RenderBlock(headingMarkup, lineMarkups);
+
+    /// <summary>
+    /// Renders an exit-code section with a full-width heading and enum title followed by compact
+    /// code, name, and description columns.
+    /// </summary>
+    public static void RenderExitCodeSection(
+        string sectionHeadingMarkup,
+        string titleMarkup,
+        IReadOnlyList<(int Value, string NameMarkup, string? DescriptionMarkup)> exitCodes)
+    {
+        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
+        var grid = new CliGrid(3, exitCodes.Count + 2)
+        {
+            DefaultCellStyle = PreformattedStyle()
+        };
+
+        grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle
+        {
+            HorizontalAlignment = CliTextAlignment.Right,
+            Padding = CliCellPadding.Right
+        }));
+        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle
+        {
+            Padding = CliCellPadding.Both,
+            MinWidth = exitCodes.Count == 0 ? 0 : exitCodes.Max(exitCode => exitCode.NameMarkup.Length + 2)
+        }));
+        grid.SetColumn(2, new CliGridColumnDefinition(new CliCellStyle())
+        {
+            Sizing = CliColumnSizing.Star
+        });
+
+        var fullWidthLeftAligned = new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left };
+        grid.Set(0, 0, sectionHeadingMarkup, fullWidthLeftAligned, colSpan: 3);
+        grid.Set(0, 1, titleMarkup, fullWidthLeftAligned, colSpan: 3);
+
+        for (int i = 0; i < exitCodes.Count; i++)
+        {
+            var exitCode = exitCodes[i];
+            var row = i + 2;
+            grid.Set(0, row, $"[Key]{exitCode.Value}[/]");
+            grid.Set(1, row, $"[Key]{exitCode.NameMarkup}[/]");
+            grid.Set(2, row, exitCode.DescriptionMarkup ?? "");
+        }
+
+        TigerConsole.RenderGrid(grid, sink);
+    }
 
     private static void RenderBlock(string headMarkup, IReadOnlyList<string> indentedLineMarkups)
     {

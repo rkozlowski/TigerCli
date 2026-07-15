@@ -1,4 +1,5 @@
 using ItTiger.TigerCli.Commands;
+using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Terminal;
 using ItTiger.TigerCli.Tui.Testing;
 
@@ -123,6 +124,41 @@ public sealed class TigerCliHelpRenderingTests
 
         Assert.Single(lines);
         Assert.Equal("tool", lines[0]);
+    }
+
+    [Fact]
+    public void RenderExitCodeSection_UsesCompactKeyColumnsAndWrapsDescriptions()
+    {
+        var sink = new TextSegmentLinesSink { SoftMaxWidth = 60 };
+        using var scope = TigerConsole.PushOutputSink(sink);
+
+        TigerCliHelpRenderer.RenderExitCodeSection(
+            "[Accent]Exit codes:[/]",
+            "Toolkit response codes",
+            [
+                (0, "Ok", "Operation completed successfully."),
+                (1003, "CliInteractiveNotAllowed", "Prompt attempted in non-interactive mode.")
+            ]);
+
+        var lines = sink.Lines
+            .Select(line => string.Concat(line.Select(segment => segment.Text)))
+            .ToList();
+
+        Assert.Equal("Exit codes:", lines[0]);
+        Assert.Equal("Toolkit response codes", lines[1]);
+        Assert.Contains(lines, line => line.Contains("0", StringComparison.Ordinal) && line.Contains("Ok", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("1003", StringComparison.Ordinal) && line.Contains("CliInteractiveNotAllowed", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("Prompt", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.Contains("non-interactive", StringComparison.Ordinal));
+        Assert.True(lines.Count > 4, "The constrained description column should wrap onto additional lines.");
+        Assert.DoesNotContain("", lines.Skip(2));
+
+        var keyForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Key).CharStyle?.Foreground;
+        foreach (var text in new[] { "0", "Ok", "1003", "CliInteractiveNotAllowed" })
+        {
+            var segment = sink.Lines.SelectMany(line => line).Single(candidate => candidate.Text == text);
+            Assert.Equal(keyForeground, segment.Style.Foreground);
+        }
     }
 
     private static string[] SplitLines(string text) =>

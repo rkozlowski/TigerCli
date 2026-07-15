@@ -4607,10 +4607,6 @@ public sealed class TigerCliApp
                 ?? typeText.Label;
         }
 
-        TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_ExitCodes", culture))}[/]");
-        TigerConsole.MarkupLine($"  {Esc(heading)}");
-        TigerConsole.MarkupLine("");
-
         var fields = exitCodeType
             .GetFields(BindingFlags.Public | BindingFlags.Static)
             .Select(field =>
@@ -4625,17 +4621,10 @@ public sealed class TigerCliApp
             })
             .ToArray();
 
-        if (fields.Length == 0)
-            return;
-
-        var valueWidth = Math.Max(1, fields.Max(field => field.Value.ToString().Length));
-        foreach (var field in fields)
-        {
-            TigerConsole.MarkupLine($"  {field.Value.ToString().PadRight(valueWidth)}  {Esc(field.Label)}");
-            if (!string.IsNullOrWhiteSpace(field.Description))
-                TigerConsole.MarkupLine($"      {Esc(field.Description)}");
-            TigerConsole.MarkupLine("");
-        }
+        TigerCliHelpRenderer.RenderExitCodeSection(
+            $"[Accent]{Esc(L("Help_ExitCodes", culture))}[/]",
+            Esc(heading),
+            fields.Select(field => (field.Value, Esc(field.Label), field.Description is null ? null : Esc(field.Description))).ToArray());
     }
 
     private Type? ResolveExitCodeHelpType(TigerCliCommandRegistration? command)
