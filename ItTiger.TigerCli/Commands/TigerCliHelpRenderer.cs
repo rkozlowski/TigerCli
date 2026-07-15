@@ -149,6 +149,45 @@ internal static class TigerCliHelpRenderer
         TigerConsole.RenderGrid(grid, sink);
     }
 
+    /// <summary>Renders a concise indented note section.</summary>
+    public static void RenderNoteSection(string headingMarkup, IReadOnlyList<string> noteMarkups)
+        => RenderBlock(headingMarkup, noteMarkups);
+
+    /// <summary>Renders a single muted help hint without structural indentation.</summary>
+    public static void RenderHint(string hintMarkup)
+    {
+        var grid = new CliGrid(1, 1) { DefaultCellStyle = PreformattedStyle() };
+        grid.Set(0, 0, hintMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left });
+        TigerConsole.RenderGrid(grid, new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink()));
+    }
+
+    /// <summary>Renders an optional copyright line and compact metadata link rows.</summary>
+    public static void RenderMetadataFooter(
+        string? copyrightMarkup,
+        IReadOnlyList<(string LabelMarkup, string ValueMarkup)> links)
+    {
+        var rowCount = links.Count + (copyrightMarkup is null ? 0 : 1);
+        var grid = new CliGrid(2, rowCount) { DefaultCellStyle = PreformattedStyle() };
+        grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Padding = CliCellPadding.Right }));
+        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Padding = CliCellPadding.Left }) { Sizing = CliColumnSizing.Star });
+
+        var row = 0;
+        if (copyrightMarkup is not null)
+        {
+            grid.Set(0, row, copyrightMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left }, colSpan: 2);
+            row++;
+        }
+
+        foreach (var link in links)
+        {
+            grid.Set(0, row, link.LabelMarkup);
+            grid.Set(1, row, link.ValueMarkup);
+            row++;
+        }
+
+        TigerConsole.RenderGrid(grid, new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink()));
+    }
+
     private static void RenderBlock(string headMarkup, IReadOnlyList<string> indentedLineMarkups)
     {
         var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());

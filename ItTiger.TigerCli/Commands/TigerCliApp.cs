@@ -4408,11 +4408,12 @@ public sealed class TigerCliApp
             if (defaultNamed != null || exactlyOneOfNotes.Count > 0)
             {
                 TigerConsole.MarkupLine("");
-                TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Notes", culture))}[/]");
+                var notes = new List<string>();
                 if (defaultNamed != null)
-                    TigerConsole.MarkupLine($"  {Esc(L("Help_DefaultCommand", culture))} {Esc(defaultNamed.Name!)}");
+                    notes.Add($"[Muted]{Esc(L("Help_DefaultCommand", culture))} [Key]{Esc(defaultNamed.Name!)}[/][/]" );
                 foreach (var note in exactlyOneOfNotes)
-                    TigerConsole.MarkupLine($"  {Esc(note)}");
+                    notes.Add($"[Muted]{Esc(note)}[/]");
+                TigerCliHelpRenderer.RenderNoteSection($"[Accent]{Esc(L("Help_Notes", culture))}[/]", notes);
             }
 
             PrintExitCodeHelpHint(command, culture);
@@ -4437,8 +4438,8 @@ public sealed class TigerCliApp
             if (alias != null)
             {
                 TigerConsole.MarkupLine("");
-                TigerConsole.MarkupLine(
-                    $"  [Muted]{Esc(TigerCliResources.Format("Help_AliasFor", culture, alias.TargetPath))}[/]");
+                TigerCliHelpRenderer.RenderHint(
+                    $"[Muted]{TigerCliResources.Format("Help_AliasFor", culture, $"[Key]{Esc(alias.TargetPath)}[/]")}[/]");
             }
             TigerConsole.MarkupLine("");
             PrintArguments(command.SettingsType, culture, _appResources);
@@ -4543,27 +4544,15 @@ public sealed class TigerCliApp
 
         TigerConsole.MarkupLine("");
 
-        if (hasCopyright)
-            TigerConsole.MarkupLine(Esc(_metadata.Copyright!));
-
-        if (!hasLinks)
-            return;
-
         var links = _metadata.Links
             .Select(link => new
             {
                 Label = ResolveApplicationLinkLabel(link, culture),
                 link.Url
             })
+            .Select(link => ($"[Key]{Esc(link.Label)}[/]", $"[Link]{Esc(link.Url)}[/]"))
             .ToArray();
-        var width = links.Max(link => link.Label.Length);
-
-        foreach (var link in links)
-        {
-            var safeLabel = Esc(link.Label.PadRight(width));
-            var safeUrl = Esc(link.Url);
-            TigerConsole.MarkupLine($"{safeLabel}  [Link]{safeUrl}[/]");
-        }
+        TigerCliHelpRenderer.RenderMetadataFooter(hasCopyright ? Esc(_metadata.Copyright!) : null, links);
     }
 
     private static string ResolveApplicationLinkLabel(TigerCliApplicationLink link, CultureInfo culture)
@@ -4579,7 +4568,7 @@ public sealed class TigerCliApp
             return;
 
         TigerConsole.MarkupLine("");
-        TigerConsole.MarkupLine(Esc(L("Help_Hint_ExitCodes", culture)));
+        TigerCliHelpRenderer.RenderHint($"[Muted]{Esc(L("Help_Hint_ExitCodes", culture))}[/]");
     }
 
     private void PrintExitCodeHelp(TigerCliCommandRegistration? command, bool leadingBlankLine, CultureInfo culture)
@@ -4591,7 +4580,7 @@ public sealed class TigerCliApp
 
         if (exitCodeType == null)
         {
-            TigerConsole.MarkupLine(Esc(L("Help_Hint_NoExitCodeEnum", culture)));
+            TigerCliHelpRenderer.RenderHint($"[Muted]{Esc(L("Help_Hint_NoExitCodeEnum", culture))}[/]");
             return;
         }
 
@@ -4813,9 +4802,9 @@ public sealed class TigerCliApp
             return;
 
         TigerConsole.MarkupLine("");
-        TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Notes", culture))}[/]");
-        foreach (var note in notes)
-            TigerConsole.MarkupLine($"  {Esc(note)}");
+        TigerCliHelpRenderer.RenderNoteSection(
+            $"[Accent]{Esc(L("Help_Notes", culture))}[/]",
+            notes.Select(note => $"[Muted]{Esc(note)}[/]").ToArray());
     }
 
     private void PrintHelpOnlyOption(CultureInfo culture, bool cultureOptionEnabled)

@@ -1,7 +1,7 @@
 artifact: roi-cities-basic-show-prompt.png
 canonical-os: Windows 11
 generated-os: Microsoft Windows 10.0.26200
-dotnet: .NET 10.0.9
+dotnet: .NET 10.0.10
 skiasharp: 4.148.0
 terminal-font: Cascadia Mono
 title-font: Cascadia Mono
