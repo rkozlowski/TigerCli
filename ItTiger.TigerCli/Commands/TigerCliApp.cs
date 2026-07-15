@@ -4339,16 +4339,15 @@ public sealed class TigerCliApp
             var topLevelGroups = _commandGroups.Where(IsTopLevelGroup).ToList();
             if (topLevelCommands.Count > 0 || topLevelGroups.Count > 0)
             {
-                TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Commands", culture))}[/]");
+                var commandItems = new List<(string NameMarkup, string? DescriptionMarkup)>();
                 foreach (var cmd in topLevelCommands)
                 {
                     var safeName = Esc(cmd.Name!);
                     // Description is trusted markup from AddCommand
                     var resolvedDesc = TigerCliAppText.Resolve(
                         cmd.Description, cmd.DescriptionResourceKey, culture, _appResources);
-                    var desc = resolvedDesc != null ? $"  {resolvedDesc}" : "";
                     var defaultMarker = cmd.IsDefault ? $" [Muted]{Esc(L("Help_DefaultMarker", culture))}[/]" : "";
-                    TigerConsole.MarkupLine($"  {safeName}{desc}{defaultMarker}");
+                    commandItems.Add(($"[Key]{safeName}[/]", resolvedDesc is null ? defaultMarker : $"{resolvedDesc}{defaultMarker}"));
                 }
                 foreach (var grp in topLevelGroups)
                 {
@@ -4356,9 +4355,11 @@ public sealed class TigerCliApp
                     // Description is trusted markup from SetDescription
                     var resolvedDesc = TigerCliAppText.Resolve(
                         grp.Description, grp.DescriptionResourceKey, culture, _appResources);
-                    var desc = resolvedDesc != null ? $"  {resolvedDesc}" : "";
-                    TigerConsole.MarkupLine($"  {safeName}{desc}");
+                    commandItems.Add(($"[Key]{safeName}[/]", resolvedDesc));
                 }
+                TigerCliHelpRenderer.RenderNameDescriptionSection(
+                    $"[Accent]{Esc(L("Help_Commands", culture))}[/]",
+                    commandItems);
                 TigerConsole.MarkupLine("");
             }
 
@@ -4368,7 +4369,7 @@ public sealed class TigerCliApp
             var visibleAliases = _aliases.Where(a => !a.HiddenFromHelp).ToList();
             if (visibleAliases.Count > 0)
             {
-                TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Aliases", culture))}[/]");
+                var aliasItems = new List<(string NameMarkup, string? DescriptionMarkup)>();
                 foreach (var aliasEntry in visibleAliases)
                 {
                     var safeName = Esc(aliasEntry.Name);
@@ -4377,11 +4378,13 @@ public sealed class TigerCliApp
                             aliasEntry.Description, aliasEntry.DescriptionResourceKey, culture, _appResources)
                         ?? TigerCliAppText.Resolve(
                             aliasEntry.Target.Description, aliasEntry.Target.DescriptionResourceKey, culture, _appResources);
-                    var desc = resolvedDesc != null ? $"  {resolvedDesc}" : "";
                     var targetMarker =
-                        $" [Muted]{Esc(TigerCliResources.Format("Help_AliasTargetMarker", culture, aliasEntry.TargetPath))}[/]";
-                    TigerConsole.MarkupLine($"  {safeName}{desc}{targetMarker}");
+                        $"[Muted]{TigerCliResources.Format("Help_AliasTargetMarker", culture, $"[Key]{Esc(aliasEntry.TargetPath)}[/]")}[/]";
+                    aliasItems.Add(($"[Key]{safeName}[/]", resolvedDesc is null ? targetMarker : $"{resolvedDesc} {targetMarker}"));
                 }
+                TigerCliHelpRenderer.RenderNameDescriptionSection(
+                    $"[Accent]{Esc(L("Help_Aliases", culture))}[/]",
+                    aliasItems);
                 TigerConsole.MarkupLine("");
             }
 
@@ -4470,15 +4473,14 @@ public sealed class TigerCliApp
 
         if (childCommands.Count > 0 || childGroups.Count > 0)
         {
-            TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Commands", culture))}[/]");
+            var commandItems = new List<(string NameMarkup, string? DescriptionMarkup)>();
             foreach (var child in childCommands)
             {
                 var safeName = Esc(GroupRelativeName(child.PathTokens, group));
                 // Description is trusted markup from AddCommand
                 var childDesc = TigerCliAppText.Resolve(
                     child.Description, child.DescriptionResourceKey, culture, _appResources);
-                var desc = childDesc != null ? $"  {childDesc}" : "";
-                TigerConsole.MarkupLine($"  {safeName}{desc}");
+                commandItems.Add(($"[Key]{safeName}[/]", childDesc));
             }
             foreach (var childGroup in childGroups)
             {
@@ -4486,9 +4488,11 @@ public sealed class TigerCliApp
                 // Description is trusted markup from SetDescription
                 var childDesc = TigerCliAppText.Resolve(
                     childGroup.Description, childGroup.DescriptionResourceKey, culture, _appResources);
-                var desc = childDesc != null ? $"  {childDesc}" : "";
-                TigerConsole.MarkupLine($"  {safeName}{desc}");
+                commandItems.Add(($"[Key]{safeName}[/]", childDesc));
             }
+            TigerCliHelpRenderer.RenderNameDescriptionSection(
+                $"[Accent]{Esc(L("Help_Commands", culture))}[/]",
+                commandItems);
             TigerConsole.MarkupLine("");
         }
 

@@ -9,7 +9,8 @@ namespace ItTiger.TigerCli.Commands;
 /// Structured help rendering: composes help output as a document of separate frameless
 /// <see cref="CliGrid"/> blocks rendered through the normal measure/render pipeline. This slice
 /// covers the title block (app/command title plus optional description) and heading-plus-lines
-/// sections (Usage and exit codes); later sections migrate onto the same block shapes.
+/// sections (Usage, exit codes, and compact name/description lists); later sections migrate onto
+/// the same block shapes.
 /// </summary>
 /// <remarks>
 /// All inputs are trusted, already-composed markup strings (escaped by the caller where needed),
@@ -114,6 +115,35 @@ internal static class TigerCliHelpRenderer
                 grid.Set(2, row, detail);
                 row++;
             }
+        }
+
+        TigerConsole.RenderGrid(grid, sink);
+    }
+
+    /// <summary>
+    /// Renders a compact command or alias list with a two-space structural indent, an auto-sized
+    /// semantic name column, and a wrapping description column.
+    /// </summary>
+    public static void RenderNameDescriptionSection(
+        string sectionHeadingMarkup,
+        IReadOnlyList<(string NameMarkup, string? DescriptionMarkup)> items)
+    {
+        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
+        var grid = new CliGrid(3, items.Count + 1)
+        {
+            DefaultCellStyle = PreformattedStyle()
+        };
+
+        grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Width = IndentWidth, MinWidth = IndentWidth }));
+        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Padding = CliCellPadding.Right }));
+        grid.SetColumn(2, new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
+
+        grid.Set(0, 0, sectionHeadingMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left }, colSpan: 3);
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            grid.Set(1, i + 1, item.NameMarkup);
+            grid.Set(2, i + 1, item.DescriptionMarkup ?? "");
         }
 
         TigerConsole.RenderGrid(grid, sink);

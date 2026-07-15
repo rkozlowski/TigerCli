@@ -202,6 +202,37 @@ public sealed class TigerCliHelpRenderingTests
         Assert.Equal(valueForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text.Contains("dark | light", StringComparison.Ordinal)).Style.Foreground);
     }
 
+    [Fact]
+    public void RenderNameDescriptionSection_UsesCompactKeyRowsAndWrapsDescriptions()
+    {
+        using var themeScope = new ThemeScope(new HelpTestTheme());
+        var sink = new TextSegmentLinesSink { SoftMaxWidth = 42 };
+        using var scope = TigerConsole.PushOutputSink(sink);
+
+        TigerCliHelpRenderer.RenderNameDescriptionSection(
+            "[Accent]Commands:[/]",
+            [
+                ("[Key]list[/]", "Lists items with a deliberately long description that wraps in the description column."),
+                ("[Key]generate-code[/]", "Generates source code.")
+            ]);
+
+        var lines = sink.Lines
+            .Select(line => string.Concat(line.Select(segment => segment.Text)))
+            .ToList();
+
+        Assert.Equal("Commands:", lines[0]);
+        Assert.Contains(lines, line => line.StartsWith("  list ", StringComparison.Ordinal));
+        Assert.Contains(lines, line => line.StartsWith("  generate-code ", StringComparison.Ordinal));
+        Assert.DoesNotContain("", lines.Skip(1));
+        Assert.True(lines.Count > 3, "The description column should wrap independently of command rows.");
+
+        var accentForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Accent).CharStyle?.Foreground;
+        var keyForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Key).CharStyle?.Foreground;
+        Assert.Equal(accentForeground, sink.Lines[0].Single(segment => segment.Text == "Commands:").Style.Foreground);
+        Assert.Equal(keyForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text == "list").Style.Foreground);
+        Assert.Equal(keyForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text == "generate-code").Style.Foreground);
+    }
+
     private static string[] SplitLines(string text) =>
         text.Replace("\r\n", "\n").Split('\n');
 
