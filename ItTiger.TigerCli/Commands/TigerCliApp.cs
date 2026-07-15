@@ -4316,20 +4316,20 @@ public sealed class TigerCliApp
 
         if (command == null || command.Name == null)
         {
-            // Root help
-            TigerConsole.MarkupLine(safeAppName);
+            // Root help. Title and Usage render as structured CliGrid blocks; the markup content
+            // (and section ordering) is unchanged apart from the semantic Key/Value styling.
             var appDescription = TigerCliAppText.Resolve(_description, _descriptionResourceKey, culture, _appResources);
-            if (appDescription != null)
-                TigerConsole.MarkupLine($"  {appDescription}");
+            TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName}[/]", appDescription);
             TigerConsole.MarkupLine("");
 
-            TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Usage", culture))}[/]");
-            var optionsUsage = FormatOptionsUsage(culture);
+            var optionsUsage = $"[Value]{FormatOptionsUsage(culture)}[/]";
             var hasCommandsOrGroups = _namedCommands.Count > 0 || _commandGroups.Count > 0;
+            var usageLines = new List<string>();
             if (_defaultCommand != null)
-                TigerConsole.MarkupLine($"  {safeAppName}{FormatArgumentUsage(_defaultCommand.SettingsType)} {optionsUsage}");
+                usageLines.Add($"[Key]{safeAppName}[/]{FormatArgumentUsage(_defaultCommand.SettingsType)} {optionsUsage}");
             if (hasCommandsOrGroups)
-                TigerConsole.MarkupLine($"  {safeAppName} {FormatCommandUsage(culture)} {optionsUsage}");
+                usageLines.Add($"[Key]{safeAppName}[/] [Value]{FormatCommandUsage(culture)}[/] {optionsUsage}");
+            TigerCliHelpRenderer.RenderSection($"[Accent]{Esc(L("Help_Usage", culture))}[/]", usageLines);
             TigerConsole.MarkupLine("");
 
             // Top-level help lists only immediate entries: ungrouped commands and
@@ -4421,17 +4421,16 @@ public sealed class TigerCliApp
             // (name, description) and a note naming the target, but the arguments/options always come
             // from the target command's settings.
             var safeCmdName = Esc(alias?.Name ?? command.Name!);
-            TigerConsole.MarkupLine($"{safeAppName} {safeCmdName}");
             // Description is trusted markup from AddCommand/AddCommandAlias
             var resolvedDesc = alias != null
                 ? TigerCliAppText.Resolve(alias.Description, alias.DescriptionResourceKey, culture, _appResources)
                     ?? TigerCliAppText.Resolve(command.Description, command.DescriptionResourceKey, culture, _appResources)
                 : TigerCliAppText.Resolve(command.Description, command.DescriptionResourceKey, culture, _appResources);
-            if (resolvedDesc != null)
-                TigerConsole.MarkupLine($"  {resolvedDesc}");
+            TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName} {safeCmdName}[/]", resolvedDesc);
             TigerConsole.MarkupLine("");
-            TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Usage", culture))}[/]");
-            TigerConsole.MarkupLine($"  {safeAppName} {safeCmdName}{FormatArgumentUsage(command.SettingsType)} {FormatOptionsUsage(culture)}");
+            TigerCliHelpRenderer.RenderSection(
+                $"[Accent]{Esc(L("Help_Usage", culture))}[/]",
+                [$"[Key]{safeAppName} {safeCmdName}[/]{FormatArgumentUsage(command.SettingsType)} [Value]{FormatOptionsUsage(culture)}[/]"]);
             if (alias != null)
             {
                 TigerConsole.MarkupLine("");
@@ -4452,16 +4451,15 @@ public sealed class TigerCliApp
         var safeAppName = Esc(appName);
         var safeGroupName = Esc(group.Name);
 
-        TigerConsole.MarkupLine($"{safeAppName} {safeGroupName}");
         // Description is trusted markup from SetDescription
         var resolvedDesc = TigerCliAppText.Resolve(
             group.Description, group.DescriptionResourceKey, culture, _appResources);
-        if (resolvedDesc != null)
-            TigerConsole.MarkupLine($"  {resolvedDesc}");
+        TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName} {safeGroupName}[/]", resolvedDesc);
         TigerConsole.MarkupLine("");
 
-        TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Usage", culture))}[/]");
-        TigerConsole.MarkupLine($"  {safeAppName} {safeGroupName} {FormatCommandUsage(culture)} {FormatOptionsUsage(culture)}");
+        TigerCliHelpRenderer.RenderSection(
+            $"[Accent]{Esc(L("Help_Usage", culture))}[/]",
+            [$"[Key]{safeAppName} {safeGroupName}[/] [Value]{FormatCommandUsage(culture)}[/] [Value]{FormatOptionsUsage(culture)}[/]"]);
         TigerConsole.MarkupLine("");
 
         // Group help lists only this group's immediate entries — child commands and nested
@@ -4648,13 +4646,15 @@ public sealed class TigerCliApp
         return _exitCodePolicy.DocumentedExitCodeType;
     }
 
+    // Usage-line argument tokens (" <arg> <arg>…"), each styled as a semantic Value; empty when the
+    // settings type declares no positional arguments.
     private static string FormatArgumentUsage(Type settingsType)
     {
         var arguments = BuildArgumentMetadata(settingsType);
         if (arguments.Count == 0)
             return string.Empty;
 
-        return " " + string.Join(" ", arguments.Select(arg => $"<{Esc(arg.DisplayName)}>"));
+        return " " + string.Join(" ", arguments.Select(arg => $"[Value]<{Esc(arg.DisplayName)}>[/]"));
     }
 
     private static string FormatCommandUsage(CultureInfo culture) =>

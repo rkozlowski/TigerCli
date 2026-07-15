@@ -33,6 +33,11 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
 {
     static readonly CliCharStyle DefaultCharStyle = new() { Background = CliColor.Black, Foreground = CliColor.Gray };
 
+    // The framework-global fallback char style the cascade injects when no style layer sets
+    // colours. Exposed so document-style renderers (help) can recognize — and neutralize — the
+    // fallback colours on otherwise-unstyled text.
+    internal static CliCharStyle GlobalDefaultCharStyle => DefaultCharStyle;
+
     static readonly CliCellStyle GlobalDefaultStyle = new()
     {
         HorizontalAlignment = CliTextAlignment.Left,
