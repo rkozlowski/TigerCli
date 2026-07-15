@@ -108,6 +108,8 @@
   <data name="Prompt_Cancelled" xml:space="preserve"><value>Cancelled.</value></data>
   <data name="Error_PromptNoChoices" xml:space="preserve"><value>No prompt choices available for {0}.</value></data>
   <data name="Error_PromptProviderFailed" xml:space="preserve"><value>Prompt value provider failed for {0}: {1}</value></data>
+  <data name="Error_ProviderFailed" xml:space="preserve"><value>Cannot load choices for {0}: {1}</value></data>
+  <data name="Error_CommandFailedWithId" xml:space="preserve"><value>{0} ({1})</value></data>
   <data name="Error_InvalidProviderValue" xml:space="preserve"><value>Invalid value for {0}: {1} is not an available choice.</value></data>
   <data name="Error_MultiSelectRequiresSelection" xml:space="preserve"><value>At least one value must be selected for {0}.</value></data>
   <data name="Error_EditTargetNotFound" xml:space="preserve"><value>Cannot find '{0}' to edit.</value></data>

@@ -22,7 +22,8 @@ internal static class TigerCliExitClassification
 
         TigerCliExitKind.Cancelled => TigerCliExitCategory.Cancelled,
 
-        TigerCliExitKind.GenericFail => TigerCliExitCategory.Execution,
+        TigerCliExitKind.GenericFail or
+        TigerCliExitKind.ProviderError => TigerCliExitCategory.Execution,
 
         TigerCliExitKind.UnhandledException => TigerCliExitCategory.Unexpected,
 

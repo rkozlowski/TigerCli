@@ -258,9 +258,15 @@ dotnet run --project internal/DocSamples -- api-map
 
 ## ItTiger.TigerCli.Exceptions
 
+- `TigerCliCommandException` *(class)* — Classified command failure for handlers — especially reusable command libraries — that want to express what kind of failure occurred using TigerCli concepts without owning the application's numeric exit-code scheme.
+  Source: `ItTiger.TigerCli/Exceptions/TigerCliCommandException.cs`
+  API: `docs/api-docfx/_site/api/ItTiger.TigerCli.Exceptions.TigerCliCommandException.html`
 - `TigerCliException` *(class)* — Exception raised for TigerCli framework failures that should identify the render or execution stage where the failure occurred.
   Source: `ItTiger.TigerCli/Exceptions/TigerCliException.cs`
   API: `docs/api-docfx/_site/api/ItTiger.TigerCli.Exceptions.TigerCliException.html`
+- `TigerCliProviderException` *(class)* — Deliberate failure signal for dynamic value providers.
+  Source: `ItTiger.TigerCli/Exceptions/TigerCliProviderException.cs`
+  API: `docs/api-docfx/_site/api/ItTiger.TigerCli.Exceptions.TigerCliProviderException.html`
 - `TigerCliSystemCancellationException` *(class)* — Thrown by the simple (collapsing) TigerTui prompt helpers when the underlying modal completed with SystemCancel — a process/system cancellation request such as Ctrl-C / SIGINT / SIGTERM / SIGQUIT.
   Source: `ItTiger.TigerCli/Exceptions/TigerCliSystemCancellationException.cs`
   API: `docs/api-docfx/_site/api/ItTiger.TigerCli.Exceptions.TigerCliSystemCancellationException.html`

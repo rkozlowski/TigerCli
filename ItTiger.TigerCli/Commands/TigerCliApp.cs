@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Resources;
 using ItTiger.TigerCli.Enums;
+using ItTiger.TigerCli.Exceptions;
 using ItTiger.TigerCli.Markup;
 using ItTiger.TigerCli.Rendering;
 using ItTiger.TigerCli.Resources;
@@ -644,6 +645,17 @@ public sealed class TigerCliApp
         try
         {
             return await ExecuteHandler(effectiveCommand, settings);
+        }
+        catch (TigerCliCommandException ex)
+        {
+            // A classified command failure (typically from a reusable command library): report the
+            // handler's own message (with its stable error id when present) and resolve the exit code
+            // from the thrown kind through the app's policy instead of UnhandledException.
+            var message = ex.ErrorId == null
+                ? Esc(ex.Message)
+                : TigerCliResources.Format("Error_CommandFailedWithId", culture, Esc(ex.Message), Esc(ex.ErrorId));
+            WriteFrameworkError(culture, message);
+            return _exitCodePolicy.Resolve(ex.ExitKind);
         }
         catch (Exception ex)
         {
@@ -1769,6 +1781,10 @@ public sealed class TigerCliApp
             {
                 throw;
             }
+            catch (TigerCliProviderException ex)
+            {
+                return ProviderReportedFailure(displayName, ex);
+            }
             catch (TigerCliPromptProviderConfigurationException ex)
             {
                 return PromptResolutionResult.FailureLiteral(Esc(ex.Message), TigerCliExitKind.ValidationError);
@@ -1845,6 +1861,10 @@ public sealed class TigerCliApp
         catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested)
         {
             return PromptResolutionResult.UserCancellation();
+        }
+        catch (TigerCliProviderException ex)
+        {
+            return ProviderReportedFailure(displayName, ex);
         }
         catch (TigerCliPromptProviderConfigurationException ex)
         {
@@ -2997,6 +3017,10 @@ public sealed class TigerCliApp
             // whose token was NOT tripped falls through to the generic provider-failure handling below.
             throw;
         }
+        catch (TigerCliProviderException ex)
+        {
+            return ProviderReportedFailure(displayName, ex);
+        }
         catch (TigerCliPromptProviderConfigurationException ex)
         {
             return PromptResolutionResult.FailureLiteral(Esc(ex.Message), TigerCliExitKind.ValidationError);
@@ -3234,6 +3258,10 @@ public sealed class TigerCliApp
             // whose token was NOT tripped falls through to the generic provider-failure handling below.
             throw;
         }
+        catch (TigerCliProviderException ex)
+        {
+            return (ProviderReportedFailure(displayName, ex), null);
+        }
         catch (TigerCliPromptProviderConfigurationException ex)
         {
             return (PromptResolutionResult.FailureLiteral(Esc(ex.Message), TigerCliExitKind.ValidationError), null);
@@ -3356,6 +3384,10 @@ public sealed class TigerCliApp
             // surfaces the gentle "Cancelled." notice rather than a misleading Error_PromptProviderFailed. An
             // OperationCanceledException whose token was NOT tripped is treated as a genuine fault below.
             return PromptResolutionResult.Canceled(DialogResultKind.TokenCancel);
+        }
+        catch (TigerCliProviderException ex)
+        {
+            return ProviderReportedFailure(displayName, ex);
         }
         catch (TigerCliPromptProviderConfigurationException ex)
         {
@@ -3547,6 +3579,20 @@ public sealed class TigerCliApp
             new object[] { Esc(displayName) },
             TigerCliExitKind.ValidationError);
     }
+
+    /// <summary>
+    /// Builds the terminal result for a provider that deliberately reported a failure by throwing
+    /// <see cref="TigerCliProviderException"/>: the provider's user-facing message is reported for
+    /// the field and the run maps through <see cref="TigerCliExitKind.ProviderError"/>. This is
+    /// distinct from the empty-choices path (the provider produced nothing selectable) and from an
+    /// arbitrary provider exception (an unexpected fault mapped through
+    /// <see cref="TigerCliExitKind.UnhandledException"/>).
+    /// </summary>
+    private static PromptResolutionResult ProviderReportedFailure(string displayName, TigerCliProviderException ex) =>
+        PromptResolutionResult.Failure(
+            "Error_ProviderFailed",
+            new object[] { Esc(displayName), Esc(ex.Message) },
+            TigerCliExitKind.ProviderError);
 
     /// <summary>
     /// Reads the current effective settings value to use as a prompt default/preselect.
@@ -4200,7 +4246,20 @@ public sealed class TigerCliApp
             throw new InvalidOperationException(
                 $"No ExecuteAsync({command.SettingsType.Name}) method found on '{command.HandlerType.Name}'.");
 
-        var task = (Task)method.Invoke(handler, [settings])!;
+        // A handler that throws synchronously (before returning its Task) surfaces from
+        // reflection as TargetInvocationException; unwrap it so callers observe the handler's
+        // real exception type — the same one an async handler's faulted task produces.
+        Task task;
+        try
+        {
+            task = (Task)method.Invoke(handler, [settings])!;
+        }
+        catch (TargetInvocationException ex) when (ex.InnerException != null)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+            throw; // unreachable
+        }
+
         await task;
 
         var resultProperty = task.GetType().GetProperty("Result");

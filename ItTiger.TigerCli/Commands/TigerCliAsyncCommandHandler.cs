@@ -11,8 +11,10 @@ public abstract class TigerCliAsyncCommandHandler<TSettings> where TSettings : T
     /// Executes the command with fully bound, prompted, and validated <paramref name="settings"/>.
     /// The returned integer becomes the process exit code as-is; it is not remapped by the app's
     /// exit-code policy, which applies only to framework-owned outcomes
-    /// (<see cref="TigerCliExitKind"/>). An exception escaping this method is reported and mapped
-    /// through <see cref="TigerCliExitKind.UnhandledException"/>.
+    /// (<see cref="TigerCliExitKind"/>). A thrown
+    /// <see cref="ItTiger.TigerCli.Exceptions.TigerCliCommandException"/> is reported and resolved
+    /// through the app's exit-code policy for its declared kind; any other exception escaping this
+    /// method is reported and mapped through <see cref="TigerCliExitKind.UnhandledException"/>.
     /// </summary>
     public abstract Task<int> ExecuteAsync(TSettings settings);
 }
@@ -31,7 +33,9 @@ public abstract class TigerCliAsyncCommandHandler<TSettings, TExitCode>
 {
     /// <summary>
     /// Executes the command with fully bound, prompted, and validated <paramref name="settings"/>.
-    /// An exception escaping this method is reported and mapped through
+    /// A thrown <see cref="ItTiger.TigerCli.Exceptions.TigerCliCommandException"/> is reported and
+    /// resolved through the app's exit-code policy for its declared kind; any other exception
+    /// escaping this method is reported and mapped through
     /// <see cref="TigerCliExitKind.UnhandledException"/>.
     /// </summary>
     public abstract Task<TExitCode> ExecuteAsync(TSettings settings);

@@ -272,6 +272,7 @@ public sealed class TigerCliExitCodeTests
         Assert.Equal(7, (int)TigerCliExitKind.NoCommand);
         Assert.Equal(8, (int)TigerCliExitKind.UnhandledException);
         Assert.Equal(9, (int)TigerCliExitKind.Cancelled);
+        Assert.Equal(10, (int)TigerCliExitKind.ProviderError);
     }
 
     [Fact]

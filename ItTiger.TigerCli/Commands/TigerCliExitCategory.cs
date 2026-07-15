@@ -16,7 +16,7 @@ public enum TigerCliExitCategory
     /// <summary>Input was well-formed but failed validation (<see cref="TigerCliExitKind.ValidationError"/>).</summary>
     Validation,
 
-    /// <summary>The command ran but reported a generic failure (<see cref="TigerCliExitKind.GenericFail"/>).</summary>
+    /// <summary>The run failed while doing its work (<see cref="TigerCliExitKind.GenericFail"/>, <see cref="TigerCliExitKind.ProviderError"/>).</summary>
     Execution,
 
     /// <summary>An unexpected, unhandled error escaped (<see cref="TigerCliExitKind.UnhandledException"/>).</summary>

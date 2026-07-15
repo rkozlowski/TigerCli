@@ -46,5 +46,16 @@ public enum TigerCliExitKind
     /// <see cref="TigerCliExitCategory.Cancelled"/>. Appended at the end to preserve the locked
     /// declared order of the earlier kinds.
     /// </summary>
-    Cancelled = 9
+    Cancelled = 9,
+
+    /// <summary>
+    /// A dynamic value provider reported a deliberate failure
+    /// (<see cref="ItTiger.TigerCli.Exceptions.TigerCliProviderException"/>): its backing source was
+    /// reachable but could not produce choices, so the run could neither prompt nor validate. This
+    /// is not the user's fault (not <see cref="TigerCliExitCategory.Usage"/> or
+    /// <see cref="TigerCliExitCategory.Validation"/>) and not an unexpected bug; it rolls up to
+    /// <see cref="TigerCliExitCategory.Execution"/>. Appended at the end to preserve the locked
+    /// declared order of the earlier kinds.
+    /// </summary>
+    ProviderError = 10
 }
