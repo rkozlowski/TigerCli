@@ -82,6 +82,43 @@ internal static class TigerCliHelpRenderer
         TigerConsole.RenderGrid(grid, sink);
     }
 
+    /// <summary>
+    /// Renders an argument, option, or prompted-value section. Each item has a two-space
+    /// signature indent and its details continue at six spaces through structural grid columns.
+    /// </summary>
+    public static void RenderDetailSection(
+        string sectionHeadingMarkup,
+        IReadOnlyList<(string SignatureMarkup, IReadOnlyList<string> DetailMarkups)> items)
+    {
+        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
+        var rowCount = 1 + items.Sum(item => 1 + item.DetailMarkups.Count);
+        var grid = new CliGrid(3, rowCount)
+        {
+            DefaultCellStyle = PreformattedStyle()
+        };
+
+        grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Width = IndentWidth, MinWidth = IndentWidth }));
+        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Width = 4, MinWidth = 4 }));
+        grid.SetColumn(2, new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
+
+        grid.Set(0, 0, sectionHeadingMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left }, colSpan: 3);
+
+        var row = 1;
+        foreach (var item in items)
+        {
+            grid.Set(1, row, item.SignatureMarkup, colSpan: 2);
+            row++;
+
+            foreach (var detail in item.DetailMarkups)
+            {
+                grid.Set(2, row, detail);
+                row++;
+            }
+        }
+
+        TigerConsole.RenderGrid(grid, sink);
+    }
+
     private static void RenderBlock(string headMarkup, IReadOnlyList<string> indentedLineMarkups)
     {
         var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());

@@ -1,7 +1,10 @@
 using ItTiger.TigerCli.Commands;
 using ItTiger.TigerCli.Enums;
+using ItTiger.TigerCli.Primitives;
 using ItTiger.TigerCli.Terminal;
+using ItTiger.TigerCli.Tui.Abstractions;
 using ItTiger.TigerCli.Tui.Testing;
+using ItTiger.TigerCli.Tui.Themes;
 
 namespace ItTiger.TigerCli.Tests;
 
@@ -161,8 +164,72 @@ public sealed class TigerCliHelpRenderingTests
         }
     }
 
+    [Fact]
+    public void RenderDetailSection_UsesStructuralContinuationIndentAndSemanticSpans()
+    {
+        using var themeScope = new ThemeScope(new HelpTestTheme());
+        var sink = new TextSegmentLinesSink { SoftMaxWidth = 40 };
+        using var scope = TigerConsole.PushOutputSink(sink);
+
+        TigerCliHelpRenderer.RenderDetailSection(
+            "[Accent]Options:[/]",
+            [
+                (
+                    "[Key]--theme[/] [Value]<theme>[/]",
+                    (IReadOnlyList<string>)
+                    [
+                        "Select the UI theme by name; this description wraps in the content column.",
+                        "[Value]dark | light | tiger-blue[/]"
+                    ])
+            ]);
+
+        var lines = sink.Lines
+            .Select(line => string.Concat(line.Select(segment => segment.Text)))
+            .ToList();
+
+        Assert.Equal("Options:", lines[0]);
+        Assert.Equal("  --theme <theme>", lines[1]);
+        Assert.StartsWith("      Select", lines[2], StringComparison.Ordinal);
+        Assert.Contains(lines, line => line.StartsWith("      dark | light | tiger-blue", StringComparison.Ordinal));
+        Assert.True(lines.Count > 4, "The detail cell should wrap independently of the signature row.");
+
+        var accentForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Accent).CharStyle?.Foreground;
+        var keyForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Key).CharStyle?.Foreground;
+        var valueForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Value).CharStyle?.Foreground;
+        Assert.Equal(accentForeground, sink.Lines[0].Single(segment => segment.Text == "Options:").Style.Foreground);
+        Assert.Equal(keyForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text == "--theme").Style.Foreground);
+        Assert.Equal(valueForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text.Contains("<theme>", StringComparison.Ordinal)).Style.Foreground);
+        Assert.Equal(valueForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text.Contains("dark | light", StringComparison.Ordinal)).Style.Foreground);
+    }
+
     private static string[] SplitLines(string text) =>
         text.Replace("\r\n", "\n").Split('\n');
+
+    private sealed class ThemeScope : IDisposable
+    {
+        private readonly ITheme originalTheme = TigerConsole.CurrentTheme;
+
+        public ThemeScope(ITheme theme)
+        {
+            TigerConsole.CurrentTheme = theme;
+        }
+
+        public void Dispose() => TigerConsole.CurrentTheme = originalTheme;
+    }
+
+    private sealed class HelpTestTheme : ITheme
+    {
+        private readonly DarkTheme inner = new();
+
+        public string Name => "help-test";
+        public TigerThemeFamily Family => inner.Family;
+
+        public CliCellStyle Resolve(ThemeStyle style) => style == ThemeStyle.Value
+            ? new CliCellStyle(new CliCharStyle(CliColor.Yellow))
+            : inner.Resolve(style);
+
+        public SurfaceColors ResolveSurface(SurfaceRole role) => inner.ResolveSurface(role);
+    }
 
     private static async Task<(int ExitCode, string Stdout, string Stderr)> RunAsync(
         TigerCliApp app,

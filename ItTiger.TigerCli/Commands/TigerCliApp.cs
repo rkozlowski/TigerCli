@@ -4658,14 +4658,17 @@ public sealed class TigerCliApp
         if (arguments.Count == 0)
             return;
 
-        TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Arguments", culture))}[/]");
-        foreach (var arg in arguments)
+        var items = arguments.Select(arg =>
         {
-            TigerConsole.MarkupLine($"  <{Esc(arg.DisplayName)}>");
             var description = TigerCliAppText.Resolve(arg.Description, arg.DescriptionResourceKey, culture, appResources);
-            if (!string.IsNullOrEmpty(description))
-                TigerConsole.MarkupLine($"      {description}");
-        }
+            return (
+                $"<[Key]{Esc(arg.DisplayName)}[/]>",
+                (IReadOnlyList<string>)(string.IsNullOrEmpty(description) ? [] : [description]));
+        }).ToArray();
+
+        TigerCliHelpRenderer.RenderDetailSection(
+            $"[Accent]{Esc(L("Help_Arguments", culture))}[/]",
+            items);
         TigerConsole.MarkupLine("");
     }
 
@@ -4696,68 +4699,33 @@ public sealed class TigerCliApp
             .Where(opt => !opt.AllowCommandLineValue)
             .ToList();
 
-        TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Options", culture))}[/]");
-
-        foreach (var opt in commandLineOptions)
-        {
-            // Line 1: aliases + value placeholder
-            var safeAliases = string.Join(", ", opt.Aliases.Select(Esc));
-            if (opt.TakesValue && opt.ValuePlaceholder != null)
-                safeAliases += $" <{Esc(ResolveOptionValuePlaceholder(opt, culture))}>";
-
-            TigerConsole.MarkupLine($"  {safeAliases}");
-
-            // Line 2: description (indented) — trusted markup from attribute
-            var description = TigerCliAppText.Resolve(opt.Description, opt.DescriptionResourceKey, culture, appResources);
-            if (!string.IsNullOrEmpty(description))
-                TigerConsole.MarkupLine($"      {description}");
-
-            // Line 3: required indicator (indented)
-            if (opt.Required)
-                TigerConsole.MarkupLine($"      {Esc(L("Help_Required", culture))}");
-
-            // Line 4: repeatable indicator (indented)
-            if (opt.IsRepeatable)
-            {
-                TigerConsole.MarkupLine($"      {Esc(L("Help_Repeatable", culture))}");
-
-                // Line 4: key-value syntax hint
-                if (opt.ValueKind == OptionValueKind.RepeatedKeyValue)
-                {
-                    var safeAlias = Esc(opt.Aliases[0]);
-                    TigerConsole.MarkupLine($"      {Esc(TigerCliResources.Format("Help_Examples", culture, safeAlias))}");
-                }
-            }
-
-            // Line 5: default value (indented), if applicable
-            if (defaultInstance != null)
-            {
-                var defaultDisplay = opt.GetDefaultDisplayValue(defaultInstance);
-                if (defaultDisplay != null)
-                    TigerConsole.MarkupLine($"      {Esc(TigerCliResources.Format("Help_Default", culture, Esc(defaultDisplay)))}");
-            }
-        }
-
-        PrintBuiltinOptions(culture, cultureOptionEnabled);
+        var optionItems = commandLineOptions.Select(opt => BuildOptionHelpItem(opt, culture, appResources, defaultInstance)).ToList();
+        AppendBuiltinOptionHelpItems(optionItems, culture, cultureOptionEnabled);
+        TigerCliHelpRenderer.RenderDetailSection(
+            $"[Accent]{Esc(L("Help_Options", culture))}[/]",
+            optionItems);
 
         if (promptedOptions.Count > 0)
         {
             TigerConsole.MarkupLine("");
-            TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_PromptedValues", culture))}[/]");
-            foreach (var opt in promptedOptions)
+            var promptedItems = promptedOptions.Select(opt =>
             {
-                TigerConsole.MarkupLine($"  {Esc(GetPromptedValueDisplayName(opt))}");
-
+                var details = new List<string>();
                 var description = TigerCliAppText.Resolve(opt.Description, opt.DescriptionResourceKey, culture, appResources);
                 if (!string.IsNullOrEmpty(description))
-                    TigerConsole.MarkupLine($"      {description}");
+                    details.Add(description);
 
                 var promptTextKey = opt.Secret
                     ? "Help_PromptedSecretValue"
                     : "Help_PromptedValue";
-                TigerConsole.MarkupLine($"      {Esc(L(promptTextKey, culture))}");
-                TigerConsole.MarkupLine($"      {Esc(L("Help_PromptedCommandLineNotAllowed", culture))}");
-            }
+                details.Add(Esc(L(promptTextKey, culture)));
+                details.Add(Esc(L("Help_PromptedCommandLineNotAllowed", culture)));
+                return ($"[Key]{Esc(GetPromptedValueDisplayName(opt))}[/]", (IReadOnlyList<string>)details);
+            }).ToArray();
+
+            TigerCliHelpRenderer.RenderDetailSection(
+                $"[Accent]{Esc(L("Help_PromptedValues", culture))}[/]",
+                promptedItems);
         }
 
         // ExactlyOneOf notes (suppressed when root help prints a consolidated Notes section)
@@ -4802,6 +4770,35 @@ public sealed class TigerCliApp
         return option.ValuePlaceholder!;
     }
 
+    private static (string SignatureMarkup, IReadOnlyList<string> DetailMarkups) BuildOptionHelpItem(
+        TigerCliOptionMetadata option,
+        CultureInfo culture,
+        ResourceManager? appResources,
+        TigerCliSettings? defaultInstance)
+    {
+        var signature = string.Join(", ", option.Aliases.Select(alias => $"[Key]{Esc(alias)}[/]"));
+        if (option.TakesValue && option.ValuePlaceholder != null)
+            signature += $" [Value]<{Esc(ResolveOptionValuePlaceholder(option, culture))}>[/]";
+
+        var details = new List<string>();
+        var description = TigerCliAppText.Resolve(option.Description, option.DescriptionResourceKey, culture, appResources);
+        if (!string.IsNullOrEmpty(description))
+            details.Add(description);
+        if (option.Required)
+            details.Add(Esc(L("Help_Required", culture)));
+        if (option.IsRepeatable)
+        {
+            details.Add(Esc(L("Help_Repeatable", culture)));
+            if (option.ValueKind == OptionValueKind.RepeatedKeyValue)
+                details.Add(Esc(TigerCliResources.Format("Help_Examples", culture, Esc(option.Aliases[0]))));
+        }
+
+        if (defaultInstance != null && option.GetDefaultDisplayValue(defaultInstance) is { } defaultDisplay)
+            details.Add(Esc(TigerCliResources.Format("Help_Default", culture, Esc(defaultDisplay))));
+
+        return (signature, details);
+    }
+
     private static void PrintExactlyOneOfNotes(
         Type settingsType,
         List<TigerCliOptionMetadata> options,
@@ -4819,38 +4816,38 @@ public sealed class TigerCliApp
 
     private void PrintHelpOnlyOption(CultureInfo culture, bool cultureOptionEnabled)
     {
-        TigerConsole.MarkupLine($"[Accent]{Esc(L("Help_Options", culture))}[/]");
-        PrintBuiltinOptions(culture, cultureOptionEnabled);
+        var optionItems = new List<(string SignatureMarkup, IReadOnlyList<string> DetailMarkups)>();
+        AppendBuiltinOptionHelpItems(optionItems, culture, cultureOptionEnabled);
+        TigerCliHelpRenderer.RenderDetailSection(
+            $"[Accent]{Esc(L("Help_Options", culture))}[/]",
+            optionItems);
     }
 
-    private void PrintBuiltinOptions(CultureInfo culture, bool cultureOptionEnabled)
+    private void AppendBuiltinOptionHelpItems(
+        List<(string SignatureMarkup, IReadOnlyList<string> DetailMarkups)> optionItems,
+        CultureInfo culture,
+        bool cultureOptionEnabled)
     {
-        TigerConsole.MarkupLine("  -h, --help");
-        TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_Help_Desc", culture))}");
+        optionItems.Add(("[Key]-h[/], [Key]--help[/]", [Esc(L("Help_Builtin_Help_Desc", culture))]));
         if (_metadata.VersionEnabled)
         {
-            TigerConsole.MarkupLine("  --version");
-            TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_Version_Desc", culture))}");
-            TigerConsole.MarkupLine("  --version-full");
-            TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_VersionFull_Desc", culture))}");
+            optionItems.Add(("[Key]--version[/]", [Esc(L("Help_Builtin_Version_Desc", culture))]));
+            optionItems.Add(("[Key]--version-full[/]", [Esc(L("Help_Builtin_VersionFull_Desc", culture))]));
         }
-        TigerConsole.MarkupLine("  --help-errors");
-        TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_HelpErrors_Desc", culture))}");
-        TigerConsole.MarkupLine("  --non-interactive");
-        TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_NonInteractive_Desc", culture))}");
+        optionItems.Add(("[Key]--help-errors[/]", [Esc(L("Help_Builtin_HelpErrors_Desc", culture))]));
+        optionItems.Add(("[Key]--non-interactive[/]", [Esc(L("Help_Builtin_NonInteractive_Desc", culture))]));
 
         var themePlaceholder = Esc(L("Help_Builtin_Theme_ValuePlaceholder", culture));
-        TigerConsole.MarkupLine($"  --theme <{themePlaceholder}>");
-        TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_Theme_Desc", culture))}");
+        var themeDetails = new List<string> { Esc(L("Help_Builtin_Theme_Desc", culture)) };
         var selectableThemes = string.Join(" | ", GetEnabledThemeNames());
         if (selectableThemes.Length > 0)
-            TigerConsole.MarkupLine($"      {Esc(selectableThemes)}");
+            themeDetails.Add($"[Value]{Esc(selectableThemes)}[/]");
+        optionItems.Add(($"[Key]--theme[/] [Value]<{themePlaceholder}>[/]", themeDetails));
 
         if (cultureOptionEnabled)
         {
             var placeholder = Esc(L("Help_Builtin_Culture_ValuePlaceholder", culture));
-            TigerConsole.MarkupLine($"  --culture <{placeholder}>");
-            TigerConsole.MarkupLine($"      {Esc(L("Help_Builtin_Culture_Desc", culture))}");
+            optionItems.Add(($"[Key]--culture[/] [Value]<{placeholder}>[/]", [Esc(L("Help_Builtin_Culture_Desc", culture))]));
         }
     }
 
