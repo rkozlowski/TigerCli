@@ -17,11 +17,11 @@ namespace FolderCopy;
 /// path — a rich progress dialog in semi-interactive mode, and the same work headlessly under
 /// <c>--non-interactive</c>. There is no separate "interactive" vs "non-interactive" copy body.
 /// </summary>
-public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySettings>
+public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySettings, FolderCopyExitCode>
 {
     internal const double BytesPerMb = 1024.0 * 1024.0;
 
-    public override async Task<int> ExecuteAsync(FolderCopySettings settings)
+    public override async Task<FolderCopyExitCode> ExecuteAsync(FolderCopySettings settings)
     {
         // Source/Destination are Required options: a missing value has already been prompted (semi-
         // interactive) or failed validation (non-interactive) before we get here, so they are non-null.
@@ -31,13 +31,13 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
         if (!Directory.Exists(source))
         {
             TigerConsole.MarkupErrorLine(settings.E("[Error]Source folder does not exist:[/] {0}", source));
-            return 1;
+            return FolderCopyExitCode.CopyFailed;
         }
 
         if (PathsAreSame(source, destination))
         {
             TigerConsole.MarkupErrorLine(settings.T("[Error]Source and destination are the same folder.[/]"));
-            return 1;
+            return FolderCopyExitCode.CopyFailed;
         }
 
         // Scanning phase: walk the source tree inside its own simple activity so a slow filesystem walk
@@ -50,20 +50,20 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
         {
             TigerConsole.MarkupErrorLine(settings.E(
                 "[Error]Could not scan source folder:[/] {0}", scanResult.Exception?.Message ?? "unknown error"));
-            return 1;
+            return FolderCopyExitCode.CopyFailed;
         }
 
         if (!scanResult.IsCompleted)
         {
             TigerConsole.MarkupErrorLine(settings.T("[Warning]Copy cancelled.[/]"));
-            return 1;
+            return FolderCopyExitCode.Cancelled;
         }
 
         var plan = scanResult.Value!;
         if (plan.Items.Count == 0)
         {
             TigerConsole.MarkupLine(settings.E("[Muted]No files to copy under[/] {0}[Muted].[/]", source));
-            return 0;
+            return FolderCopyExitCode.Ok;
         }
 
         var spec = BuildActivitySpec(settings, plan, destination);
@@ -81,7 +81,7 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
         return ReportOutcome(settings, result, plan, source, destination, stopwatch.Elapsed);
     }
 
-    private int ReportOutcome(
+    private FolderCopyExitCode ReportOutcome(
         FolderCopySettings settings,
         ActivityResult<int> result,
         CopyPlan plan,
@@ -99,25 +99,25 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
                     source,
                     destination,
                     FormatDuration(elapsed)));
-                return 0;
+                return FolderCopyExitCode.Ok;
 
             case ActivityOutcome.Failed:
                 TigerConsole.MarkupErrorLine(settings.E(
                     "[Error]Copy failed:[/] {0}", result.Exception?.Message ?? "unknown error"));
-                return 1;
+                return FolderCopyExitCode.CopyFailed;
 
             case ActivityOutcome.Cancelled:
             case ActivityOutcome.Aborted:
             case ActivityOutcome.SystemCancelled:
                 TigerConsole.MarkupErrorLine(settings.T("[Warning]Copy cancelled.[/]"));
-                return 1;
+                return FolderCopyExitCode.Cancelled;
 
             case ActivityOutcome.TimedOut:
                 TigerConsole.MarkupErrorLine(settings.T("[Warning]Copy timed out.[/]"));
-                return 1;
+                return FolderCopyExitCode.Cancelled;
 
             default:
-                return 1;
+                return FolderCopyExitCode.InternalError;
         }
     }
 

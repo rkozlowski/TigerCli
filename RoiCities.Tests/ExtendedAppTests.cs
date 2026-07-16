@@ -116,7 +116,20 @@ public sealed class ExtendedAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)RoiCitiesExitCode.Ok, result.ExitCode);
-        Assert.Contains("ROI Cities version 1.0.0", result.StdOut);
+        Assert.Contains("ROI Cities version 0.8.0", result.StdOut);
+    }
+
+    [Fact]
+    public async Task VersionFull_WritesSharedInformationalVersion()
+    {
+        var result = await TigerCliAppTestHost
+            .For(RoiCitiesApp.Create())
+            .WithArgs("--version-full")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)RoiCitiesExitCode.Ok, result.ExitCode);
+        Assert.Contains("ROI Cities product version 0.8.0+", result.StdOut);
+        Assert.Empty(result.StdErr);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using ItTiger.TigerCli.Commands;
+using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Tui.Abstractions;
 
 namespace FolderCopy;
@@ -22,12 +23,14 @@ public static class FolderCopyApp
     /// </summary>
     public static TigerCliApp Create(IFolderBrowser? folderBrowser = null)
     {
-        // App identity (command name from <AssemblyName>folder-copy</AssemblyName>) and description
-        // (from <Description>) live in FolderCopy.csproj and are imported here, the preferred pattern
-        // for a normal executable app. See docs/guides/command-apps.md ("App Metadata"). This app has
-        // no version, so version output stays off (enableVersion: false).
+        // App identity, display name, description, version, and project/repository links come from
+        // FolderCopy.csproj and Version.props, and are imported here — the normal executable-app
+        // pattern. See docs/guides/command-apps.md ("App Metadata").
         var builder = TigerCliApp.CreateBuilder()
-            .UseAssemblyMetadata(typeof(FolderCopyApp).Assembly, enableVersion: false)
+            .UseAssemblyMetadata(typeof(FolderCopyApp).Assembly)
+            .UseExitCodes(FolderCopyExitCode.Ok, FolderCopyExitCode.InternalError)
+                .ExitKind(TigerCliExitKind.ValidationError, FolderCopyExitCode.ValidationError)
+                .ExitKind(TigerCliExitKind.Cancelled, FolderCopyExitCode.Cancelled)
             .SetDefaultCommand<FolderCopyCommand>();
 
         if (folderBrowser is not null)

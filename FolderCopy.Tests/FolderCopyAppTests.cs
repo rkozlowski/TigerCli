@@ -30,7 +30,7 @@ public sealed class FolderCopyAppTests
             .WithArgs("--source", source, "--destination", destination, "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
         Assert.Equal("top", File.ReadAllText(Path.Combine(destination, "top.txt")));
         Assert.Equal("child", File.ReadAllText(Path.Combine(destination, "nested", "child.txt")));
         Assert.Contains("Copied", result.StdOut);
@@ -49,7 +49,7 @@ public sealed class FolderCopyAppTests
             .WithArgs("--source", source, "--destination", destination, "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
         Assert.Contains("destination[brackets]", result.StdOut);
         Assert.DoesNotContain("destination[[brackets]]", result.StdOut);
     }
@@ -66,7 +66,7 @@ public sealed class FolderCopyAppTests
             .WithArgs("-s", source, "-d", destination, "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
         Assert.Contains("No files to copy", result.StdOut);
     }
 
@@ -81,7 +81,7 @@ public sealed class FolderCopyAppTests
             .WithArgs("--destination", destination, "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.ValidationError, result.ExitCode);
         Assert.Contains("--source", result.StdErr);
     }
 
@@ -97,7 +97,7 @@ public sealed class FolderCopyAppTests
             .WithArgs("--source", source, "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.ValidationError, result.ExitCode);
         Assert.Contains("--destination", result.StdErr);
     }
 
@@ -113,7 +113,7 @@ public sealed class FolderCopyAppTests
             .WithArgs("--source", missing, "--destination", destination, "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(1, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.CopyFailed, result.ExitCode);
         Assert.Contains("does not exist", result.StdErr);
     }
 
@@ -125,9 +125,49 @@ public sealed class FolderCopyAppTests
             .WithArgs("--help")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
         Assert.Contains("folder-copy", result.StdOut);
         Assert.Contains("--source", result.StdOut);
         Assert.Contains("--destination", result.StdOut);
+    }
+
+    [Fact]
+    public async Task Version_WritesDisplayNameAndSharedVersion()
+    {
+        var result = await TigerCliAppTestHost
+            .For(FolderCopyApp.Create())
+            .WithArgs("--version")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
+        Assert.Contains("Folder Copy version 0.8.0", result.StdOut);
+        Assert.Empty(result.StdErr);
+    }
+
+    [Fact]
+    public async Task VersionFull_WritesInformationalVersion()
+    {
+        var result = await TigerCliAppTestHost
+            .For(FolderCopyApp.Create())
+            .WithArgs("--version-full")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
+        Assert.Contains("Folder Copy product version 0.8.0+", result.StdOut);
+        Assert.Empty(result.StdErr);
+    }
+
+    [Fact]
+    public async Task HelpErrors_DocumentsTypedExitCodes()
+    {
+        var result = await TigerCliAppTestHost
+            .For(FolderCopyApp.Create())
+            .WithArgs("--help-errors")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
+        Assert.Contains("Copy failed", result.StdOut);
+        Assert.Contains("Validation error", result.StdOut);
+        Assert.Empty(result.StdErr);
     }
 }

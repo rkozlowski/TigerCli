@@ -40,7 +40,7 @@ public sealed class FolderCopyFolderPickerTests
         // Reaching the "same folder" guard proves both required folders were supplied by the picker —
         // an unresolved required option would have failed validation before the command body ran. The
         // guard runs before the scanning activity, so the run stays deterministic under a test shell.
-        Assert.Equal(1, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.CopyFailed, result.ExitCode);
         Assert.Contains("same folder", result.Stderr);
         Assert.True(shell.Terminal.ReadCount > 0);
     }
@@ -57,7 +57,7 @@ public sealed class FolderCopyFolderPickerTests
 
         var result = await RunCapturedAsync(app, [], shell);
 
-        Assert.NotEqual(0, result.ExitCode);
+        Assert.Equal((int)FolderCopyExitCode.Cancelled, result.ExitCode);
         Assert.Contains("Cancelled", result.Stderr);
     }
 

@@ -15,8 +15,9 @@ public static class RoiCitiesApp
     {
         var store = new CityStore();
 
-        // App identity, display name, version, and description come from the project file
-        // (RoiCities.Extended.csproj) and are imported here — the normal executable-app pattern.
+        // App identity, display name, description, version, and project/repository links come from
+        // RoiCities.Extended.csproj and Version.props, and are imported here — the normal
+        // executable-app pattern.
         return TigerCliApp.CreateBuilder()
             .UseAssemblyMetadata(typeof(RoiCitiesApp).Assembly)
             .UseExitCodes(RoiCitiesExitCode.Ok, RoiCitiesExitCode.InternalError)
