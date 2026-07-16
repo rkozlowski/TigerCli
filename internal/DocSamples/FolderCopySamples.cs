@@ -104,7 +104,7 @@ internal static class FolderCopySamples
         // visibly different fills. The storyboard runner validates every frame it yields.
         var targetIndex = MidCopyFrameIndex(BuildStoryboard(SamplePlan()));
         string? dialogHtml = null;
-        await RunActivityStoryboardAsync((step, shell) =>
+        await RunActivityStoryboardAsync((step, _, shell) =>
         {
             if (step != targetIndex)
                 return;
@@ -181,7 +181,7 @@ internal static class FolderCopySamples
 
             var frames = new List<byte[]>();
             int? canvasRows = null;
-            await RunActivityStoryboardAsync((_, shell) =>
+            await RunActivityStoryboardAsync((_, spinnerFrame, shell) =>
             {
                 var grid = shell.Terminal.LastRenderedGrid
                     ?? throw new InvalidOperationException("Folder Copy capture: no grid was rendered.");
@@ -196,7 +196,12 @@ internal static class FolderCopySamples
                         $"Folder Copy capture: frame {frames.Count} is {rows} rows tall, "
                         + $"but the run started at {canvasRows.Value} rows.");
 
-                frames.Add(PngRenderer.RenderGridToBytes(grid, DocTerminal.FrameOptions(rows, WindowTitle)));
+                // Mirror the terminal title an activity uses in a real terminal: its current spinner
+                // glyph prefixes the app title. The dialog grid already carries the bracketed overlay;
+                // the PNG chrome needs this explicit per-frame title because it is rendered separately.
+                frames.Add(PngRenderer.RenderGridToBytes(
+                    grid,
+                    DocTerminal.FrameOptions(rows, $"{spinnerFrame} {WindowTitle}")));
             });
 
             var fileName = "folder-copy-activity.webp";
@@ -254,7 +259,7 @@ internal static class FolderCopySamples
     /// rendered frame shows the expected content of all five dynamic rows plus the expected spinner
     /// frame — see the class remarks for why that makes the captured frame deterministic.
     /// </summary>
-    private static async Task RunActivityStoryboardAsync(Action<int, TestShell> onFrame)
+    private static async Task RunActivityStoryboardAsync(Action<int, string, TestShell> onFrame)
     {
         var plan = SamplePlan();
         var storyboard = BuildStoryboard(plan);
@@ -289,8 +294,9 @@ internal static class FolderCopySamples
             FolderCopyCommand.ReportProgress(context, progress, elapsed);
 
             // The ticker advances once per elapsed spinner period, cycling through its frame set.
-            string spinnerNeedle =
-                $"[{spinnerFrames[(int)(elapsed.TotalMilliseconds / spinnerPeriodMs) % spinnerFrames.Count]}]";
+            string spinnerFrame = spinnerFrames[
+                (int)(elapsed.TotalMilliseconds / spinnerPeriodMs) % spinnerFrames.Count];
+            string spinnerNeedle = $"[{spinnerFrame}]";
             var rows = ExpectedRows(progress, elapsed);
 
             await WaitForFrameAsync(shell, i, lines =>
@@ -299,7 +305,7 @@ internal static class FolderCopySamples
                     l.Contains(r.Label, StringComparison.Ordinal)
                     && l.Contains(r.Content, StringComparison.Ordinal))));
 
-            onFrame(i, shell);
+            onFrame(i, spinnerFrame, shell);
         }
 
         operationDone.SetResult();
