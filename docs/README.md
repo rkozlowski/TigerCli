@@ -4,6 +4,15 @@ TigerCli documentation is organized by how close each page is to day-to-day app 
 
 Browse the published [API documentation](https://rkozlowski.github.io/TigerCli/index.html).
 
+## Markdown API Links
+
+Use API links sparingly to connect explanatory Markdown to the published reference. Link the first
+meaningful mention of an important public type in a document or major section, preferring type-level
+pages for public classes, interfaces, enums, attributes, and important exception types. Do not link
+every repeated mention, common .NET types, or private/internal implementation types. Avoid member
+links unless that member is the section's subject or exact member navigation is clearly useful.
+Preserve readable prose; Markdown documentation must not become API-link soup.
+
 ## Recommended Reading Path
 
 1. [Getting started](getting-started.md)
@@ -31,11 +40,11 @@ Guides are the practical docs for building applications with TigerCli.
 - [Arguments and options](guides/arguments-and-options.md) - bind positional arguments, options, repeated values, key-value options, prompts, and validation
 - [Interaction modes](guides/interaction-modes.md)
 - [Prompting and providers](guides/prompting-and-providers.md) - collect missing values safely with parser-driven prompts and provider-backed choices
-- [Semi-interactive prompts](guides/semi-interactive-prompts.md) - call direct TigerTui select, input, confirm, and multi-select prompts safely
+- [Semi-interactive prompts](guides/semi-interactive-prompts.md) - call direct [TigerTui](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Tui.TigerTui.html) select, input, confirm, and multi-select prompts safely
 - [Exit codes](guides/exit-codes.md) - use typed enum exit codes, framework policy mapping, and generated --help-errors
 - [Localization](guides/localization.md) - configure cultures, localize command output with T/F/E, and use TigerText for app metadata
 - [App testing](guides/app-testing.md) - test real TigerCli apps without the real console
-- [CRUD command apps](guides/crud-commands.md) - map list/show/add/edit/delete onto CliList, CliDetails, prompts, and `.AsEdit()`
+- [CRUD command apps](guides/crud-commands.md) - map list/show/add/edit/delete onto [CliList&lt;T&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliList-1.html), [CliDetails](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliDetails.html), prompts, and `.AsEdit()`
 - [Structured output](guides/structured-output.md) - render markup, grids, tables, lists, details, and testable command output
 - [Themes, styles & colors](guides/themes-and-styles.md) - raw colors vs semantic styles, custom styles, color aliases, theme families, disabling themes, and opt-in style packages
 - [CliTable](guides/cli-table.md) - render table-shaped command output with columns, records, frames, and testable lines

@@ -51,7 +51,7 @@ case.
 
 Validation runs for interactive and non-interactive command execution. In non-interactive mode an
 unknown supplied provider value fails before the handler runs with the localized invalid-provider
-message and `TigerCliExitKind.ValidationError`; TigerCli does not prompt for a replacement.
+message and the `ValidationError` exit kind from [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html); TigerCli does not prompt for a replacement.
 
 Provider configuration failures are validation errors. Other provider failures map through the
 framework's provider error handling, and cooperative cancellation propagates normally. A provider

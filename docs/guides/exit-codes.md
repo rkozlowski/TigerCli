@@ -26,7 +26,7 @@ public enum MyExitCode
 }
 ```
 
-Return that enum from a typed async command handler:
+Return that enum from a typed [TigerCliAsyncCommandHandler&lt;TSettings, TExitCode&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliAsyncCommandHandler-2.html):
 
 ```csharp
 using ItTiger.TigerCli.Commands;
@@ -60,6 +60,8 @@ TigerCliExitOutcome        (Success, Error)
   TigerCliExitCategory     (Success, Usage, Validation, Execution, Unexpected, Cancelled)
     TigerCliExitKind       (the specific reason: InvalidArguments, ValidationError, …)
 ```
+
+The model's [TigerCliExitOutcome](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitOutcome.html), [TigerCliExitCategory](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitCategory.html), and [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html) enums distinguish the outcome, broad category, and specific framework reason.
 
 The outcome/category/kind roll-up is fixed by the framework. You configure the exit codes those layers produce.
 

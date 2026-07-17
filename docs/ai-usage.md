@@ -15,9 +15,9 @@ For public examples, start with [Getting Started / ROI Cities](getting-started.m
 ## Core Rules
 
 - Use async command handlers only.
-- Keep `Program.cs` thin and build the app through a reusable app factory.
-- Derive settings classes from `TigerCliSettings`.
-- Declare inputs with `TigerCliArgumentAttribute` and `TigerCliOptionAttribute`.
+- Keep `Program.cs` thin and build the [TigerCliApp](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliApp.html) through a reusable app factory.
+- Derive settings classes from [TigerCliSettings](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliSettings.html).
+- Declare inputs with [TigerCliArgumentAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliArgumentAttribute.html) and [TigerCliOptionAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliOptionAttribute.html).
 - Use generated help, version, `--non-interactive`, and `--culture` behavior. Do not reimplement them.
 - Use enum-backed exit codes when possible.
 - Use `TigerCliAppTestHost` for app-level tests.
@@ -67,11 +67,11 @@ builder.AddCommandGroup("connections", group => group
 
 TigerCli is strongly suited to CRUD-style command apps:
 
-- `list`: render many records with `CliList<T>`.
-- `show`: render one record with `CliDetails`.
+- `list`: render many records with [CliList&lt;T&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliList-1.html).
+- `show`: render one record with [CliDetails](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliDetails.html).
 - `add`: bind supplied values, then use parser-driven prompts/providers for missing values.
 - `edit`: use `.AsEdit(...)` so TigerCli loads existing values, applies command-line overrides, prompts editable fields with defaults, and validates providers.
-- `delete`: use a bounded confirmation prompt, then report the result with `TigerConsole`.
+- `delete`: use a bounded confirmation prompt, then report the result with [TigerConsole](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.TigerConsole.html).
 
 Do not hand-render normal list/details output, and do not model edit as "add with every option optional." See [CRUD command apps](guides/crud-commands.md).
 
@@ -98,14 +98,14 @@ public sealed class RunSettings : TigerCliSettings
 }
 ```
 
-Use direct `TigerTui` prompts only for bounded command behavior after execution starts, such as delete confirmation. Do not use direct prompts to reimplement argument/option binding.
+Use direct [TigerTui](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Tui.TigerTui.html) prompts only for bounded command behavior after execution starts, such as delete confirmation. Do not use direct prompts to reimplement argument/option binding.
 
 ## Providers
 
 - Use providers for dynamic choices.
 - Register providers at the scope that needs them: app, command group, or command.
 - Prefer `AddAsync(...)` / `AddAsyncProvider(...)` for I/O-backed or slow providers.
-- Observe `TigerCliProviderContext.CancellationToken` for cooperative cancellation.
+- Observe [TigerCliProviderContext](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliProviderContext.html).CancellationToken for cooperative cancellation.
 - Use `OptionItem<T>` when the display label differs from the stable bound key.
 - Configure slow-provider loading text through provider options when useful.
 - Providers return choices. Providers do not render UI.

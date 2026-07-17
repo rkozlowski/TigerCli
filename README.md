@@ -44,7 +44,7 @@ Activity dialogs can show live progress while the same operation remains script-
 - Parser-driven prompts for missing governed input
 - Provider-backed select prompts with async provider loading UI
 - Typed exit codes and `--help-errors`
-- `CliList`, `CliDetails`, `CliTable`, and `CliGrid` structured output
+- [CliList&lt;T&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliList-1.html), [CliDetails](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliDetails.html), `CliTable`, and `CliGrid` structured output
 - Activity/progress dialogs through `RunActivityAsync`
 - Command menu for semi-interactive command discovery
 - Localization support for framework and app CLI text

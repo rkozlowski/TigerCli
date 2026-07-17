@@ -59,7 +59,7 @@ This split keeps command lines readable and stable: the identity reads the same 
 
 ## Positional Arguments
 
-Positional arguments are declared on a settings class with `[TigerCliArgument]`.
+Positional arguments are declared on a settings class with [TigerCliArgumentAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliArgumentAttribute.html) (`[TigerCliArgument]`).
 
 ```csharp
 using ItTiger.TigerCli.Commands;
@@ -103,7 +103,7 @@ For deeper command-path and positional ordering rules, see [command processing p
 
 ## Options
 
-Options are declared with `[TigerCliOption]`.
+Options are declared with [TigerCliOptionAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliOptionAttribute.html) (`[TigerCliOption]`).
 
 ```csharp
 public sealed class EchoSettings : TigerCliSettings
@@ -429,7 +429,7 @@ public enum Mode
 public Mode Mode { get; set; } = Mode.Unspecified;
 ```
 
-Use `[TigerCliExactlyOneOf]` for mutually exclusive option groups:
+Use [TigerCliExactlyOneOfAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExactlyOneOfAttribute.html) (`[TigerCliExactlyOneOf]`) for mutually exclusive option groups:
 
 ```csharp
 [TigerCliExactlyOneOf(nameof(FilePath), nameof(Query),
@@ -444,7 +444,7 @@ public sealed class RunSettings : TigerCliSettings
 }
 ```
 
-Custom validation belongs in `TigerCliSettings.Validate()`:
+Custom validation belongs in [TigerCliSettings](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliSettings.html); overrides of `Validate()` return a [TigerCliValidationResult](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliValidationResult.html):
 
 ```csharp
 public override TigerCliValidationResult Validate()
@@ -526,7 +526,7 @@ Exit-code help is documented in [exit codes](exit-codes.md).
 - Do not turn a required value into a positional argument just because it is required. Positionals are for [selectors](#arguments-options-and-selectors); required values that describe, configure, or change the object belong in options with `Required = true`.
 - Do not rely on localized enum labels for CLI parsing. Use enum member names on the command line.
 - Do not manually check `--non-interactive` in handlers. TigerCli owns interaction policy before handler execution.
-- Use `TigerConsole.MarkupLine(...)` or `TigerConsole.MarkupErrorLine(...)` for app output instead of `Console.WriteLine(...)`, so tests and terminal rendering stay on the TigerCli path.
+- Use [TigerConsole](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.TigerConsole.html) `MarkupLine(...)` or `MarkupErrorLine(...)` instead of `Console.WriteLine(...)`, so tests and terminal rendering stay on the TigerCli path.
 - Do not define framework-owned options such as `--help`, `--version`, `--version-full`, `--non-interactive`, or `--culture` on settings classes.
 - Do not use short-option bundles such as `-abc` unless you have defined `-abc` as a single alias.
 
