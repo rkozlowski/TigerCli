@@ -166,76 +166,62 @@ public static class DocExampleSet
 
     // ---- CliTable presets -----------------------------------------------------------------
 
-    // Mirrors the TableTasting harness: the same list/details preset pairs and connection-profile
-    // data shape, trimmed to three profiles to keep the artifacts compact.
-    private static readonly (string Name, CliTableStylePreset ListPreset, CliTableStylePreset DetailsPreset)[]
-        PresetPairs =
-        [
-            ("Alpha", CliTableStylePreset.Milano, CliTableStylePreset.Lucca),
-            ("Beta", CliTableStylePreset.Roma, CliTableStylePreset.Roma),
-            ("Gamma", CliTableStylePreset.Parma, CliTableStylePreset.Verona),
-            ("Delta", CliTableStylePreset.Torino, CliTableStylePreset.Torino),
-        ];
-
-    private sealed record Profile(
-        string Name, string Server, string Authentication, string Username,
-        string Encrypt, string Database, string Timeout, string Environment);
-
-    private static readonly Profile[] Profiles =
+    private static readonly CliTableStylePreset[] TableStylePresets =
     [
-        new("local-dev", "localhost,1433", "SQL Password", "tiger_dev",
-            "Optional", "TigerDev", "15 seconds", "Development"),
-        new("reporting", "sql-reporting.internal", "Integrated", "CORP\\svc_reports",
-            "Required", "Reports", "30 seconds", "Production"),
-        new("staging", "sql-staging.internal", "Entra ID", "db-admin@contoso.com",
-            "Required", "TigerStage", "20 seconds", "Staging"),
+        CliTableStylePreset.Roma,
+        CliTableStylePreset.Milano,
+        CliTableStylePreset.Napoli,
+        CliTableStylePreset.Torino,
+        CliTableStylePreset.Genova,
+        CliTableStylePreset.Bologna,
+        CliTableStylePreset.Palermo,
+        CliTableStylePreset.Parma,
+        CliTableStylePreset.Verona,
+        CliTableStylePreset.Lucca,
+    ];
+
+    private static readonly (string DisplayName, ITheme Theme)[] TableStyleThemes =
+    [
+        ("TigerBlue", new TigerBlueTheme()),
+        ("Dark", new DarkTheme()),
+        ("Light", new LightTheme()),
     ];
 
     private static IReadOnlyList<DocArtifact> CliTablePresets()
     {
-        // The pinned width plays the terminal's role, like TableTasting's bounded tables, so the
-        // HTML fragments and the PNG companions show the same measured layout.
         var options = DocTerminal.Html();
         var sections = new List<DocPage.Section>();
         var artifacts = new List<DocArtifact>();
 
-        foreach (var (name, listPreset, detailsPreset) in PresetPairs)
+        foreach (var preset in TableStylePresets)
         {
-            var list = new CliTable()
-                .ApplyPreset(listPreset, Theme, CliTableOrientation.Vertical)
-                .AddTitle($"{name} list - {listPreset}");
-            list.AddHeader("Name", "Server", "Authentication", "Database", "Environment");
-            foreach (var p in Profiles)
-                list.AddRecord(p.Name, p.Server, p.Authentication, p.Database, p.Environment);
-
-            var details = new CliTable()
-                .ApplyPreset(detailsPreset, Theme, CliTableOrientation.Horizontal)
-                .AddTitle($"{name} details - {detailsPreset}");
-            details.AddHeader("Name:", "Server:", "Authentication:", "Username:", "Database:", "Environment:");
-            var d = Profiles[1];
-            details.AddRecord(d.Name, d.Server, d.Authentication, d.Username, d.Database, d.Environment);
-
-            var listGrid = list.ToGrid();
-            var detailsGrid = details.ToGrid();
-            sections.Add(new DocPage.Section(
-                $"{name} — {listPreset} list + {detailsPreset} details",
-                $"List preset {listPreset} (vertical) paired with details preset {detailsPreset} (horizontal).",
-                null,
-                TigerConsole.RenderGridToHtml(listGrid, options) + "\n" + TigerConsole.RenderGridToHtml(detailsGrid, options)));
-
-            // PNG companion: both tables of the pair stacked in one frame. The subgrids are
-            // re-measured inside the stack at the same 120-column width the HTML used.
-            var stack = new CliGrid(1, 3);
-            stack.SetSubgrid(0, 0, listGrid);
-            stack.Set(0, 1, "");
-            stack.SetSubgrid(0, 2, detailsGrid);
-            artifacts.AddRange(PngCompanion.FromGrid($"cli-table-presets-{name.ToLowerInvariant()}", stack));
-            if (string.Equals(name, "Alpha", StringComparison.Ordinal))
+            foreach (var orientation in SupportedOrientations(preset))
             {
-                artifacts.AddRange(PngCompanion.FromMeasuredGrid(
-                    "cli-table-presets-alpha-terminal",
-                    stack,
-                    title: "CliTable presets"));
+                var renderedThemes = new List<string>();
+                foreach (var (displayName, theme) in TableStyleThemes)
+                {
+                    var grid = CreateTableStyleExample(preset, orientation, theme).ToGrid();
+                    renderedThemes.Add(
+                        $"<h3>{displayName}</h3>\n{TigerConsole.RenderGridToHtml(grid, options)}");
+
+                    var artifactName = string.Join(
+                        '-',
+                        "cli-table-style",
+                        preset.ToString().ToLowerInvariant(),
+                        orientation.ToString().ToLowerInvariant(),
+                        theme.Name);
+                    artifacts.AddRange(PngCompanion.FromMeasuredGrid(
+                        artifactName,
+                        grid,
+                        title: $"{preset} · {orientation} · {displayName}"));
+                }
+
+                sections.Add(new DocPage.Section(
+                    $"{preset} — {orientation}",
+                    $"The {preset} preset rendered in its supported {orientation.ToString().ToLowerInvariant()} "
+                    + "orientation under every built-in theme.",
+                    null,
+                    string.Join('\n', renderedThemes)));
             }
         }
 
@@ -243,11 +229,42 @@ public static class DocExampleSet
             "cli-table-presets.html",
             DocPage.BuildPage(
                 "CliTable style presets",
-                "The preset pairs from the TableTasting harness, rendered at an emulated 120-column "
-                + "terminal width (HtmlSinkOptions.SoftMaxWidth) with the TigerBlue theme.",
+                "Every city preset in every supported orientation under the TigerBlue, Dark, and Light "
+                + "themes. Each fragment and its PNG companion use the same real CliTable grid, measured "
+                + "at the shared 120-column documentation terminal width.",
                 sections));
 
         return [page, .. artifacts];
+    }
+
+    private static IReadOnlyList<CliTableOrientation> SupportedOrientations(CliTableStylePreset preset)
+        => CliTableStyles.OrientationSupport(preset) switch
+        {
+            CliTableStyleOrientationSupport.Both =>
+                [CliTableOrientation.Vertical, CliTableOrientation.Horizontal],
+            CliTableStyleOrientationSupport.VerticalOnly => [CliTableOrientation.Vertical],
+            CliTableStyleOrientationSupport.HorizontalOnly => [CliTableOrientation.Horizontal],
+            _ => throw new InvalidOperationException($"Unknown orientation support for {preset}."),
+        };
+
+    private static CliTable CreateTableStyleExample(
+        CliTableStylePreset preset,
+        CliTableOrientation orientation,
+        ITheme theme)
+    {
+        var table = new CliTable()
+            .ApplyPreset(preset, theme, orientation)
+            .AddTitle(orientation == CliTableOrientation.Vertical ? "Service inventory" : "Service details")
+            .AddHeader("Name", "Status", "Region");
+
+        table.AddRecord("api-gateway", "Online", "Dublin");
+        if (orientation == CliTableOrientation.Vertical)
+        {
+            table.AddRecord("job-runner", "Degraded", "London");
+            table.AddRecord("audit-store", "Online", "Paris");
+        }
+
+        return table;
     }
 
     // ---- CliList ---------------------------------------------------------------------------

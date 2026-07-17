@@ -1,0 +1,20 @@
+artifact: cli-table-style-roma-vertical-tiger-blue.png
+canonical-os: Windows 11
+generated-os: Microsoft Windows 10.0.26200
+dotnet: .NET 10.0.10
+skiasharp: 4.148.0
+terminal-font: Cascadia Mono
+title-font: Cascadia Mono
+columns: 120
+rows: 8
+chrome: FrameAndTitle
+title: Roma · Vertical · TigerBlue
+--- visible text ---
+         Service inventory
+╔═════════════════════════════════╗
+║    Name     │  Status  │ Region ║
+║─────────────┼──────────┼────────║
+║ api-gateway │ Online   │ Dublin ║
+║ job-runner  │ Degraded │ London ║
+║ audit-store │ Online   │ Paris  ║
+╚═════════════════════════════════╝

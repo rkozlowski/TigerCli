@@ -22,9 +22,9 @@ dotnet add package ItTiger.Core --version 0.8.0
 
 ## What It Looks Like
 
-Structured output — `CliTable` list and details presets ([more presets](docs/guides/cli-table.md), generated from real rendering):
+Structured output — generated `CliTable` style presets ([compare every preset](docs/guides/cli-table.md)):
 
-![CliTable list and details presets](docs/examples/png/cli-table-presets-alpha-terminal.png)
+![Roma table preset with the TigerBlue theme](docs/examples/png/cli-table-style-roma-vertical-tiger-blue.png)
 
 Semi-interactive prompts — the framework-owned select dialog ([prompt guide](docs/guides/semi-interactive-prompts.md)):
 
