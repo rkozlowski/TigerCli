@@ -36,6 +36,11 @@ TigerConsole.MarkupLine("[Success]Completed.[/]");
 TigerConsole.MarkupErrorLine("[Error]Failed.[/]");
 ```
 
+The generated example below shows `MarkupLine` output with raw colors, decorations, semantic status
+tokens, and structured-output roles:
+
+![TigerCli markup and styles](../examples/png/markup-and-styles.png)
+
 Use stdout for normal command output:
 
 ```csharp
@@ -329,6 +334,8 @@ var list = new CliList<Device>()
 TigerConsole.Render(list.Render(devices));
 ```
 
+![CliList rendered through TigerCli](../examples/png/cli-list.png)
+
 `Render(items)` projects each item into a record and returns a `CliTable`, so output goes through the normal `CliTable` → `CliGrid` pipeline. An **empty** sequence yields a header-only table — a consistent empty-state default that still shows the columns and title; a command that wants a custom empty message can branch before calling `Render`.
 
 Columns:
@@ -401,17 +408,9 @@ var details = new CliDetails()
 TigerConsole.Render(details);
 ```
 
-```text
-       SQL Server connection
-┌─────────────────┬────────────────┐
-│ Name:           │ prod-core      │
-│ Server:         │ localhost      │
-│ Authentication: │ SqlPassword    │
-│ Database:       │ (not selected) │
-└─────────────────┴────────────────┘
-```
+![CliDetails rendered through TigerCli](../examples/png/cli-details.png)
 
-(`Username:` is absent: `AddOptional` skips a missing value, while `Database:` is shown with an explicit missing display.)
+In the code above, `Username:` is absent: `AddOptional` skips a missing value, while `Database:` is shown with an explicit missing display.
 
 Like `CliList`, the title is centered by default; pass `AddTitle("…", alignment: CliTextAlignment.Left)` or call `SetTitleAlignment(CliTextAlignment.Left)` to left-align (or right-align) it. Alignment affects layout only — the title's semantic style is preserved.
 

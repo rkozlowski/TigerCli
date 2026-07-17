@@ -178,6 +178,10 @@ When no provider is configured, TigerCli can prompt some missing values from the
 | enum | Select |
 | `[Flags]` enum | Multi-select |
 
+Here a missing positional value is rendered as the framework-owned text-input prompt:
+
+![Parser-driven text input prompt](../examples/png/roi-cities-basic-show-prompt.png)
+
 Optional nullable selects (`enum?` and provider-backed `string?`) also offer a no-selection row — see [No-Selection For Optional Nullable Prompts](#no-selection-for-optional-nullable-prompts).
 
 Parser-driven select and multi-select prompts use the same dialogs as the direct `TigerTui` prompts; rendered storyboards of those dialogs are committed at [`docs/examples/tui-storyboards.html`](../examples/tui-storyboards.html).
@@ -316,6 +320,8 @@ Behavior:
 - **Non-interactive**: the value is a comma-separated list and/or a repeated option — `--tags red,blue` or `--tags red --tags blue`. Each token is matched against the provider's choices by key or label (case-insensitive); duplicates collapse; unknown tokens are rejected with a clear error unless `AllowCustomValues = true` (string collections only).
 - **Empty selection** is allowed by default; set `AllowEmpty = false` to require at least one value.
 
+![Multi-select prompt with one value toggled](../examples/png/tui-multi-select-toggled.png)
+
 For key/label choices (display a friendly label, bind a typed key) the provider returns `OptionItem<TKey>` and the property is `List<TKey>` / `TKey[]`:
 
 ```csharp
@@ -384,6 +390,10 @@ Use providers in two steps:
 
 1. Register a named provider on the app, command group, or command.
 2. Reference the provider from an option or argument with `Provider = "..."`.
+
+The prompt renders provider labels while binding their stable keys:
+
+![Provider-backed select prompt](../examples/png/roi-cities-extended-show-select.png)
 
 Providers can be registered at app, command group, or command level:
 

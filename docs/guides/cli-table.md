@@ -67,12 +67,9 @@ foreach (var connection in connections)
 TigerConsole.Render(table);
 ```
 
-```text
-Name     │Server           │Authentication│Database
-─────────┼─────────────────┼──────────────┼─────────
-prod     │sql01.example.com│Integrated    │Sales
-reporting│sql02.example.com│SqlLogin      │Warehouse
-```
+A generated Torino table shows the preset's frameless header rule and column separators:
+
+![CliTable using the Torino preset](../examples/png/cli-table-presets-delta.png)
 
 - `AddHeader(params string[])` adds one field per caption. Pass localized text such as `settings.T("Name")` (which returns a `string`) or plain string literals.
 - `AddRecord(params object?[])` adds one record from simple values — `string`, enum, `bool`, `int`, `null`, and so on. Each value is rendered through normal string conversion; `null` renders safely as an empty cell (or the field's null display value).
@@ -176,16 +173,10 @@ The predefined recipes:
 | `Verona` | Condensed detail view: frameless, left-padded values, tight header. | Horizontal only |
 | `Lucca` | Milano-based detail view: boxed single-line frame, no between-field separator; panel surface, success (green) title, warning (yellow) header. Alias: `Details`. | Horizontal only |
 
-The recipe controls the structure; the active theme controls the colours:
+The recipe controls the structure; the active theme controls the colours. This generated artifact
+shows Milano list output and its Lucca details counterpart:
 
-```text
-Roma                Milano              Torino
-╔═══════════╤═════╗ ┌───────────┬─────┐    Name    │Count
-║   Name    │Count║ │   Name    │Count│ ───────────┼─────
-╟───────────┼─────╢ ├───────────┼─────┤ Projects   │3
-║Projects   │3    ║ │Projects   │3    │ Connections│12
-╚═══════════╧═════╝ └───────────┴─────┘
-```
+![CliTable Milano and Lucca presets](../examples/png/cli-table-presets-alpha-terminal.png)
 
 To restyle tables for a new theme, override the surface/ink hooks (`Panel`, `AlertSurface`, `*SurfaceAlt`, `TableHeader`, `TableCell`, `TableFrame`, `TableTitle`, `Success`, `Warning`) on your `ThemeBase` subclass. The cleanest way to define a custom theme is to subclass a framework theme and override only what differs — unoverridden roles fall through to the base.
 

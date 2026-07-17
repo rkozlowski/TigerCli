@@ -102,6 +102,8 @@ Select behavior:
 - Timeout or cancellation returns `null`.
 - Empty item lists render a localized empty state and are not confirmable.
 
+![Direct select prompt](../examples/png/tui-select-initial.png)
+
 `SelectAsync<TEnum>` is also available for enum values:
 
 ```csharp
@@ -212,6 +214,8 @@ Multi-select behavior:
 - Flags prompts show non-zero single-bit enum values only.
 - The returned flags value is the bitwise OR of selected values.
 
+![Direct multi-select prompt](../examples/png/tui-multi-select-toggled.png)
+
 ## Folder Select Prompts
 
 Use `SelectFolderAsync` to let the user navigate the filesystem and pick a folder, for example a destination or source directory.
@@ -319,6 +323,8 @@ differ from the visible activity message, build an `ActivityDialogSpec` and call
 `SetNonInteractiveMessage(...)`.
 
 [Folder Copy](../examples/folder-copy.md) is the public real-operation sample for this: it scans with a simple activity and copies with a rich activity dialog containing current-file, files, bytes, elapsed, and ETA rows.
+
+![Folder Copy activity dialog](../examples/folder-copy/folder-copy-activity.webp)
 
 An activity is *work-with-UI*, not a prompt, so it behaves differently from `SelectAsync`/`ConfirmAsync`
 under `--non-interactive`. In non-interactive mode the dialog is suppressed but the operation body still
