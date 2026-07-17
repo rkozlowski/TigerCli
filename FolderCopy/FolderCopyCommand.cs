@@ -81,7 +81,7 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
         return ReportOutcome(settings, result, plan, source, destination, stopwatch.Elapsed);
     }
 
-    private FolderCopyExitCode ReportOutcome(
+    private static FolderCopyExitCode ReportOutcome(
         FolderCopySettings settings,
         ActivityResult<int> result,
         CopyPlan plan,

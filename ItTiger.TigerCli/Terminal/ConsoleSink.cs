@@ -18,6 +18,8 @@ internal sealed class ConsoleSink : ICliRenderSink
     public int? MaxWidth => null;
     public int? MaxHeight => null;
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
+        Justification = "ICliRenderSink requires SetStyle to be implemented as an instance member.")]
     public void SetStyle(CliCharStyle style)
     {
         if (style.Foreground.HasValue)
