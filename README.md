@@ -80,6 +80,7 @@ TigerCli works best when you accept its assumptions:
 ## Documentation
 
 Start with the full documentation index: [docs/README.md](docs/README.md).
+Browse the published [API documentation](https://rkozlowski.github.io/TigerCli/index.html).
 
 Common entry points:
 

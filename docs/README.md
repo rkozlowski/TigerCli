@@ -2,6 +2,8 @@
 
 TigerCli documentation is organized by how close each page is to day-to-day app development.
 
+Browse the published [API documentation](https://rkozlowski.github.io/TigerCli/index.html).
+
 ## Recommended Reading Path
 
 1. [Getting started](getting-started.md)

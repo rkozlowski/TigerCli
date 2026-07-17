@@ -7,8 +7,11 @@ Use the **API Reference** link in the navigation bar to browse by namespace.
 
 Assemblies covered:
 
-- `ItTiger.TigerCli` — the main library
-- `ItTiger.Core` — shared primitives surfaced by the TigerCli public API (e.g. `TigerTextAttribute`)
-- `ItTiger.TigerCli.PngSink` — optional PNG rendering package
+- [`ItTiger.TigerCli`](https://github.com/rkozlowski/TigerCli/tree/main/ItTiger.TigerCli) — the main library
+- [`ItTiger.Core`](https://github.com/rkozlowski/TigerCli/tree/main/ItTiger.Core) — shared primitives surfaced by the TigerCli public API (e.g. `TigerTextAttribute`)
+- [`ItTiger.TigerCli.PngSink`](https://github.com/rkozlowski/TigerCli/tree/main/ItTiger.TigerCli.PngSink) — optional PNG rendering package
 
-See `docs/api-docfx/README.md` in the repository for how to regenerate this site locally.
+See [`docs/api-docfx/README.md`](https://github.com/rkozlowski/TigerCli/blob/main/docs/api-docfx/README.md) in the repository for how to regenerate this site locally.
+
+- [GitHub repository](https://github.com/rkozlowski/TigerCli)
+- [IT Tiger project page](https://www.ittiger.net/projects/tigercli/)
