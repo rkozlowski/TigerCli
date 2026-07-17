@@ -21,9 +21,9 @@ Run DocFX when XML comments, DocFX configuration, generated API reference conten
 dotnet docfx docs/api-docfx/docfx.json
 ```
 
-In this environment, do not run `dotnet docfx` in a restricted sandbox when Roslyn/MSBuild named-pipe access is blocked. Known failure modes include `UnauthorizedAccessException` involving Roslyn/MSBuild named pipes, DocFX appearing to hang, and stale `dotnet`/DocFX/build-host processes remaining after interruption.
+**Hard rule: never run `dotnet docfx docs/api-docfx/docfx.json` inside a sandboxed or restricted environment. Run DocFX only in the normal/non-sandbox command environment.** Do not try the sandbox first. Restricted Roslyn/MSBuild named-pipe access can cause `UnauthorizedAccessException`, indefinite hangs, and stale `dotnet`/DocFX/build-host child processes.
 
-If DocFX hangs or fails this way, stop the command, terminate only stale child processes you started, optionally run `dotnet build-server shutdown`, and do not leave orphaned `dotnet`/DocFX processes. Rerun DocFX only in the normal/non-sandbox command environment. If normal execution is unavailable, skip DocFX validation and report that limitation clearly.
+If DocFX is accidentally started in a sandbox and hangs, stop it, terminate only the stale child processes started by that run, optionally run `dotnet build-server shutdown`, and confirm that no orphaned `dotnet`/DocFX processes remain before continuing. A sandbox DocFX hang or failure is an execution-environment failure, not a documentation failure. Treat DocFX validation as failed only if the same command also fails in the normal/non-sandbox environment. If normal execution is unavailable, report DocFX validation as incomplete; do not claim that it passed.
 
 `docs/reference/api-map.md` is generated from DocFX metadata. Do not hand-edit it. Correct flow:
 
