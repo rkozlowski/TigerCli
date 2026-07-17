@@ -76,7 +76,7 @@ internal static class TigerCliHelpRenderer
             var exitCode = exitCodes[i];
             var row = i + 2;
             grid.Set(0, row, $"[Key]{exitCode.Value}[/]");
-            grid.Set(1, row, $"[Key]{exitCode.NameMarkup}[/]");
+            grid.Set(1, row, $"[Accent]{exitCode.NameMarkup}[/]");
             grid.Set(2, row, exitCode.DescriptionMarkup ?? "");
         }
 

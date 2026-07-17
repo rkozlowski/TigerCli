@@ -130,7 +130,7 @@ public sealed class TigerCliHelpRenderingTests
     }
 
     [Fact]
-    public void RenderExitCodeSection_UsesCompactKeyColumnsAndWrapsDescriptions()
+    public void RenderExitCodeSection_UsesKeyCodesAccentNamesAndWrapsDescriptions()
     {
         var sink = new TextSegmentLinesSink { SoftMaxWidth = 60 };
         using var scope = TigerConsole.PushOutputSink(sink);
@@ -157,10 +157,17 @@ public sealed class TigerCliHelpRenderingTests
         Assert.DoesNotContain("", lines.Skip(2));
 
         var keyForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Key).CharStyle?.Foreground;
-        foreach (var text in new[] { "0", "Ok", "1003", "CliInteractiveNotAllowed" })
+        var accentForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Accent).CharStyle?.Foreground;
+        foreach (var text in new[] { "0", "1003" })
         {
             var segment = sink.Lines.SelectMany(line => line).Single(candidate => candidate.Text == text);
             Assert.Equal(keyForeground, segment.Style.Foreground);
+        }
+
+        foreach (var text in new[] { "Ok", "CliInteractiveNotAllowed" })
+        {
+            var segment = sink.Lines.SelectMany(line => line).Single(candidate => candidate.Text == text);
+            Assert.Equal(accentForeground, segment.Style.Foreground);
         }
     }
 
