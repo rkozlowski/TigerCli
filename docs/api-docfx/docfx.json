@@ -29,7 +29,8 @@
     "output": "_site",
     "template": [
       "default",
-      "modern"
+      "modern",
+      "templates/tigercli"
     ],
     "globalMetadata": {
       "_appName": "TigerCli",

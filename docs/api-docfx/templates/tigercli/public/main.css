@@ -1,0 +1,9 @@
+/* Keep inline API identifiers distinct from navigable links. */
+:root,
+[data-bs-theme="light"] {
+  --bs-code-color: #495057;
+}
+
+[data-bs-theme="dark"] {
+  --bs-code-color: #ced4da;
+}
