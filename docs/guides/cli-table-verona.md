@@ -8,6 +8,14 @@ Verona uses a condensed frameless detail view with left-padded values and tight 
 
 ## Horizontal
 
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Verona horizontal table in TigerBlue](../examples/png/cli-table-style-verona-horizontal-tiger-blue.png) | ![Verona horizontal table in Dark](../examples/png/cli-table-style-verona-horizontal-dark.png) | ![Verona horizontal table in Light](../examples/png/cli-table-style-verona-horizontal-light.png) |
+**TigerBlue**
+
+![Verona horizontal table in TigerBlue](../examples/png/cli-table-style-verona-horizontal-tiger-blue.png)
+
+**Dark**
+
+![Verona horizontal table in Dark](../examples/png/cli-table-style-verona-horizontal-dark.png)
+
+**Light**
+
+![Verona horizontal table in Light](../examples/png/cli-table-style-verona-horizontal-light.png)

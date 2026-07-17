@@ -8,12 +8,28 @@ Bologna uses Roma-style framing on the default surface, with a double outer fram
 
 ## Vertical
 
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Bologna vertical table in TigerBlue](../examples/png/cli-table-style-bologna-vertical-tiger-blue.png) | ![Bologna vertical table in Dark](../examples/png/cli-table-style-bologna-vertical-dark.png) | ![Bologna vertical table in Light](../examples/png/cli-table-style-bologna-vertical-light.png) |
+**TigerBlue**
+
+![Bologna vertical table in TigerBlue](../examples/png/cli-table-style-bologna-vertical-tiger-blue.png)
+
+**Dark**
+
+![Bologna vertical table in Dark](../examples/png/cli-table-style-bologna-vertical-dark.png)
+
+**Light**
+
+![Bologna vertical table in Light](../examples/png/cli-table-style-bologna-vertical-light.png)
 
 ## Horizontal
 
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Bologna horizontal table in TigerBlue](../examples/png/cli-table-style-bologna-horizontal-tiger-blue.png) | ![Bologna horizontal table in Dark](../examples/png/cli-table-style-bologna-horizontal-dark.png) | ![Bologna horizontal table in Light](../examples/png/cli-table-style-bologna-horizontal-light.png) |
+**TigerBlue**
+
+![Bologna horizontal table in TigerBlue](../examples/png/cli-table-style-bologna-horizontal-tiger-blue.png)
+
+**Dark**
+
+![Bologna horizontal table in Dark](../examples/png/cli-table-style-bologna-horizontal-dark.png)
+
+**Light**
+
+![Bologna horizontal table in Light](../examples/png/cli-table-style-bologna-horizontal-light.png)

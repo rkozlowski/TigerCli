@@ -8,6 +8,14 @@ Parma uses a compact frameless list with a single-space column separator.
 
 ## Vertical
 
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Parma vertical table in TigerBlue](../examples/png/cli-table-style-parma-vertical-tiger-blue.png) | ![Parma vertical table in Dark](../examples/png/cli-table-style-parma-vertical-dark.png) | ![Parma vertical table in Light](../examples/png/cli-table-style-parma-vertical-light.png) |
+**TigerBlue**
+
+![Parma vertical table in TigerBlue](../examples/png/cli-table-style-parma-vertical-tiger-blue.png)
+
+**Dark**
+
+![Parma vertical table in Dark](../examples/png/cli-table-style-parma-vertical-dark.png)
+
+**Light**
+
+![Parma vertical table in Light](../examples/png/cli-table-style-parma-vertical-light.png)
