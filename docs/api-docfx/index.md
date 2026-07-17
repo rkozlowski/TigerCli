@@ -5,6 +5,10 @@ documentation comments with DocFX.
 
 Use the **API Reference** link in the navigation bar to browse by namespace.
 
+For a compact, machine-friendly overview, use the [API map](../reference/api-map.md).
+The [visual references](visual-reference.md) collect the published color palette and
+built-in theme renders.
+
 Assemblies covered:
 
 - [`ItTiger.TigerCli`](https://github.com/rkozlowski/TigerCli/tree/main/ItTiger.TigerCli) — the main library

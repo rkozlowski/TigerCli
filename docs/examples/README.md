@@ -20,6 +20,13 @@ For example, the select-prompt storyboard frame ([HTML page](tui-storyboards.htm
 
 ![Select prompt — initial state](png/tui-select-initial.png)
 
+Published visual references:
+
+- [CliColor ANSI 0–255 palette](https://rkozlowski.github.io/TigerCli/reference/cli-color.html)
+- [Dark theme](https://rkozlowski.github.io/TigerCli/examples/theme-dark.html)
+- [Light theme](https://rkozlowski.github.io/TigerCli/examples/theme-light.html)
+- [Tiger Blue theme](https://rkozlowski.github.io/TigerCli/examples/theme-tiger-blue.html)
+
 Do not edit generated artifact files by hand. Regenerate them with:
 
 ```bash

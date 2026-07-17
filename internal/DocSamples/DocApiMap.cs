@@ -9,7 +9,7 @@ namespace DocSamples;
 ///
 /// The map is generated output, never hand-maintained. Behavioral contracts live in XML docs, the
 /// generated API reference, and the guides; this file is only a navigational index (namespaces →
-/// types → one-line summary → source path → local API page).
+/// types → kind → one-line summary → source path). Type names link to the published API page.
 ///
 /// DocFX YAML shape used (per-type file <c>api/&lt;uid&gt;.yml</c>, first <c>items</c> entry is the
 /// type itself; later entries are its members and are ignored):
@@ -21,13 +21,16 @@ namespace DocSamples;
 ///                              and only the first sentence is kept.</item>
 ///     <item><c>source.remote.path</c> — repo-relative source file path.</item>
 ///   </list>
-/// The local API page path is derived from the YAML file name (DocFX names the HTML page identically),
-/// and is only emitted when the generated page actually exists under <c>_site/</c>.
+/// The published API page URL is derived from the YAML file name (DocFX names the HTML page
+/// identically), and is only emitted when the generated page actually exists under <c>_site/</c>.
 /// </summary>
 public static class DocApiMap
 {
     /// <summary>Repo-relative path of the generated map.</summary>
     public const string RelativePath = "docs/reference/api-map.md";
+
+    private const string PublishedApiBaseUrl = "https://rkozlowski.github.io/TigerCli/api/";
+    private const string RepositoryBlobBaseUrl = "https://github.com/rkozlowski/TigerCli/blob/main/";
 
     private static readonly string[] TypeKinds =
         { "Class", "Struct", "Interface", "Enum", "Delegate" };
@@ -62,8 +65,12 @@ public static class DocApiMap
         builder.Append("<!-- Generated from DocFX metadata by internal/DocSamples (`api-map` mode). Do not edit by hand. -->\n\n");
         builder.Append("Generated from DocFX metadata. Do not edit by hand.\n\n");
         builder.Append(
-            "This is a compact index of public TigerCli types for humans and AI tools. Behavioral " +
+            "This is a structured index of public TigerCli types for humans and AI tools. Type names " +
+            "link to the published DocFX reference; source paths link to the repository. Behavioral " +
             "contracts live in XML documentation comments, the generated API reference, and the guides.\n\n");
+        builder.Append("**Coverage:** ").Append(types.Count).Append(" public types across ")
+            .Append(types.Select(t => t.Namespace).Distinct(StringComparer.Ordinal).Count())
+            .Append(" namespaces.\n\n");
         builder.Append("Regenerate with:\n\n");
         builder.Append("```\n");
         builder.Append("dotnet docfx docs/api-docfx/docfx.json\n");
@@ -75,14 +82,27 @@ public static class DocApiMap
                      .OrderBy(g => g.Key, StringComparer.Ordinal))
         {
             builder.Append("\n## ").Append(group.Key).Append('\n').Append('\n');
+            builder.Append("| Public type | Kind | Summary | Source |\n");
+            builder.Append("|---|---|---|---|\n");
 
             foreach (var type in group.OrderBy(t => t.Name, StringComparer.Ordinal))
             {
-                builder.Append("- `").Append(type.Name).Append("` *(").Append(type.Kind).Append(")* — ")
-                    .Append(type.Summary).Append('\n');
-                builder.Append("  Source: `").Append(type.SourcePath).Append("`\n");
                 if (type.ApiPage is not null)
-                    builder.Append("  API: `").Append(type.ApiPage).Append("`\n");
+                    builder.Append("| [").Append(EscapeMarkdownCell(type.Name)).Append("](")
+                        .Append(type.ApiPage).Append(") ");
+                else
+                    builder.Append("| `").Append(EscapeMarkdownCell(type.Name)).Append("` ");
+
+                builder.Append("| `").Append(type.Kind).Append("` | ")
+                    .Append(EscapeMarkdownCell(type.Summary)).Append(" | ");
+
+                if (type.SourcePath == "(unknown)")
+                    builder.Append("`(unknown)`");
+                else
+                    builder.Append("[`").Append(EscapeMarkdownCell(type.SourcePath)).Append("`](")
+                        .Append(RepositoryBlobBaseUrl).Append(EscapeUrlPath(type.SourcePath)).Append(')');
+
+                builder.Append(" |\n");
             }
         }
 
@@ -165,7 +185,7 @@ public static class DocApiMap
 
         string? apiPage = null;
         if (File.Exists(Path.Combine(siteApiDir, stem + ".html")))
-            apiPage = $"docs/api-docfx/_site/api/{stem}.html";
+            apiPage = PublishedApiBaseUrl + stem + ".html";
 
         return new TypeEntry(name, kind.ToLowerInvariant(), ns, summary, sourcePath, apiPage);
     }
@@ -243,6 +263,7 @@ public static class DocApiMap
     // method parameter lists trimmed).
     private static string ShortName(string uid)
     {
+        uid = Uri.UnescapeDataString(uid);
         var paren = uid.IndexOf('(');
         if (paren >= 0)
             uid = uid[..paren];
@@ -257,11 +278,29 @@ public static class DocApiMap
         for (int i = 0; i < text.Length - 1; i++)
         {
             if (text[i] == '.' && text[i + 1] == ' ')
+            {
+                var throughPeriod = text.AsSpan(0, i + 1);
+                if (throughPeriod.EndsWith("e.g.", StringComparison.OrdinalIgnoreCase) ||
+                    throughPeriod.EndsWith("i.e.", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 return text[..(i + 1)];
+            }
         }
 
         return text;
     }
+
+    private static string EscapeMarkdownCell(string value) => value
+        .Replace("&", "&amp;", StringComparison.Ordinal)
+        .Replace("<", "&lt;", StringComparison.Ordinal)
+        .Replace(">", "&gt;", StringComparison.Ordinal)
+        .Replace("|", "\\|", StringComparison.Ordinal)
+        .Replace("\r", " ", StringComparison.Ordinal)
+        .Replace("\n", " ", StringComparison.Ordinal);
+
+    private static string EscapeUrlPath(string path) =>
+        string.Join('/', path.Replace('\\', '/').Split('/').Select(Uri.EscapeDataString));
 
     private static string DecodeEntities(string text) => text
         .Replace("&lt;", "<")

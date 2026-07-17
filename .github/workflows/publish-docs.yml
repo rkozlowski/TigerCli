@@ -9,6 +9,12 @@ on:
       - "TigerCli.sln"
       - "Version.props"
       - "docs/api-docfx/**"
+      - "docs/reference/api-map.md"
+      - "docs/reference/cli-color.html"
+      - "docs/examples/theme-dark.html"
+      - "docs/examples/theme-light.html"
+      - "docs/examples/theme-tiger-blue.html"
+      - "internal/DocSamples/**"
       - "ItTiger.Core/**"
       - "ItTiger.TigerCli/**"
       - "ItTiger.TigerCli.PngSink/**"
@@ -43,6 +49,8 @@ jobs:
         run: dotnet build TigerCli.sln --configuration Release --no-restore
       - name: Build DocFX site
         run: dotnet docfx docs/api-docfx/docfx.json
+      - name: Check generated API map
+        run: dotnet run --project internal/DocSamples --configuration Release --no-build -- api-map check
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:

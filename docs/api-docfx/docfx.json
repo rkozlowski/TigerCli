@@ -22,7 +22,25 @@
         "files": [
           "api/**.yml",
           "toc.yml",
-          "index.md"
+          "index.md",
+          "visual-reference.md"
+        ]
+      },
+      {
+        "src": "..",
+        "files": [
+          "reference/api-map.md"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "src": "..",
+        "files": [
+          "reference/cli-color.html",
+          "examples/theme-dark.html",
+          "examples/theme-light.html",
+          "examples/theme-tiger-blue.html"
         ]
       }
     ],

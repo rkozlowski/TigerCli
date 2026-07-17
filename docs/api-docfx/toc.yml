@@ -1,2 +1,6 @@
 - name: API Reference
   href: api/
+- name: API Map
+  href: ../reference/api-map.md
+- name: Visual References
+  href: visual-reference.md

@@ -52,9 +52,10 @@ Then open <http://localhost:8080>.
 ## Compact API map
 
 The DocFX metadata under `api/` is also the source for the committed, compact
-type index at [`docs/reference/api-map.md`](../reference/api-map.md) (namespaces →
-public types → one-line summary → source path → local API page). It is generated,
-never hand-maintained. After running DocFX above, regenerate it with:
+type index at [`docs/reference/api-map.md`](../reference/api-map.md) (namespace tables →
+linked public types → kind → one-line summary → linked source path). It is generated,
+never hand-maintained, and is included in the published DocFX site. After running DocFX above,
+regenerate it with:
 
 ```powershell
 dotnet run --project internal/DocSamples -- api-map
@@ -62,6 +63,14 @@ dotnet run --project internal/DocSamples -- api-map
 
 `dotnet run --project internal/DocSamples -- api-map check` reports drift without
 writing.
+
+## Published visual references
+
+DocFX copies a curated set of generated HTML artifacts into the published site through the
+`resource` entries in `docfx.json`: the CliColor palette and the dark, light, and Tiger Blue theme
+renders. The [visual-reference page](visual-reference.md) links those artifacts from the site
+navigation. Add future published artifacts to that explicit resource list rather than introducing a
+manual post-build copy step.
 
 ## Notes
 
