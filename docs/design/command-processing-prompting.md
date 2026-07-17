@@ -35,7 +35,7 @@ Keeping these separate prevents optional values from becoming required just beca
 
 - Positional arguments are required.
 - Options are optional unless marked `Required = true`.
-- `Promptable = TigerCliPromptable.No` always prevents prompting.
+- `Promptable = [TigerCliPromptable](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliPromptable.html).No` always prevents prompting.
 - `Promptable = TigerCliPromptable.First`, `Normal`, or `Last` allows prompting only when interaction mode allows it.
 - Omitted `Promptable` uses the effective prompt mode.
 - The framework default prompt mode is `RequiredOnly`.

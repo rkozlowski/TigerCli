@@ -91,7 +91,7 @@ TigerConsole.RenderGrid(grid);
 
 Two concepts work together:
 
-- A **table style** is a *recipe* (`CliTableStyleRecipe`): structure plus theme roles (frame configuration, padding, surface role, title/frame accent roles). It contains **no colours**. The built-in presets are named by the `CliTableStylePreset` enum — ten "city" presets (`Roma`, `Milano`, `Napoli`, `Torino`, `Genova`, `Bologna`, `Palermo`, `Parma`, `Verona`, `Lucca`) plus boring aliases that canonicalize to a city (`Default`→Roma, `Light`→Milano, `Grid`→Napoli, `Alert`→Palermo, `Condensed`→Parma, `Details`→Lucca, `DetailsCondensed`→Verona).
+- A **table style** is a *recipe* (`CliTableStyleRecipe`): structure plus theme roles (frame configuration, padding, surface role, title/frame accent roles). It contains **no colours**. The built-in presets are named by the [CliTableStylePreset](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableStylePreset.html) enum — ten "city" presets (`Roma`, `Milano`, `Napoli`, `Torino`, `Genova`, `Bologna`, `Palermo`, `Parma`, `Verona`, `Lucca`) plus boring aliases that canonicalize to a city (`Default`→Roma, `Light`→Milano, `Grid`→Napoli, `Alert`→Palermo, `Condensed`→Parma, `Details`→Lucca, `DetailsCondensed`→Verona).
 - A **theme** (`ITheme`) supplies the *colours* — the surfaces and ink the recipe references. The same recipe renders differently under `DarkTheme`, `LightTheme`, and `TigerBlueTheme`.
 
 `ApplyPreset(preset, theme?, orientation?)` resolves a preset's recipe against a theme and applies it as **defaults**. Apply first, then customize with `SetOrientation(...)`, `UseAlternateRecords(...)`, `FrameConfig`, `DataStyle`, `DataAltStyle`, or any header style before adding records. When the theme is omitted the current theme is used; when orientation is omitted the preset default is used. Most presets default to vertical, Parma clamps vertical, and Verona clamps horizontal.
@@ -133,7 +133,7 @@ var table = new CliTable()
     .AddRecord("prod", "localhost");
 ```
 
-`AddTitle(string)` treats the text as preformatted, markup-aware content. For non-string content with explicit formatting, use `AddTitle(object title, CliFormattingMode formattingMode, CliFormatter? formatter = null)`. If you do not want a title, simply do not call `AddTitle`.
+`AddTitle(string)` treats the text as preformatted, markup-aware content. For non-string content with explicit formatting, use `AddTitle(object title, [CliFormattingMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliFormattingMode.html) formattingMode, CliFormatter? formatter = null)`. If you do not want a title, simply do not call `AddTitle`.
 
 For config or plugin input, the string overloads parse a preset name (case-insensitive) and delegate to the enum path; unknown names (including removed tasting variants) throw:
 
@@ -143,13 +143,13 @@ var style = CliTableStyles.Create("Default", theme);   // -> Roma
 
 ### Surfaces
 
-A table style sits on a reusable **surface** (`SurfaceRole`): `Default` (the base console surface), `Panel` (an elevated surface), or `Alert` (an attention surface). The theme resolves a surface to its background and an optional alternate-record (zebra) colour. Dialogs and controls use the separate `ThemeStyle.DialogSurface` token, which defaults to the `Panel` surface but is overrideable — **table styles never use `DialogSurface`**; they use surface roles. Roma/Milano/Genova sit on `Panel`; Napoli/Torino/Bologna/Parma/Verona on `Default`; Palermo on `Alert`.
+A table style sits on a reusable **surface** ([SurfaceRole](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.SurfaceRole.html)): `Default` (the base console surface), `Panel` (an elevated surface), or `Alert` (an attention surface). The theme resolves a surface to its background and an optional alternate-record (zebra) colour. Dialogs and controls use the separate [ThemeStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ThemeStyle.html).DialogSurface token, which defaults to the `Panel` surface but is overrideable — **table styles never use `DialogSurface`**; they use surface roles. [TableAccent](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TableAccent.html) controls title/frame accents, while [CliFrameSegmentStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliFrameSegmentStyle.html) controls frame segments and [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) supplies raw cell colours where a style explicitly needs one. Roma/Milano/Genova sit on `Panel`; Napoli/Torino/Bologna/Parma/Verona on `Default`; Palermo on `Alert`.
 
 ### Framework and custom themes
 
 TigerCli resolves themes by name through `TigerConsole`:
 
-- **Framework themes** are built in and reserved: `"dark"`, `"light"`, `"tiger-blue"` (see the `TigerCliTheme` enum). `"default"` is an alias for `TigerConsole.CurrentTheme` — it is not a separate instance.
+- **Framework themes** are built in and reserved: `"dark"`, `"light"`, `"tiger-blue"` (see the [TigerCliTheme](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliTheme.html) enum). `"default"` is an alias for `TigerConsole.CurrentTheme` — it is not a separate instance.
 - `TigerConsole.CurrentTheme` is the theme used when no explicit theme is passed; it defaults to `DarkTheme` and can be set to any `ITheme` (including a custom one). It cannot be `null`.
 - **Custom themes** are registered by unique `Name` with `TigerConsole.AddOrUpdateCustomTheme(theme)` and resolved with `TigerConsole.GetTheme(name)` / `TryGetTheme`. Registration is case-insensitive and **cannot override a framework name**.
 
@@ -362,7 +362,7 @@ Data cells are raw by default. Raw cell values are formatted as plain values, so
 table.Records.Add([projectName, status, count]);
 ```
 
-Header captions created with `new CliTableElement("...", ...)` use `CliFormattingMode.Preformatted`, so they can contain TigerCli markup:
+Header captions created with `new CliTableElement("...", ...)` use `CliFormattingMode.Preformatted`, so they can contain TigerCli markup. [CliTableOrientation](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableOrientation.html) controls whether a generic preset lays out records horizontally or vertically, and [CliTextAlignment](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextAlignment.html) controls title and cell alignment:
 
 ```csharp
 table.Header.Elements.Add(new CliTableElement("[cyan]Name[/]", null));

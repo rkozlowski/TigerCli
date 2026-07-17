@@ -66,7 +66,7 @@ var app = TigerCliApp.CreateBuilder()
 
 Prompt modes:
 
-- `TigerCliPromptMode.No` does not prompt missing values by default.
+- [TigerCliPromptMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliPromptMode.html).No does not prompt missing values by default.
 - `TigerCliPromptMode.RequiredOnly` prompts missing required values by default. This is the framework default.
 - `TigerCliPromptMode.Yes` may also prompt optional values when TigerCli can produce a prompt.
 
@@ -82,7 +82,7 @@ Prompt mode is still gated by interaction mode. `--non-interactive` forces non-i
 
 ## Promptable Metadata
 
-`Promptable` is available on both arguments and options. It uses `TigerCliPromptable`, so promptability and prompt order are one concept:
+`Promptable` is available on both arguments and options. It uses [TigerCliPromptable](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliPromptable.html), so promptability and prompt order are one concept:
 
 - `TigerCliPromptable.No` never prompts.
 - `TigerCliPromptable.First` prompts early when prompting applies.
@@ -709,7 +709,7 @@ For multi-select string collections the equivalent switch is `AllowCustomValues 
 
 ### Matching Supplied Values To Choices
 
-When a value is supplied on the command line for a provider-backed option or argument, TigerCli matches it against the provider's current choices — during provider validation and multi-select resolution. Matching only decides which choice the supplied value corresponds to; the **bound value is always the provider's canonical key**, never the raw input. Set the strategy per member with `ValueMatching`:
+When a value is supplied on the command line for a provider-backed option or argument, TigerCli matches it against the provider's current choices — during provider validation and multi-select resolution. Matching only decides which choice the supplied value corresponds to; the **bound value is always the provider's canonical key**, never the raw input. Set the strategy per member with [TigerCliValueMatchPreset](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliValueMatchPreset.html):
 
 ```csharp
 [TigerCliOption("--config", Provider = "config-files",

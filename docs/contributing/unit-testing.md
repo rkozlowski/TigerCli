@@ -85,6 +85,8 @@ Assert.Equal(DialogResultKind.Ok, result.Kind);
 Assert.Equal(2, result.Payload);
 ```
 
+Assert the returned [DialogResultKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.DialogResultKind.html) as well as the payload when a direct prompt or modal is the test subject.
+
 ## TestTerminal and TestShell
 
 `TestShell` is the test-facing shell. It exposes:

@@ -58,7 +58,7 @@ Reference docs describe public contracts, framework rules, and stable behavior t
 - [HtmlSink](reference/html-sink.md) - render TigerCli output to deterministic HTML for snapshot tests and documentation examples
 - [PngSink](reference/png-sink.md) - optional SkiaSharp-based PNG rendering package for visual documentation artifacts
 - [Help rendering trust model](reference/help-rendering-trust-model.md)
-- [CliColor reference (ANSI 0–255 swatches)](reference/cli-color.html) - generated visual reference for the full palette
+- [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) reference: [ANSI 0–255 swatches](reference/cli-color.html) - generated visual reference for the full palette
 - [Rendered examples](examples/README.md) - generated HTML artifacts of real TigerCli rendering (markup, table presets, CliList, CliDetails)
 
 ## Design

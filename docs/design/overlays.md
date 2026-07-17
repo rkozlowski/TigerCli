@@ -38,7 +38,7 @@ Every overlay carries a base `CliCharStyle` (`CliOverlay.Style`). There are two 
 
 Both paths are applied through a single internal styled pipeline: a plain renderer is adapted into glyphs
 that carry no per-character style, so its output resolves to the base style and renders exactly as
-before. Overlays still own no theme: callers resolve `ThemeStyle` to `CliCharStyle` before constructing
+before. Overlays still own no theme: callers resolve [ThemeStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ThemeStyle.html) to `CliCharStyle` before constructing
 the overlay (the base style and any per-glyph styles are already resolved).
 
 ### Multi-style progress bars

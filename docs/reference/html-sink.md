@@ -79,7 +79,7 @@ public sealed class HtmlSinkOptions
 
 - **`WrapInPre`** (default `true`) — wrap the output in `<pre class="tigercli">…</pre>`. When `false`,
   only the inner HTML is emitted (for embedding inside a caller-supplied container).
-- **`HyperlinkMode`** (default `HtmlHyperlinkMode.Text`) — how hyperlink targets render (below).
+- **`HyperlinkMode`** (default [HtmlHyperlinkMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.HtmlHyperlinkMode.html).Text) — how hyperlink targets render (below).
 - **`SoftMaxWidth`** (default `null`) — optional emulated terminal width, in text columns (below).
   Must be positive when set.
 

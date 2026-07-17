@@ -8,7 +8,7 @@ TigerCli activity/progress UI is built on the semi-interactive dialog stack. It 
 - `ActivityDialogSpec` describes the layout: columns, rows, cells, text elements, progress-bar elements, and named dynamic rows.
 - `ActivityContext` is the only update surface given to the operation. Operations update values; they do not render.
 - `ActivityResult<T>` reports `Completed`, `Cancelled`, `Aborted`, `TimedOut`, `SystemCancelled`, or `Failed` without collapsing outcomes.
-- `ActivityStopMode` chooses the single stop action (`Cancel` or `Abort`).
+- [ActivityStopMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ActivityStopMode.html) chooses the single stop action (`Cancel` or `Abort`).
 - `ActivitySpinnerSpec` configures the top-frame spinner.
 
 ## Ownership Boundaries
@@ -21,7 +21,7 @@ TigerCli activity/progress UI is built on the semi-interactive dialog stack. It 
 
 ## Non-Interactive Execution
 
-An activity is *work-with-UI*, not a prompt. In non-interactive mode (`shell.InteractionMode == NonInteractive`), `RunActivityAsync` runs the operation body **headlessly**: no dialog, spinner, stop button, or keyboard wait. It returns the normal `ActivityResult<T>` — `Completed`/`Failed` with `DialogResultKind.Ok` — never `InteractionNotAllowed` and never a spurious `Cancelled`. The caller token, `timeout`, and system cancellation are honored with the same precedence as the modal path (system > caller token > timeout), and value updates through `ActivityContext` still validate identically (they are just never rendered).
+An activity is *work-with-UI*, not a prompt. In non-interactive [TigerCliInteractionMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliInteractionMode.html), `RunActivityAsync` runs the operation body **headlessly**: no dialog, spinner, stop button, or keyboard wait. It returns the normal `ActivityResult<T>` — `Completed`/`Failed` with [DialogResultKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.DialogResultKind.html).Ok — never `InteractionNotAllowed` and never a spurious `Cancelled`. The caller token, `timeout`, and system cancellation are honored with the same precedence as the modal path (system > caller token > timeout), and value updates through `ActivityContext` still validate identically (they are just never rendered).
 
 **Progress updates are safe headless.** With no modal loop draining `ActivityState`, `ActivityContext.SetValue`/`SetValues`/`SetMessage` calls neither hang, block on rendering, nor fail merely because there is no dialog. Each valid update is **recorded** in `ActivityState` (the latest value per slot is retained — exactly what a drain loop would have observed) and is **validated on the caller thread** (unknown row, bad index, or wrong value count throws, faulting the operation), so correctness protection is identical in both modes; the recorded values are simply never rendered. A consumer can therefore write one activity-based execution path and call progress freely regardless of mode.
 
@@ -33,7 +33,7 @@ The no-shell overloads run on the `InlineShell` singleton, which reports its int
 
 TigerCli activity APIs are mode-aware. Do not write separate "direct" and "activity" execution paths just to support `--non-interactive`. Use one `RunActivityAsync` path and let TigerCli render it interactively or run it headlessly.
 
-Recommended:
+Recommended: its columns use [CliTextAlignment](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextAlignment.html) and [CliColumnSizing](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColumnSizing.html) for layout.
 
 ```csharp
 var spec = ActivityDialogSpec.Create()

@@ -11,9 +11,9 @@ capability. Throughout this document `ESC` denotes the escape character `0x1B`.
 > line clears are colour-mode-aware too: under ANSI they paint the theme background faithfully via
 > SGR sequences instead of a `ConsoleColor` approximation.
 
-## CliColorMode
+## [CliColorMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColorMode.html)
 
-`TigerConsole.ColorMode` (`enum CliColorMode`, default `Auto`) selects the policy:
+`TigerConsole.ColorMode` (`enum CliColorMode`, default `Auto`) selects the policy; [CliAnsiSupport](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliAnsiSupport.html) reports the independently resolved terminal capability.
 
 | Mode | Output sink | Behaviour |
 |---|---|---|

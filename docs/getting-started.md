@@ -201,7 +201,7 @@ Providers are registered at app, group, or command scope and can depend on earli
 
 ### Command menu
 
-`UseCommandMenu(CommandMenuMode.Enabled)` makes a bare `roi-cities` open a picker over the registered commands — TigerCli's discoverable alternative to shell tab completion. The selected command then runs through the normal pipeline, so choosing `show` flows straight into the city select above:
+`UseCommandMenu([CommandMenuMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CommandMenuMode.html).Enabled)` makes a bare `roi-cities` open a picker over the registered commands — TigerCli's discoverable alternative to shell tab completion. The selected command then runs through the normal pipeline, so choosing `show` flows straight into the city select above:
 
 ![roi-cities command menu](examples/png/roi-cities-extended-menu.png)
 
@@ -225,7 +225,7 @@ public enum RoiCitiesExitCode
 }
 ```
 
-Framework outcomes (invalid arguments, a missing selector under `--non-interactive`, a cancelled prompt) map onto the same enum through the `ExitKind` calls, and `roi-cities --help-errors` documents the whole contract to users and scripts from the `[TigerText]` labels — see the [generated render](examples/roi-cities.html) and [exit codes](guides/exit-codes.md).
+Framework outcomes (invalid arguments, a missing selector under `--non-interactive`, a cancelled prompt) map onto the same enum through [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html) `ExitKind` calls, and `roi-cities --help-errors` documents the whole contract to users and scripts from the `[TigerText]` labels — see the [generated render](examples/roi-cities.html) and [exit codes](guides/exit-codes.md).
 
 ### Metadata polish
 

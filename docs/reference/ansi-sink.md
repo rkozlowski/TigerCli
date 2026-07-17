@@ -18,7 +18,7 @@ public sealed class AnsiSink : ICliRenderSink
 
 ## What it is for
 
-`AnsiSink` renders the full ANSI **0–255** `CliColor` palette faithfully, so it is the right sink
+[AnsiSink](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.AnsiSink.html) renders the full ANSI **0–255** [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) palette faithfully, so it is the right sink
 for emitting colored output to ANSI-capable terminals, files, pipes, golden-file tests, generated
 documentation, and examples. When terminal controls are enabled, it also emits framework-owned
 window title updates as OSC 0 sequences through the same writer path.
@@ -82,7 +82,7 @@ where `n == (int)CliColor`. For example `CliColor.OceanBlue` (24) → `ESC[38;5;
 
 ## Text decorations
 
-Beyond colour, a `CliCharStyle` carries `CliTextDecoration` flags (`Bold`, `Italic`, `Underline`).
+Beyond colour, a `CliCharStyle` carries [CliTextDecoration](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextDecoration.html) flags (`Bold`, `Italic`, `Underline`).
 `AnsiSink` diffs them against the previously emitted style and emits the matching SGR attribute codes:
 
 | Decoration | On | Off |
@@ -129,7 +129,7 @@ that ignore OSC 8. Behaviour:
 
 `emitHyperlinks` defaults to `false`, so a directly-constructed `AnsiSink` (and helpers such as
 `MarkupToAnsi` / `RenderGridToAnsi`) emit no hyperlink sequences unless opted in. On the default
-console paths, `ConsoleSinkFactory` sets the flag from `TigerConsole.HyperlinkMode` (`CliHyperlinkMode`):
+console paths, `ConsoleSinkFactory` sets the flag from `TigerConsole.HyperlinkMode` ([CliHyperlinkMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliHyperlinkMode.html)):
 `Always` (on whenever the ANSI sink is used), `Never` (off), and `Auto` (default — on only when ANSI
 was capability-detected for the stream, not when forced/uncertain). Targets come from `[Link]…[/]`
 markup or from structured `CliDetails.AddLink` / `CliList.AddLinkColumn` values.

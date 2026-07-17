@@ -33,7 +33,7 @@ In all four commands the selector/key is the same `(connection-name, project-nam
 
 ## list → CliList
 
-A `list` command should not manually render headings, spacing, indentation, loops, or column formatting with `MarkupLine`. Declare columns once and render the sequence:
+A `list` command should not manually render headings, spacing, indentation, loops, or column formatting with `MarkupLine`. Declare columns once, choose a [CliTableStylePreset](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableStylePreset.html), and render the sequence:
 
 ```csharp
 var list = new CliList<Device>()
@@ -113,7 +113,7 @@ Contrast this with add: add starts from initializer/default values and collects 
 
 ### Sharing one settings class between add and edit
 
-Because add and edit share the same selector/key and differ only in *flow*, they can — and often should — share a settings class. The selector properties are selectors in **both** commands; only the edit-mode input experience differs, and that is exactly what `EditProvider` is for:
+Because add and edit share the same selector/key and differ only in *flow*, they can — and often should — share a settings class. The selector properties are selectors in **both** commands; only the edit-mode input experience differs, and that is exactly what `EditProvider` is for. Their per-member prompt order uses [TigerCliPromptable](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliPromptable.html):
 
 ```csharp
 public sealed class ProjectSettings : TigerCliSettings

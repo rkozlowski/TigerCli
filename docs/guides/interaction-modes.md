@@ -108,7 +108,7 @@ validation run after prompting.
 ## Cancellation
 
 - Escape from the command menu before selecting a command can exit without running one.
-- Cancelling a prompt after command selection maps to `TigerCliExitKind.Cancelled`.
+- Cancelling a prompt after command selection maps to [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html).Cancelled.
 - Activity stop actions preserve `Cancelled`, `Aborted`, `TimedOut`, and `SystemCancelled` outcomes.
 
 ## Application Configuration

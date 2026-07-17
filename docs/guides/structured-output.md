@@ -103,7 +103,7 @@ TigerConsole.MarkupLine("[Panel]Connection details[/]");
 TigerConsole.MarkupLine("[Dialog]Choose an option[/]");
 ```
 
-Semantic markup is a curated subset of the theme's styles — not every `ThemeStyle` value is exposed, and table-only ink/surface tokens are intentionally hidden. Apps can also register **custom semantic styles** (e.g. `[ConnectionName]`, `[EnvironmentProd]`) that resolve through the active theme alongside these built-ins — see [themes, styles & colors](themes-and-styles.md).
+Semantic markup is a curated subset of the theme's styles — not every [ThemeStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ThemeStyle.html) value is exposed, and table-only ink/surface tokens are intentionally hidden. Apps can also register **custom semantic styles** (e.g. `[ConnectionName]`, `[EnvironmentProd]`) that resolve through the active theme alongside these built-ins — see [themes, styles & colors](themes-and-styles.md).
 
 | Token | Channel | Resolves from |
 |-------|---------|---------------|
@@ -130,7 +130,7 @@ TigerConsole.MarkupLine("[Key]camera-main[/] [Value]Sony A7IV[/] [Path]/media/in
 TigerConsole.MarkupLine("[Link]https://example.com[/]");
 ```
 
-`[Link]` renders the URL as **visible, copyable text** in every sink. Clickability is a **progressive enhancement**: on the ANSI sink TigerCli additionally wraps the visible text in an OSC 8 hyperlink (target = the link's own visible text) so supporting terminals make it clickable, controlled by `TigerConsole.HyperlinkMode` (`CliHyperlinkMode.Auto`/`Never`/`Always`, default `Auto`). The URL always stays visible and copyable. Nested links are rejected, and there is no hidden-target syntax (`[Link=…]label[/]` is not supported yet). See [themes & styles → Clickable links (OSC 8)](themes-and-styles.md#clickable-links-osc-8).
+`[Link]` renders the URL as **visible, copyable text** in every sink. Clickability is a **progressive enhancement**: on the ANSI sink TigerCli additionally wraps the visible text in an OSC 8 hyperlink (target = the link's own visible text) so supporting terminals make it clickable, controlled by `TigerConsole.HyperlinkMode` ([CliHyperlinkMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliHyperlinkMode.html).Auto/`Never`/`Always`, default `Auto`). The URL always stays visible and copyable. Nested links are rejected, and there is no hidden-target syntax (`[Link=…]label[/]` is not supported yet). See [themes & styles → Clickable links (OSC 8)](themes-and-styles.md#clickable-links-osc-8).
 
 **Foreground-only vs foreground/background.** Foreground-only tokens change only the text color and **preserve the surrounding background**, so they nest cleanly inside a background-bearing token:
 
@@ -169,7 +169,7 @@ TigerConsole.MarkupLine("[b]Bold[/]");
 TigerConsole.MarkupLine("[B][Red ON Blue]Error![/][/]");
 ```
 
-`[Bold]` / `CliTextDecoration.Bold` emits ANSI SGR 1. Some terminals treat SGR 1 as an
+`[Bold]` / [CliTextDecoration](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextDecoration.html).Bold emits ANSI SGR 1. Some terminals treat SGR 1 as an
 "intense text" request rather than guaranteed font weight. Depending on terminal settings, it may
 render as a bold font, brighter colors, both, or neither. Windows Terminal exposes this through the
 `Intense text style` setting. Italic and underline are also terminal/font dependent. Do not rely on
@@ -194,7 +194,7 @@ A raw (non-semantic) tag is a **style expression** with the grammar:
 - Zero or more decoration tokens (`Bold`, `Italic`, `Underline`) come **first**; their order is unimportant.
 - An optional foreground color follows the decorations.
 - An optional background, introduced by `on`, comes last (and may appear with no foreground).
-- Colors are `CliColor` names, or an app-registered raw color alias — never semantic style names. TigerCli ships **no** built-in color aliases; apps register their own (see [themes, styles & colors](themes-and-styles.md)).
+- Colors are [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) names, or an app-registered raw color alias — never semantic style names. TigerCli ships **no** built-in color aliases; apps register their own (see [themes, styles & colors](themes-and-styles.md)).
 
 ```csharp
 TigerConsole.MarkupLine("[Bold Yellow]Warning[/]");
@@ -267,7 +267,7 @@ TigerConsole.Render(new SummaryComponent
 });
 ```
 
-Important concepts:
+Important concepts: [CliTextAlignment](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextAlignment.html) controls the horizontal alignment used by a cell.
 
 - Cells hold content and optional cell style.
 - Rows and columns can have definitions and default styles.
@@ -281,7 +281,7 @@ For most app output, start with `CliList`/`CliDetails`, then `CliTable`. Reach f
 
 ## CliTable
 
-`CliTable` is the medium-level API for table-shaped data: headers, records, frames, orientation, null display, and per-field styles. For normal CRUD output, prefer [`CliList`](#clilist) and [`CliDetails`](#clidetails), which build on `CliTable`; use `CliTable` directly when those builders are not suitable. For simple tables, choose a preset, add a header in one call, then add records:
+`CliTable` is the medium-level API for table-shaped data: headers, records, frames, orientation, null display, and per-field styles. For normal CRUD output, prefer [`CliList`](#clilist) and [`CliDetails`](#clidetails), which build on `CliTable`; use `CliTable` directly when those builders are not suitable. Its [CliTableStylePreset](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableStylePreset.html) and [CliTableOrientation](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableOrientation.html) options cover common visual recipes and layout direction. For simple tables, choose a preset, add a header in one call, then add records:
 
 ```csharp
 using ItTiger.TigerCli.Enums;
@@ -598,7 +598,7 @@ App-level command tests can also capture stdout and stderr through `TigerCliAppT
 
 TigerCli rendering can also produce deterministic HTML — useful for snapshot-style tests and for
 generating documentation examples from real rendering. Output is `<pre class="tigercli">` + styled
-`<span>` (and optionally `<a>`); it is opt-in and never affects console/ANSI output.
+`<span>` (and optionally `<a>`); it is opt-in and never affects console/ANSI output. [HtmlHyperlinkMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.HtmlHyperlinkMode.html) controls whether safe markup links render as anchors.
 
 ```csharp
 // Any renderable (CliTable, CliList result, CliDetails, …):

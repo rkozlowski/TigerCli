@@ -4,7 +4,7 @@ TigerCli separates semantic styles from raw colors. Applications own theme, styl
 
 ## Current Model
 
-- Framework semantic roles are represented by `ThemeStyle`.
+- Framework semantic roles are represented by [ThemeStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ThemeStyle.html).
 - Semantic markup tokens such as `[Accent]`, `[Success]`, `[Key]`, `[Path]`, and `[Dialog]` resolve through the active theme.
 - Raw color names and registered raw color aliases are used only in raw color positions.
 - App-level registration happens through `TigerCliAppBuilder.ConfigureThemes(...)`.

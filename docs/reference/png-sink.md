@@ -6,7 +6,7 @@ the PNG sink package.
 
 `PngSink` implements `ICliRenderSink`, so it consumes the same resolved `CliTextSegment` stream as
 `AnsiSink` and `HtmlSink`. It does not introduce a parallel rendering model or a separate color
-system. `CliColor` values are mapped through `CliColorPalette`, including the 0-255 terminal palette.
+system. [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) values are mapped through `CliColorPalette`, including the 0-255 terminal palette.
 
 ## Intended Use
 
@@ -47,7 +47,7 @@ loudly. Variable fonts are not used in v1.
 
 ## Window Chrome
 
-`PngWindowChrome.FrameAndTitle` draws a one-pixel frame, title bar, title text, right-side window
+[PngWindowChrome](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.PngSink.PngWindowChrome.html).FrameAndTitle draws a one-pixel frame, title bar, title text, right-side window
 symbols, and a small title-bar icon. The default assets are bundled under `Assets/`:
 `tc_term_ico.png` for the left icon and `tc_window_symbols.png` for the right-side symbols. Chrome
 assets are drawn at their native pixel size without scaling. The default title text size is 16pt and

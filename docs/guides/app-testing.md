@@ -2,7 +2,7 @@
 
 TigerCli apps can be tested at the same boundary where users run them: the command-line application boundary. You test the app *as an app* — not just individual command handlers in isolation.
 
-Use `ItTiger.TigerCli.Testing.TigerCliAppTestHost` to run a real `TigerCliApp` in a test without touching the real console. The host supplies command-line arguments, queues prompt answers, captures stdout and stderr separately, and returns the app exit code.
+Use [TigerCliAppTestHost](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Testing.TigerCliAppTestHost.html) to run a real [TigerCliApp](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliApp.html) in a test without touching the real console. The host supplies command-line arguments, queues prompt answers, captures stdout and stderr separately, and returns the app exit code.
 
 This is especially useful for TigerCli's main use case: script-safe CLI apps that become semi-interactive when a human needs help, and stay strict when a script or agent runs them.
 
@@ -190,7 +190,7 @@ Provider validation still runs on values supplied non-interactively. If a provid
 
 ## Testing the Command Menu
 
-When an app opts into a command menu with `UseCommandMenu(...)`, the host drives menu navigation with the same `WithSelectIndex(...)` answers used for prompts. The menu only *selects* a command; the chosen command then runs through the normal parse/bind/prompt/execute pipeline.
+When an app opts into a command menu with `UseCommandMenu(...)`, the host drives [CommandMenuMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CommandMenuMode.html) navigation with the same `WithSelectIndex(...)` answers used for prompts. The menu only *selects* a command; the chosen command then runs through the normal parse/bind/prompt/execute pipeline.
 
 ```csharp
 var app = TigerCliApp.CreateBuilder()
@@ -275,7 +275,7 @@ Use these patterns to prove automation-safe behavior: missing governed input fai
 
 ## Testing Cancellation
 
-TigerCli models cancellation as a normal control-flow outcome that maps to `TigerCliExitKind.Cancelled`. The host can drive the prompt-timeout path directly: `WithPromptTimeout(...)` bounds how long a prompt flow waits before it cancels.
+TigerCli models cancellation as a normal control-flow outcome that maps to [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html).Cancelled. The host can drive the prompt-timeout path directly: `WithPromptTimeout(...)` bounds how long a prompt flow waits before it cancels.
 
 ```csharp
 var app = App(builder => builder

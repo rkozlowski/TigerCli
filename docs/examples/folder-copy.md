@@ -79,7 +79,7 @@ The copy itself runs inside a richer activity dialog built with `ActivityDialogS
 
 In semi-interactive mode, TigerCli renders the live dialog and progress bars. Under `--non-interactive`, the same operation runs headlessly: no dialog, no keyboard input, and no prompt, but cancellation and progress validation still use the same activity machinery. The spec's explicit non-interactive message gives scripts a single status line in place of the richer dialog.
 
-A mid-copy frame of the dialog (all three progress bars are `ProgressBarStyle.Dash`) is committed as a drift-checked artifact pair: [`folder-copy.html`](folder-copy.html) also carries the generated help screen, and [`png/folder-copy-activity.png`](png/folder-copy-activity.png) is its PNG companion. Both regenerate with `dotnet run --project internal/DocSamples` and are guarded by the normal artifact drift test.
+A mid-copy frame of the dialog (all three progress bars use [ProgressBarStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ProgressBarStyle.html).Dash) is committed as a drift-checked artifact pair: [`folder-copy.html`](folder-copy.html) also carries the generated help screen, and [`png/folder-copy-activity.png`](png/folder-copy-activity.png) is its PNG companion. Both regenerate with `dotnet run --project internal/DocSamples` and are guarded by the normal artifact drift test.
 
 ## Copy Planner
 

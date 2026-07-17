@@ -80,7 +80,7 @@ Do not hand-render normal list/details output, and do not model edit as "add wit
 - Use attributes and parser-driven prompts for missing arguments/options.
 - Use providers for selectable values.
 - Use `Required = true` for values automation must supply explicitly and humans may be prompted for.
-- Use `Promptable = TigerCliPromptable.Normal` / `First` / `Last` to opt into prompting or control prompt order.
+- Use `Promptable = [TigerCliPromptable](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliPromptable.html).Normal` / `First` / `Last` to opt into prompting or control prompt order.
 - Use `Promptable = TigerCliPromptable.No` only when the value must never be prompted, such as automation-only flags, unsafe values, or secrets that must come from configuration/secure channels.
 - Do not set `TigerCliPromptable.No` just to avoid learning the prompt system.
 - Do not manually prompt inside command handlers for values TigerCli can bind or prompt before the handler runs.
@@ -192,7 +192,7 @@ Rely on TigerCli's prompt/default/provider model for edit scenarios. Command-lin
 
 Provider loading is not an activity dialog. Let provider-backed prompts use TigerCli's built-in loading spinner/message.
 
-TigerCli activity APIs are mode-aware. Do not write separate "direct" and "activity" execution paths just to support `--non-interactive`. Use one `RunActivityAsync` path and let TigerCli render it interactively or run it headlessly.
+TigerCli activity APIs are [TigerCliInteractionMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliInteractionMode.html)-aware. Do not write separate "direct" and "activity" execution paths just to support `--non-interactive`. Use one `RunActivityAsync` path and let TigerCli render it interactively or run it headlessly.
 
 Bad pattern:
 
@@ -241,8 +241,8 @@ await TigerTui.ErrorAsync("Connection failed. Check your credentials.");
 ```
 
 - Do not hand-roll warning/error message boxes with custom colors or local dialog code.
-- Do not pass `MessageBoxKind.Warning`/`MessageBoxKind.Error` directly when the convenience method is cleaner.
-- Use `MessageBoxButtons` to control the button set; the default is a single `[ OK ]` button.
+- Do not pass `[MessageBoxKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.MessageBoxKind.html).Warning`/`Error` directly when the convenience method is cleaner.
+- Use [MessageBoxButtons](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.MessageBoxButtons.html) to control the button set; the default is a single `[ OK ]` button.
 - The dialog surface is theme-driven. Do not override colors locally.
 
 ## Output Rules
@@ -251,7 +251,7 @@ await TigerTui.ErrorAsync("Connection failed. Check your credentials.");
 - Use `settings.T(...)`, `settings.F(...)`, and `settings.E(...)` as settings localization helpers for command output.
 - Use `settings.E(...)` for localized markup output with dynamic formatted values; it escapes formatted arguments.
 - Use `CliMarkupParser.Escape(...)` for raw markup escaping when no localization lookup is needed.
-- Use semantic markup/styles such as `[Success]`, `[Error]`, `[Muted]`, `[Key]`, `[Value]`, `[Path]`, `[Link]`, and `ThemeStyle` roles instead of raw colors/decorations unless there is a real reason.
+- Use semantic markup/styles such as `[Success]`, `[Error]`, `[Muted]`, `[Key]`, `[Value]`, `[Path]`, `[Link]`, and [ThemeStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ThemeStyle.html) roles instead of raw colors/decorations unless there is a real reason.
 - Use `CliList<T>` for `list`, `CliDetails` for `show`/details, `CliTable` for lower-level tables, and `CliGrid` or a `CliRenderableComponent` only when custom layout is needed.
 - Do not hand-format tables, lists, or details line by line when structured output helpers fit.
 

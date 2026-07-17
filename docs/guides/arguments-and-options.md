@@ -358,7 +358,7 @@ Generated help shows defaults only when TigerCli has a useful value to show:
 
 Both `[TigerCliArgument]` and `[TigerCliOption]` support `Promptable`. Promptability and prompt order are one concept:
 
-- `TigerCliPromptable.No` never prompts.
+- [TigerCliPromptable](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliPromptable.html).No never prompts.
 - `TigerCliPromptable.First` prompts early when prompting applies.
 - `TigerCliPromptable.Normal` uses normal prompt order when prompting applies.
 - `TigerCliPromptable.Last` prompts late when prompting applies.
@@ -377,7 +377,7 @@ public bool DryRun { get; set; }
 
 The effective prompt mode can be configured at the framework default, app, command group, or command level:
 
-- `TigerCliPromptMode.No` does not prompt missing values by default.
+- [TigerCliPromptMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliPromptMode.html).No does not prompt missing values by default.
 - `TigerCliPromptMode.RequiredOnly` prompts missing required values by default. This is the framework default.
 - `TigerCliPromptMode.Yes` may also prompt optional values when TigerCli can produce a prompt.
 

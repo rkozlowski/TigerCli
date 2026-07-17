@@ -526,7 +526,7 @@ An alias may own its own presentation, independent of the target:
 - `SetDescription(...)` — shown in help and the menu; falls back to the target's description.
 - `HideFromHelp()` — omits the alias from generated help (it still resolves and can still appear in
   the menu).
-- `CommandMenu(CommandMenuMode mode)` — the alias's own menu eligibility (see below).
+- `CommandMenu([CommandMenuMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CommandMenuMode.html) mode)` — the alias's own menu eligibility (see below).
 
 Top-level help lists aliases in their own **Aliases** section, each with a muted marker naming the
 target so ownership is never confused:
@@ -680,7 +680,7 @@ public enum ToolExitCode
 }
 ```
 
-Configure framework-owned failures through the builder:
+Configure framework-owned [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html) failures through the builder:
 
 ```csharp
 var app = TigerCliApp.CreateBuilder()
@@ -722,7 +722,7 @@ Do not duplicate the localization rules in command docs. See [localization](loca
 
 ## Interaction Modes And Prompting
 
-TigerCli is script-safe first. Missing required input fails in non-interactive mode and may be prompted only when semi-interactive policy allows it.
+TigerCli is script-safe first. Missing required input fails in non-interactive [TigerCliInteractionMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliInteractionMode.html) and may be prompted only when semi-interactive policy allows it. [TigerCliPromptMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliPromptMode.html) sets the default, while [TigerCliPromptable](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliPromptable.html) controls individual members.
 
 ```csharp
 using ItTiger.TigerCli.Enums;
@@ -764,7 +764,7 @@ Provider keys should be stable command values. Labels are display text and may b
 
 #### Value matching
 
-When a value is supplied non-interactively (or an existing/default value is validated), TigerCli matches it against the provider's choices by key **or** label. The `ValueMatching` preset on `[TigerCliOption]` / `[TigerCliArgument]` controls the comparison, and applies identically to single-select options, provider-backed arguments, and `[TigerCliMultiSelect]` collections:
+When a value is supplied non-interactively (or an existing/default value is validated), TigerCli matches it against the provider's choices by key **or** label. The [TigerCliValueMatchPreset](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliValueMatchPreset.html) `ValueMatching` preset on `[TigerCliOption]` / `[TigerCliArgument]` controls the comparison, and applies identically to single-select options, provider-backed arguments, and `[TigerCliMultiSelect]` collections:
 
 | Preset | Behavior |
 |---|---|

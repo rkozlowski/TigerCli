@@ -4,11 +4,11 @@ TigerCli separates five distinct concepts so terminal styling stays explicit and
 
 | Concept | What it is | Where it is valid | Registered by |
 |---|---|---|---|
-| **Raw color** | a concrete terminal color (`CliColor` enum value) | raw color positions: `[Yellow]`, `[on Blue]`, `[Yellow on Blue]` | built-in (the `CliColor` enum) |
+| **Raw color** | a concrete terminal color ([CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) enum value) | raw color positions: `[Yellow]`, `[on Blue]`, `[Yellow on Blue]` | built-in (the `CliColor` enum) |
 | **Raw color alias** | an app name for a raw color | raw color positions, like any color | the app (`RegisterColorAlias`) |
 | **Framework semantic style** | a theme role (`Accent`, `Panel`, …) resolved through the active theme | single-token semantic tags: `[Accent]` | built-in (curated subset) |
 | **Custom semantic style** | an app-defined theme role | single-token semantic tags: `[ConnectionName]` | the app (`RegisterCustomStyle`) |
-| **Theme** | a full palette mapping `ThemeStyle` roles to colors | selected via `--theme` / `TIGERCLI_THEME` / `CurrentTheme` | framework + app (`AddTheme`) |
+| **Theme** | a full palette mapping [ThemeStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ThemeStyle.html) roles to colors | selected via `--theme` / `TIGERCLI_THEME` / `CurrentTheme` | framework + app (`AddTheme`) |
 
 TigerCli core ships **no** Spectre/CSS-style color aliases and no automatic compatibility mode. Referencing a library never changes your app's styling — every alias, style, and theme is registered explicitly, app-by-app.
 
@@ -66,7 +66,7 @@ The curated framework semantic tokens resolve through the active theme. The toke
 
 ### Clickable links (OSC 8)
 
-A text run with a resolved hyperlink target — from `[Link]…[/]` markup, or from a structured `CliDetails.AddLink` / `CliList.AddLinkColumn` value — can be emitted as a clickable [OSC 8 hyperlink](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda) by `AnsiSink`. This is governed by `TigerConsole.HyperlinkMode` (`CliHyperlinkMode`):
+A text run with a resolved hyperlink target — from `[Link]…[/]` markup, or from a structured `CliDetails.AddLink` / `CliList.AddLinkColumn` value — can be emitted as a clickable [OSC 8 hyperlink](https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda) by `AnsiSink`. This is governed by `TigerConsole.HyperlinkMode` ([CliHyperlinkMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliHyperlinkMode.html)):
 
 | Mode | Behavior |
 |---|---|
@@ -158,7 +158,7 @@ themes.RegisterColorAlias("CompanyBlue", CliColor.Blue1);
 
 ## Custom semantic styles
 
-A custom style is an app-defined theme role. It always has a required framework `ThemeStyle` base fallback, plus optional dark/light family overrides and optional exact theme-name overrides.
+A custom style is an app-defined theme role. It always has a required framework `ThemeStyle` base fallback, plus optional dark/light [TigerThemeFamily](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerThemeFamily.html) overrides and optional exact theme-name overrides.
 
 ```csharp
 RegisterCustomStyle(string name, ThemeStyle baseStyle,
@@ -206,7 +206,7 @@ themes.RegisterCustomStyleForTheme("ConnectionName", "tiger-blue",
 | any light-family theme | light override → DarkBlue |
 | theme with no matching override | falls back to that theme's `Accent` |
 
-Custom styles may carry decorations:
+Custom styles may carry [CliTextDecoration](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextDecoration.html) flags:
 
 ```csharp
 themes.RegisterCustomStyle("DangerZone", ThemeStyle.Error,

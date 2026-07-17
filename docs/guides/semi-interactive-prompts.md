@@ -25,7 +25,7 @@ For command input such as missing `--connection` or `<project>`, use [prompting 
 
 ## Interaction Mode Safety
 
-Semi-interactive prompts must respect interaction mode.
+Semi-interactive prompts must respect [TigerCliInteractionMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliInteractionMode.html).
 
 Framework-owned parser prompting already handles `--non-interactive`. If the user passes `--non-interactive`, parser prompts do not run and prompt providers are not called.
 
@@ -269,7 +269,7 @@ For the design rationale and lower-level control model, see [semi-interactive TU
 title: the frame strings it cycles are **raw content**, and whatever renders them (an overlay, the
 terminal title) decides their presentation. Controls never re-declare frame lists.
 
-Frames come either from a predefined `SpinnerFrameSet` or from a custom sequence:
+Frames come either from a predefined [SpinnerFrameSet](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.SpinnerFrameSet.html) or from a custom sequence:
 
 ```csharp
 // Predefined frame set (default interval).
@@ -384,8 +384,8 @@ the raw frame.
 
 ### Progress-bar styles
 
-A progress bar in an `ActivityDialogSpec` can use a predefined glyph style via the optional `style`
-parameter on `ProgressBar(...)`, and optional end caps via the separate `caps` parameter. The defaults
+A progress bar in an `ActivityDialogSpec` can use a predefined [ProgressBarStyle](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ProgressBarStyle.html) glyph style via the optional `style`
+parameter on `ProgressBar(...)`, and optional end caps via the separate `caps` parameter. Its columns use [CliTextAlignment](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTextAlignment.html) and [CliColumnSizing](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColumnSizing.html) for layout. The defaults
 keep the original `█`/`░` look with no caps, so existing specs are unaffected; the other styles help
 adjacent or stacked bars read more cleanly.
 
@@ -411,7 +411,7 @@ var spec = ActivityDialogSpec.Create()
 
 Caps are an orthogonal decoration that composes with **any** style:
 
-| `ProgressBarCaps` | Effect | Notes |
+| [ProgressBarCaps](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ProgressBarCaps.html) | Effect | Notes |
 |---|---|---|
 | `None` | no caps; bar fills the full width | the implicit default |
 | `Brackets` | `[` … `]` around the bar | end caps reserve the outer cells; dropped if the strip is too short to hold them plus ≥1 interior cell |
@@ -427,7 +427,7 @@ style and caps. The default `Single` is the uniform bar above; the multi-colour 
 every cell** (the chosen family's solid glyph) and distinguish the parts by colour, drawn from semantic
 theme styles so each theme paints them appropriately:
 
-| `ProgressBarColorMode` | Colours | Theme styles used |
+| [ProgressBarColorMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ProgressBarColorMode.html) | Colours | Theme styles used |
 |---|---|---|
 | `Single` | one uniform colour (distinct filled/track glyphs) | the column style (or `Accent`) |
 | `TwoColor` | done / not-done | `ProgressBarDone`, `ProgressBarRemaining` |
@@ -454,7 +454,7 @@ merely fills the last cell.
 ### Stopping an activity (cooperative cancellation)
 
 An activity dialog exposes exactly **one** stop action — never Cancel and Abort together. Choose it with
-`ActivityStopMode`:
+[ActivityStopMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.ActivityStopMode.html):
 
 ```csharp
 // Cancel (the default): "Cancel" button, "Cancel this operation?" prompt, "Cancelling…" state.
@@ -576,7 +576,7 @@ var dialog = new InlineDialog(shell, "Custom", new MyControl(shell, "Press Enter
 DialogResult dr = await TigerTui.RunDialogAsync(dialog);
 ```
 
-Both helpers honour the same `timeout` and `ct` parameters and the same `DialogResultKind` outcomes
+Both helpers honour the same `timeout` and `ct` parameters and the same [DialogResultKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.DialogResultKind.html) outcomes
 (`Ok` / `Cancel` / `Timeout` / `TokenCancel` / `SystemCancel`) as the built-in prompts — the built-ins are
 themselves thin adapters over this composition. For the control/widget contract and the layout model, see
 [semi-interactive TUI design](../design/semi-interactive-tui.md); for direct grid layout, see
