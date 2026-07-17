@@ -160,155 +160,21 @@ Because tables resolve through the current/looked-up `ITheme`, all themed output
 
 ### Built-in style presets
 
-The ten city presets below are the predefined recipes. Every image is generated from the same
-service data through the real `CliTable` rendering pipeline, making frame, spacing, orientation,
-surface, and theme differences easy to compare.
+Each predefined city recipe has a dedicated visual-reference page. The pages use the same service
+data and real `CliTable` rendering pipeline under every supported orientation and built-in theme.
 
-#### Roma
-
-Double outer frame with a single header rule and column separators on the panel surface.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
+| Style | Description | Supported orientation |
 |---|---|---|
-| ![Roma vertical table in TigerBlue](../examples/png/cli-table-style-roma-vertical-tiger-blue.png) | ![Roma vertical table in Dark](../examples/png/cli-table-style-roma-vertical-dark.png) | ![Roma vertical table in Light](../examples/png/cli-table-style-roma-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Roma horizontal table in TigerBlue](../examples/png/cli-table-style-roma-horizontal-tiger-blue.png) | ![Roma horizontal table in Dark](../examples/png/cli-table-style-roma-horizontal-dark.png) | ![Roma horizontal table in Light](../examples/png/cli-table-style-roma-horizontal-light.png) |
-
-#### Milano
-
-Clean single-line boxed grid on the panel surface, with a success title and warning header.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Milano vertical table in TigerBlue](../examples/png/cli-table-style-milano-vertical-tiger-blue.png) | ![Milano vertical table in Dark](../examples/png/cli-table-style-milano-vertical-dark.png) | ![Milano vertical table in Light](../examples/png/cli-table-style-milano-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Milano horizontal table in TigerBlue](../examples/png/cli-table-style-milano-horizontal-tiger-blue.png) | ![Milano horizontal table in Dark](../examples/png/cli-table-style-milano-horizontal-dark.png) | ![Milano horizontal table in Light](../examples/png/cli-table-style-milano-horizontal-light.png) |
-
-#### Napoli
-
-Full single-line grid with separators between records on the default surface.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Napoli vertical table in TigerBlue](../examples/png/cli-table-style-napoli-vertical-tiger-blue.png) | ![Napoli vertical table in Dark](../examples/png/cli-table-style-napoli-vertical-dark.png) | ![Napoli vertical table in Light](../examples/png/cli-table-style-napoli-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Napoli horizontal table in TigerBlue](../examples/png/cli-table-style-napoli-horizontal-tiger-blue.png) | ![Napoli horizontal table in Dark](../examples/png/cli-table-style-napoli-horizontal-dark.png) | ![Napoli horizontal table in Light](../examples/png/cli-table-style-napoli-horizontal-light.png) |
-
-#### Torino
-
-Frameless outer table with a header rule and column separators on the default surface.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Torino vertical table in TigerBlue](../examples/png/cli-table-style-torino-vertical-tiger-blue.png) | ![Torino vertical table in Dark](../examples/png/cli-table-style-torino-vertical-dark.png) | ![Torino vertical table in Light](../examples/png/cli-table-style-torino-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Torino horizontal table in TigerBlue](../examples/png/cli-table-style-torino-horizontal-tiger-blue.png) | ![Torino horizontal table in Dark](../examples/png/cli-table-style-torino-horizontal-dark.png) | ![Torino horizontal table in Light](../examples/png/cli-table-style-torino-horizontal-light.png) |
-
-#### Genova
-
-Tight single-line boxed grid with no cell padding on the panel surface.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Genova vertical table in TigerBlue](../examples/png/cli-table-style-genova-vertical-tiger-blue.png) | ![Genova vertical table in Dark](../examples/png/cli-table-style-genova-vertical-dark.png) | ![Genova vertical table in Light](../examples/png/cli-table-style-genova-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Genova horizontal table in TigerBlue](../examples/png/cli-table-style-genova-horizontal-tiger-blue.png) | ![Genova horizontal table in Dark](../examples/png/cli-table-style-genova-horizontal-dark.png) | ![Genova horizontal table in Light](../examples/png/cli-table-style-genova-horizontal-light.png) |
-
-#### Bologna
-
-Roma-style framing on the default surface, with a double outer frame and success title.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Bologna vertical table in TigerBlue](../examples/png/cli-table-style-bologna-vertical-tiger-blue.png) | ![Bologna vertical table in Dark](../examples/png/cli-table-style-bologna-vertical-dark.png) | ![Bologna vertical table in Light](../examples/png/cli-table-style-bologna-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Bologna horizontal table in TigerBlue](../examples/png/cli-table-style-bologna-horizontal-tiger-blue.png) | ![Bologna horizontal table in Dark](../examples/png/cli-table-style-bologna-horizontal-dark.png) | ![Bologna horizontal table in Light](../examples/png/cli-table-style-bologna-horizontal-light.png) |
-
-#### Palermo
-
-Attention style using the alert surface, with a warning title and frame.
-**Orientation:** both.
-
-**Vertical**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Palermo vertical table in TigerBlue](../examples/png/cli-table-style-palermo-vertical-tiger-blue.png) | ![Palermo vertical table in Dark](../examples/png/cli-table-style-palermo-vertical-dark.png) | ![Palermo vertical table in Light](../examples/png/cli-table-style-palermo-vertical-light.png) |
-
-**Horizontal**
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Palermo horizontal table in TigerBlue](../examples/png/cli-table-style-palermo-horizontal-tiger-blue.png) | ![Palermo horizontal table in Dark](../examples/png/cli-table-style-palermo-horizontal-dark.png) | ![Palermo horizontal table in Light](../examples/png/cli-table-style-palermo-horizontal-light.png) |
-
-#### Parma
-
-Compact frameless list with a single-space column separator.
-**Orientation:** vertical only.
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Parma vertical table in TigerBlue](../examples/png/cli-table-style-parma-vertical-tiger-blue.png) | ![Parma vertical table in Dark](../examples/png/cli-table-style-parma-vertical-dark.png) | ![Parma vertical table in Light](../examples/png/cli-table-style-parma-vertical-light.png) |
-
-#### Verona
-
-Condensed frameless detail view with left-padded values and tight headers.
-**Orientation:** horizontal only.
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Verona horizontal table in TigerBlue](../examples/png/cli-table-style-verona-horizontal-tiger-blue.png) | ![Verona horizontal table in Dark](../examples/png/cli-table-style-verona-horizontal-dark.png) | ![Verona horizontal table in Light](../examples/png/cli-table-style-verona-horizontal-light.png) |
-
-#### Lucca
-
-Milano-based boxed detail view on the panel surface with no between-field separator.
-**Orientation:** horizontal only.
-
-| TigerBlue | Dark | Light |
-|---|---|---|
-| ![Lucca horizontal table in TigerBlue](../examples/png/cli-table-style-lucca-horizontal-tiger-blue.png) | ![Lucca horizontal table in Dark](../examples/png/cli-table-style-lucca-horizontal-dark.png) | ![Lucca horizontal table in Light](../examples/png/cli-table-style-lucca-horizontal-light.png) |
+| [Roma](cli-table-roma.md) | Double outer frame on the panel surface. | Both |
+| [Milano](cli-table-milano.md) | Clean single-line boxed grid on the panel surface. | Both |
+| [Napoli](cli-table-napoli.md) | Full single-line grid with record separators. | Both |
+| [Torino](cli-table-torino.md) | Frameless outer table with header and column rules. | Both |
+| [Genova](cli-table-genova.md) | Tight single-line boxed grid with no padding. | Both |
+| [Bologna](cli-table-bologna.md) | Roma-style framing on the default surface. | Both |
+| [Palermo](cli-table-palermo.md) | Attention styling on the alert surface. | Both |
+| [Parma](cli-table-parma.md) | Compact frameless list. | Vertical only |
+| [Verona](cli-table-verona.md) | Condensed frameless detail view. | Horizontal only |
+| [Lucca](cli-table-lucca.md) | Boxed detail view on the panel surface. | Horizontal only |
 
 To restyle tables for a new theme, override the surface/ink hooks (`Panel`, `AlertSurface`, `*SurfaceAlt`, `TableHeader`, `TableCell`, `TableFrame`, `TableTitle`, `Success`, `Warning`) on your `ThemeBase` subclass. The cleanest way to define a custom theme is to subclass a framework theme and override only what differs — unoverridden roles fall through to the base.
 
