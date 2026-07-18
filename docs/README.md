@@ -82,6 +82,7 @@ Design docs explain why TigerCli works the way it does. They summarize rationale
 
 Contributing docs describe repository workflow, testing strategy, and expectations for humans and agents working on TigerCli itself.
 
+- [Preparing and publishing a release](contributing/releases.md)
 - [Unit testing](contributing/unit-testing.md)
 - [AI agents](contributing/ai-agents.md)
 - [Creating issues](contributing/creating-issues.md)

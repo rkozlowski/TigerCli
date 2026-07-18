@@ -140,7 +140,7 @@ public sealed class FolderCopyAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
-        Assert.Contains("Folder Copy version 0.8.0", result.StdOut);
+        Assert.Contains("Folder Copy version 0.8.1", result.StdOut);
         Assert.Empty(result.StdErr);
     }
 
@@ -153,7 +153,7 @@ public sealed class FolderCopyAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
-        Assert.Contains("Folder Copy product version 0.8.0+", result.StdOut);
+        Assert.Contains("Folder Copy product version 0.8.1+", result.StdOut);
         Assert.Empty(result.StdErr);
     }
 

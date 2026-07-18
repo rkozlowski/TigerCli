@@ -12,11 +12,13 @@
   <PropertyGroup>
     <PackageId>ItTiger.TigerCli</PackageId>
     <Description>An opinionated .NET framework for building script-safe, command-driven CLI/TUI applications. Provides command parsing with metadata-driven help, framework-owned non-interactive and semi-interactive modes, structured terminal output (CliTable, CliGrid, CliList, CliDetails), typed exit codes, and localization support.</Description>
+    <PackageIcon>TigerCli.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\docs\assets\TigerCli.png" Pack="true" PackagePath="\" Link="TigerCli.png" />
   </ItemGroup>
 
   <ItemGroup>

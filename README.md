@@ -1,5 +1,9 @@
 # TigerCli
 
+<p align="center">
+  <img src="docs/assets/TigerCli.png" alt="TigerCli project icon" width="128"/>
+</p>
+
 TigerCli is an opinionated .NET framework for building script-safe, command-driven CLI/TUI applications that share one model across automation, guided human interaction, and AI-assisted development.
 
 It is built for CLI apps that need predictable automation behavior, structured terminal output, governed input, metadata-driven help, typed exit codes, locale-aware text, and tests that run at the application boundary.
@@ -11,13 +15,13 @@ TigerCli is still evolving. The core direction is deliberate, but docs and examp
 Install the main TigerCli package:
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.8.0
+dotnet add package ItTiger.TigerCli --version 0.8.1
 ```
 
 `ItTiger.Core` is also available separately for shared support utilities:
 
 ```bash
-dotnet add package ItTiger.Core --version 0.8.0
+dotnet add package ItTiger.Core --version 0.8.1
 ```
 
 ## What It Looks Like

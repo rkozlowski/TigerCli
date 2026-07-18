@@ -12,11 +12,13 @@
   <PropertyGroup>
     <PackageId>ItTiger.Core</PackageId>
     <Description>Shared foundation library for IT Tiger projects. Provides TigerTextAttribute for attaching display text and localized resource keys to code metadata, and ChainedResourceManager for resolving strings from a prioritized sequence of resource managers.</Description>
+    <PackageIcon>ItTiger-head-128.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\docs\assets\ItTiger-head-128.png" Pack="true" PackagePath="\" Link="ItTiger-head-128.png" />
   </ItemGroup>
 
 </Project>
