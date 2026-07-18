@@ -1,0 +1,282 @@
+name: Publish NuGet packages
+
+run-name: Publish NuGet packages ${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Package version already recorded in Version.props
+        required: true
+        default: "0.8.1"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-packages-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Build, test, pack, and inspect
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Validate requested version
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
+              throw "Invalid release version '$env:RELEASE_VERSION'."
+          }
+
+          [xml]$versionProps = Get-Content -Raw Version.props
+          $configuredVersion = [string]$versionProps.Project.PropertyGroup.Version
+          if ($configuredVersion -ne $env:RELEASE_VERSION) {
+              throw "Workflow input '$env:RELEASE_VERSION' does not match Version.props '$configuredVersion'."
+          }
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Build Release
+        run: dotnet build TigerCli.sln -c Release
+
+      - name: Test Release
+        run: dotnet test TigerCli.sln -c Release --no-build
+
+      - name: Check DocSamples artifacts
+        run: dotnet run --project internal/DocSamples --configuration Release --no-build -- check
+
+      - name: Run DocExamples drift test
+        run: >-
+          dotnet test ItTiger.TigerCli.Tests/ItTiger.TigerCli.Tests.csproj
+          -c Release
+          --no-build
+          --filter "FullyQualifiedName~DocExamplesDriftTests"
+
+      # GitHub-hosted runners provide the normal, unrestricted process environment required by
+      # AGENTS.md. The existing documentation workflow uses the same Ubuntu DocFX path.
+      - name: Build DocFX site
+        run: dotnet docfx docs/api-docfx/docfx.json
+
+      - name: Check generated API map
+        run: dotnet run --project internal/DocSamples --configuration Release --no-build -- api-map check
+
+      - name: Pack ItTiger.Core
+        run: >-
+          dotnet pack ItTiger.Core/ItTiger.Core.csproj
+          -c Release
+          --no-build
+          --no-restore
+          --output artifacts/packages
+
+      - name: Pack ItTiger.TigerCli
+        run: >-
+          dotnet pack ItTiger.TigerCli/ItTiger.TigerCli.csproj
+          -c Release
+          --no-build
+          --no-restore
+          --output artifacts/packages
+
+      - name: Inspect packages
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $packages = @(
+              @{
+                  Id = "ItTiger.Core"
+                  Icon = "ItTiger-head-128.png"
+              },
+              @{
+                  Id = "ItTiger.TigerCli"
+                  Icon = "TigerCli.png"
+              }
+          )
+
+          foreach ($package in $packages) {
+              $id = $package.Id
+              $packagePath = "artifacts/packages/$id.$env:RELEASE_VERSION.nupkg"
+              $symbolsPath = "artifacts/packages/$id.$env:RELEASE_VERSION.snupkg"
+
+              if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
+                  throw "Missing package: $packagePath"
+              }
+              if (-not (Test-Path -LiteralPath $symbolsPath -PathType Leaf)) {
+                  throw "Missing symbol package: $symbolsPath"
+              }
+
+              $archive = [System.IO.Compression.ZipFile]::OpenRead(
+                  (Resolve-Path -LiteralPath $packagePath)
+              )
+              try {
+                  $nuspecEntry = $archive.GetEntry("$id.nuspec")
+                  if ($null -eq $nuspecEntry) {
+                      throw "$packagePath does not contain $id.nuspec."
+                  }
+
+                  $reader = [System.IO.StreamReader]::new($nuspecEntry.Open())
+                  try {
+                      [xml]$nuspec = $reader.ReadToEnd()
+                  }
+                  finally {
+                      $reader.Dispose()
+                  }
+
+                  $metadata = $nuspec.package.metadata
+                  if ([string]$metadata.id -ne $id) {
+                      throw "$packagePath has package ID '$($metadata.id)', expected '$id'."
+                  }
+                  if ([string]$metadata.version -ne $env:RELEASE_VERSION) {
+                      throw "$packagePath has version '$($metadata.version)', expected '$env:RELEASE_VERSION'."
+                  }
+                  if ([string]$metadata.readme -ne "README.md" -or $null -eq $archive.GetEntry("README.md")) {
+                      throw "$packagePath does not contain the configured root README.md."
+                  }
+                  if ([string]$metadata.icon -ne $package.Icon -or $null -eq $archive.GetEntry($package.Icon)) {
+                      throw "$packagePath does not contain the configured root icon '$($package.Icon)'."
+                  }
+
+                  if ($id -eq "ItTiger.TigerCli") {
+                      $coreDependency = @(
+                          $nuspec.SelectNodes("//*[local-name()='dependency']") |
+                              Where-Object { $_.GetAttribute("id") -eq "ItTiger.Core" }
+                      )
+                      if ($coreDependency.Count -ne 1) {
+                          throw "$packagePath must contain exactly one ItTiger.Core dependency."
+                      }
+                      if ($coreDependency[0].GetAttribute("version") -ne $env:RELEASE_VERSION) {
+                          throw "$packagePath depends on ItTiger.Core '$($coreDependency[0].GetAttribute("version"))', expected '$env:RELEASE_VERSION'."
+                      }
+                  }
+              }
+              finally {
+                  $archive.Dispose()
+              }
+
+              Write-Host "Validated $packagePath and $symbolsPath"
+          }
+
+      - name: Upload validated packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: NuGet-packages-${{ inputs.version }}
+          path: |
+            artifacts/packages/ItTiger.Core.${{ inputs.version }}.nupkg
+            artifacts/packages/ItTiger.Core.${{ inputs.version }}.snupkg
+            artifacts/packages/ItTiger.TigerCli.${{ inputs.version }}.nupkg
+            artifacts/packages/ItTiger.TigerCli.${{ inputs.version }}.snupkg
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Approve and publish
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Download validated packages
+        uses: actions/download-artifact@v7
+        with:
+          name: NuGet-packages-${{ inputs.version }}
+          path: artifacts/packages
+
+      - name: Verify NuGet.org Trusted Publishing configuration
+        shell: bash
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::Set the NUGET_USER repository variable to the nuget.org profile username used by the Trusted Publishing policy."
+            exit 1
+          fi
+
+      # Configure a nuget.org Trusted Publishing policy for owner rkozlowski, repository TigerCli,
+      # workflow publish-packages.yml, and environment release before running this job.
+      - name: Get short-lived NuGet.org API key
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish ItTiger.Core to GitHub Packages
+        shell: bash
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          dotnet nuget push "artifacts/packages/ItTiger.Core.${RELEASE_VERSION}.nupkg" \
+            --source https://nuget.pkg.github.com/rkozlowski/index.json \
+            --api-key "$GITHUB_PACKAGES_TOKEN" \
+            --skip-duplicate \
+            --no-symbols
+
+      - name: Publish ItTiger.TigerCli to GitHub Packages
+        shell: bash
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.${RELEASE_VERSION}.nupkg" \
+            --source https://nuget.pkg.github.com/rkozlowski/index.json \
+            --api-key "$GITHUB_PACKAGES_TOKEN" \
+            --skip-duplicate \
+            --no-symbols
+
+      - name: Publish ItTiger.Core to NuGet.org
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          dotnet nuget push "artifacts/packages/ItTiger.Core.${RELEASE_VERSION}.nupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate \
+            --no-symbols
+          dotnet nuget push "artifacts/packages/ItTiger.Core.${RELEASE_VERSION}.snupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate
+
+      - name: Publish ItTiger.TigerCli to NuGet.org
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.${RELEASE_VERSION}.nupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate \
+            --no-symbols
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.${RELEASE_VERSION}.snupkg" \
+            --source https://api.nuget.org/v3/index.json \
+            --api-key "$NUGET_API_KEY" \
+            --skip-duplicate

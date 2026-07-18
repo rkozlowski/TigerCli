@@ -4,10 +4,10 @@ TigerCli publishes `ItTiger.Core` and `ItTiger.TigerCli` as NuGet packages. Both
 shared version and repository metadata in `Version.props`; package-specific descriptions, readmes,
 and embedded icons remain in their project files.
 
-For 0.8.1, GitHub Packages is the primary distribution channel. Build, inspect, and smoke-test the
-packages locally, then publish those exact `.nupkg` files to GitHub Packages. Do not rebuild between
-publishing `ItTiger.Core` and `ItTiger.TigerCli` unless a failed validation requires a new release
-candidate.
+For 0.8.1, the manual **Publish NuGet packages** GitHub Actions workflow is the primary publishing
+path. It builds, validates, and packs once, pauses at the protected `release` environment, then
+publishes the exact validated package files to GitHub Packages first and NuGet.org second. It does
+not run on ordinary pushes.
 
 ## Prepare And Validate
 
@@ -114,89 +114,88 @@ Pop-Location
 Both restore commands, both asset checks, and the TigerCli smoke build must succeed. The temporary
 directory may be removed after review.
 
-## Publish 0.8.1 To GitHub Packages
+## Configure The Publishing Workflow
 
-GitHub Packages is the preferred manual publishing path for 0.8.1. Its NuGet source is:
+The workflow is `.github/workflows/publish-packages.yml`. It has only a `workflow_dispatch` trigger
+and one input:
+
+- `version`: required package version, default `0.8.1`. It must match `Version.props`.
+
+Create a GitHub environment named `release`. Configure required reviewers and deployment branch/tag
+restrictions appropriate for the repository. The workflow's validation job does not publish. After
+it uploads the inspected package artifact, the publish job waits for the `release` environment's
+approval.
+
+Set the repository Actions variable `NUGET_USER` to the nuget.org **profile username** used for
+Trusted Publishing, not an email address. This is not an API key or secret.
+
+### NuGet.org Trusted Publishing Policy
+
+In the nuget.org account or organization that owns both packages, open **Trusted Publishing** and
+add a GitHub Actions policy with:
+
+- Repository owner: `rkozlowski`
+- Repository: `TigerCli`
+- Workflow file: `publish-packages.yml` (filename only, without `.github/workflows/`)
+- Environment: `release`
+
+The policy owner must own `ItTiger.Core` and `ItTiger.TigerCli`, and its profile username must match
+the `NUGET_USER` repository variable. NuGet.org may initially make a policy temporarily active while
+it learns immutable GitHub repository IDs; complete the first approved publication within the
+window shown by nuget.org.
+
+The workflow grants the publish job `id-token: write` and uses the official `NuGet/login@v1` action
+to exchange GitHub's OIDC token for a short-lived NuGet API key. No NuGet.org API-key secret is
+created or stored. See the official
+[Trusted Publishing documentation](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing).
+
+### GitHub Packages Access
+
+The publish job grants `packages: write` and uses its built-in `GITHUB_TOKEN`; no PAT is stored. The
+target source is:
 
 ```text
 https://nuget.pkg.github.com/rkozlowski/index.json
 ```
 
-For a local publication, authenticate with a GitHub personal access token (classic) that has
-`write:packages` permission and belongs to an account allowed to publish to the `rkozlowski`
-namespace. GitHub Actions can instead use `GITHUB_TOKEN` with `packages: write`. See GitHub's
-[NuGet registry authentication documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry).
+Ensure repository Actions settings allow workflows read/write package access. The repository URL in
+the package metadata connects both packages to this repository. The first GitHub Packages
+publication is private by default; review package visibility and inherited repository access after
+publishing. See GitHub's
+[NuGet registry documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry).
 
-Keep the token outside the repository and supply it through a protected environment variable or
-secret store. Do not put it in `NuGet.Config`, command text, shell history, captured terminal output,
-or logs. The commands below deliberately reference an environment variable rather than showing a
-token value:
+## Run And Publish
 
-```powershell
-dotnet nuget push ItTiger.Core/bin/Release/ItTiger.Core.0.8.1.nupkg `
-  --source https://nuget.pkg.github.com/rkozlowski/index.json `
-  --api-key $env:GITHUB_PACKAGES_TOKEN `
-  --skip-duplicate `
-  --no-symbols
+From the repository's **Actions** tab, select **Publish NuGet packages**, choose **Run workflow**,
+confirm the branch containing the reviewed release metadata, and enter the version. The workflow:
 
-dotnet nuget push ItTiger.TigerCli/bin/Release/ItTiger.TigerCli.0.8.1.nupkg `
-  --source https://nuget.pkg.github.com/rkozlowski/index.json `
-  --api-key $env:GITHUB_PACKAGES_TOKEN `
-  --skip-duplicate `
-  --no-symbols
-```
+1. verifies the input against `Version.props`;
+2. builds and tests Release;
+3. checks DocSamples, `DocExamplesDriftTests`, DocFX, and the generated API map;
+4. packs Core and TigerCli once;
+5. inspects versions, READMEs, icons, symbols, and TigerCli's matching Core dependency;
+6. uploads all four files as the immutable reviewed workflow artifact;
+7. waits for `release` environment approval;
+8. obtains a short-lived NuGet.org credential through OIDC;
+9. publishes `ItTiger.Core`, then `ItTiger.TigerCli`, to GitHub Packages using `GITHUB_TOKEN`,
+   `--skip-duplicate`, and `--no-symbols`; and
+10. publishes Core and its `.snupkg`, then TigerCli and its `.snupkg`, to NuGet.org using the
+    short-lived key and `--skip-duplicate`.
 
-Publish and verify `ItTiger.Core` first because `ItTiger.TigerCli` depends on Core 0.8.1. Publish
-TigerCli only after the Core package is visible and restorable. Use the same inspected `.nupkg`
-files for both pushes.
+GitHub Packages receives only `.nupkg` files because its NuGet documentation does not document
+compatible `.snupkg` symbol-server support. NuGet.org receives the supported `.snupkg` files
+explicitly after each matching `.nupkg`.
 
-GitHub's NuGet registry documentation does not document `.snupkg` symbol-server support. For 0.8.1,
-use `--no-symbols`, do not push the `.snupkg` files to the GitHub package endpoint, and retain them
-with the reviewed release artifacts. Revisit this instruction only after GitHub documents compatible
-NuGet symbol-package support.
+If any publish step fails after an earlier destination succeeded, inspect the registries before
+rerunning. `--skip-duplicate` makes an approved retry safe for package versions already present, but
+it does not replace verification.
 
-## Optional NuGet.org Distribution
+## Emergency Local Publishing
 
-NuGet.org is a separate, optional future distribution channel, not the default publishing path for
-0.8.1. Do not perform a local NuGet.org API-key push as part of the normal 0.8.1 release unless the
-human release owner explicitly approves that additional publication.
+Do not use local tokens or long-lived NuGet.org API keys for the normal release path. If GitHub
+Actions or Trusted Publishing is unavailable during an explicitly approved emergency, treat local
+publication as a separate security-reviewed procedure: use a least-privilege, short-lived credential,
+keep it out of the repository, shell history, and logs, publish the already validated artifacts in
+Core-then-TigerCli order, and revoke it immediately. Do not silently fall back from the workflow.
 
-If NuGet.org publication is approved later, use the same validated package files and keep the API key
-outside the repository:
-
-```powershell
-dotnet nuget push ItTiger.Core/bin/Release/ItTiger.Core.0.8.1.nupkg `
-  --source https://api.nuget.org/v3/index.json `
-  --api-key $env:NUGET_API_KEY `
-  --skip-duplicate
-
-dotnet nuget push ItTiger.TigerCli/bin/Release/ItTiger.TigerCli.0.8.1.nupkg `
-  --source https://api.nuget.org/v3/index.json `
-  --api-key $env:NUGET_API_KEY `
-  --skip-duplicate
-```
-
-NuGet.org supports `.snupkg` publication and normally publishes an adjacent symbol package when its
-matching `.nupkg` is pushed. Confirm the push output. If symbols were not published automatically,
-push the two `.snupkg` files explicitly, Core first, using the same source, API-key environment
-variable, and `--skip-duplicate`. See NuGet's
-[symbol-package documentation](https://learn.microsoft.com/nuget/create-packages/symbol-packages-snupkg).
-
-## Recommended Automation Follow-Up
-
-Add package automation as a separate, reviewed change after the first manual GitHub Packages
-publication establishes the desired ownership and visibility. Prefer a `workflow_dispatch` workflow
-that:
-
-1. requires an explicit version input and a protected release environment with approval when
-   configured;
-2. grants only `contents: read` and `packages: write`;
-3. restores, builds, tests, packs, inspects, and smoke-tests the requested version;
-4. uploads `.nupkg` and `.snupkg` files as reviewable workflow artifacts;
-5. publishes only from a separately approved job;
-6. publishes `ItTiger.Core` before `ItTiger.TigerCli`;
-7. publishes to GitHub Packages first with `GITHUB_TOKEN`; and
-8. treats any later NuGet.org publication as a separate reviewed step using a protected
-   repository/environment secret.
-
-Do not trigger package publication on ordinary pushes.
+Never add a package publication trigger for ordinary pushes.
