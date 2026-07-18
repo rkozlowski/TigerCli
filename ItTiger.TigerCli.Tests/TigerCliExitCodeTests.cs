@@ -292,6 +292,25 @@ public sealed class TigerCliExitCodeTests
     }
 
     [Fact]
+    public async Task RootHelp_PortableCommandUsesConsumerExitEnum()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .AddCommand<PortableNotFoundCommand>("find")
+            .UseExitCodes(ConsumerExitCode.Ok, ConsumerExitCode.Failed)
+            .ExitKind(TigerCliExitKind.NotFound, ConsumerExitCode.NotFound)
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["--help-errors"]);
+
+        Assert.Equal((int)ConsumerExitCode.Ok, result.ExitCode);
+        Assert.Contains("Consumer application exit codes", result.Stdout);
+        Assert.Contains("51", result.Stdout);
+        Assert.Contains("NotFound", result.Stdout);
+        Assert.DoesNotContain("TigerCli command outcomes", result.Stdout);
+    }
+
+    [Fact]
     public async Task TigerCliExitKindExitHelp_IncludesPortableApplicationOutcomes()
     {
         var app = TigerCliApp.CreateBuilder()
@@ -347,6 +366,24 @@ public sealed class TigerCliExitCodeTests
         Assert.Contains("CommandFailed", result.Stdout);
         Assert.DoesNotContain("Tool response codes", result.Stdout);
         Assert.DoesNotContain("InvalidArguments", result.Stdout);
+    }
+
+    [Fact]
+    public async Task CommandSpecificEnumHelp_OverridesDirectTigerCliExitKindAppEnum()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .UseTigerCliExitKindExitCodes()
+            .AddCommand<CommandSpecificEnumCommand>("run")
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["run", "--help-errors"]);
+
+        Assert.Equal((int)TigerCliExitKind.HelpShown, result.ExitCode);
+        Assert.Contains("Command response codes", result.Stdout);
+        Assert.Contains("CommandFailed", result.Stdout);
+        Assert.DoesNotContain("TigerCli command outcomes", result.Stdout);
+        Assert.DoesNotContain("NotFound", result.Stdout);
     }
 
     [Fact]

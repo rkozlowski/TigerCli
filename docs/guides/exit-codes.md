@@ -248,9 +248,13 @@ public sealed class BuildCommand
 }
 ```
 
-For command-level `--help-errors`, a named command's handler enum takes precedence over the app-wide enum. If the command uses raw `int` or has no specific enum, TigerCli falls back to the app-wide enum configured through `UseExitCodes<TExitCode>(...)`.
+For command-level `--help-errors`, a named command's app-specific handler enum takes precedence over
+the app-wide enum. `TigerCliExitKind` is the exception because it is a portable outcome rather than
+a separate process-code contract; help continues to show the consuming app's configured enum. Raw
+`int` commands also fall back to the app-wide enum configured through `UseExitCodes<TExitCode>(...)`.
 
-TigerCli does not merge command-specific and global enum docs. If a command-specific enum exists, it owns that command's exit-code help.
+TigerCli does not merge command-specific and global enum docs. A non-`TigerCliExitKind`
+command-specific enum owns that command's exit-code help.
 
 ## Generated --help-errors
 

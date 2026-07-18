@@ -4642,10 +4642,12 @@ public sealed class TigerCliApp
 
     private Type? ResolveExitCodeHelpType(TigerCliCommandRegistration? command)
     {
-        if (command?.Name != null
-            && command.ExitCodeType != null
-            && command.ExitCodeType != typeof(TigerCliExitKind))
-            return command.ExitCodeType;
+        // A non-TigerCliExitKind enum returned by a named command owns that command's scoped help.
+        // TigerCliExitKind is different: it is a portable semantic outcome whose final/user-facing
+        // codes belong to the consuming app policy. Root help also always describes that app policy.
+        var commandExitCodeType = command?.Name != null ? command.ExitCodeType : null;
+        if (commandExitCodeType != null && commandExitCodeType != typeof(TigerCliExitKind))
+            return commandExitCodeType;
 
         return _exitCodePolicy.DocumentedExitCodeType;
     }
