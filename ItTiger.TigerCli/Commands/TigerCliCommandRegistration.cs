@@ -11,6 +11,7 @@ internal sealed class TigerCliCommandRegistration
     public Type HandlerType { get; }
     public Type SettingsType { get; }
     public Type? ExitCodeType { get; }
+    public bool ResolveHandlerResultAsExitKind { get; }
     public TigerCliPromptMode? PromptMode { get; }
     public TigerCliPromptMode? GroupPromptMode { get; internal set; }
     public IReadOnlyList<ITigerCliValueProvider> Providers { get; }
@@ -74,7 +75,8 @@ internal sealed class TigerCliCommandRegistration
         string? titleSet = null,
         CommandMenuMode commandMenuMode = CommandMenuMode.Inherit,
         CommandMenuMode? groupCommandMenuMode = null,
-        bool isCommandMenu = false)
+        bool isCommandMenu = false,
+        bool resolveHandlerResultAsExitKind = false)
     {
         if (!string.IsNullOrWhiteSpace(titleAppend) && !string.IsNullOrWhiteSpace(titleSet))
             throw new InvalidOperationException("A command cannot configure both TitleAppend and TitleSet.");
@@ -98,6 +100,7 @@ internal sealed class TigerCliCommandRegistration
         CommandMenuMode = commandMenuMode;
         GroupCommandMenuMode = groupCommandMenuMode;
         IsCommandMenu = isCommandMenu;
+        ResolveHandlerResultAsExitKind = resolveHandlerResultAsExitKind;
         (SettingsType, ExitCodeType) = ResolveHandlerTypes(handlerType);
     }
 

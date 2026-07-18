@@ -14,7 +14,7 @@ For public examples, start with [Getting Started / ROI Cities](getting-started.m
 
 ## Core Rules
 
-- Use async command handlers only.
+- Use async command handler classes for normal TigerCli applications.
 - Keep `Program.cs` thin and build the [TigerCliApp](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliApp.html) through a reusable app factory.
 - Derive settings classes from [TigerCliSettings](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliSettings.html).
 - Declare inputs with [TigerCliArgumentAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliArgumentAttribute.html) and [TigerCliOptionAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliOptionAttribute.html).
@@ -53,6 +53,10 @@ return await MyApp.Create().RunAsync(args);
 - Do not register flattened paths such as `AddCommand("connections edit", ...)`.
 - Use generated help instead of custom help commands.
 - Use `UseCommandMenu(...)` only when the app needs an opt-in command picker; the selected command still runs through parse, bind, prompt, validate, execute.
+- Delegate commands (`AddDefaultCommand(...)` and non-generic `AddCommand(...)`) are only for tiny
+  utilities, demos, smoke tests, and simple automation. Do not use them when typed settings,
+  arguments/options, prompts, providers, validation, selectors, command groups, localization, or
+  reusable command behavior are needed.
 
 ```csharp
 builder.AddCommandGroup("connections", group => group

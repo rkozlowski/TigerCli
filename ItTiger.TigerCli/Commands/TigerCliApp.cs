@@ -97,6 +97,8 @@ public sealed class TigerCliApp
         List<TigerCliCommandGroupRegistration> commandGroups,
         Type? defaultHandlerType,
         Func<object>? defaultFactory,
+        string? defaultDescription,
+        bool defaultResolveHandlerResultAsExitKind,
         TigerCliExitCodePolicy exitCodePolicy,
         TigerCliInteractionMode interactionMode,
         Dictionary<Type, TigerCliInteractionMode> commandInteractionModes,
@@ -166,7 +168,12 @@ public sealed class TigerCliApp
         }
 
         _defaultCommand = defaultHandlerType != null
-            ? new TigerCliCommandRegistration(null, null, defaultHandlerType, factory: defaultFactory)
+            ? new TigerCliCommandRegistration(
+                null,
+                defaultDescription,
+                defaultHandlerType,
+                factory: defaultFactory,
+                resolveHandlerResultAsExitKind: defaultResolveHandlerResultAsExitKind)
             : commandMenuDefault;
 
         if (defaultHandlerType != null)
@@ -4232,7 +4239,7 @@ public sealed class TigerCliApp
 
     // ── Execution ───────────────────────────────────────────────────
 
-    private static async Task<int> ExecuteHandler(TigerCliCommandRegistration command, TigerCliSettings settings)
+    private async Task<int> ExecuteHandler(TigerCliCommandRegistration command, TigerCliSettings settings)
     {
         var handler = command.Factory != null
             ? command.Factory()
@@ -4265,7 +4272,11 @@ public sealed class TigerCliApp
         var resultProperty = task.GetType().GetProperty("Result");
         var result = resultProperty?.GetValue(task);
         if (result is int exitCode)
-            return exitCode;
+        {
+            return command.ResolveHandlerResultAsExitKind
+                ? _exitCodePolicy.Resolve((TigerCliExitKind)exitCode)
+                : exitCode;
+        }
 
         if (result is Enum enumExitCode)
             return Convert.ToInt32(enumExitCode);
@@ -4318,7 +4329,13 @@ public sealed class TigerCliApp
         {
             // Root help. Title and Usage render as structured CliGrid blocks; the markup content
             // (and section ordering) is unchanged apart from the semantic Key/Value styling.
-            var appDescription = TigerCliAppText.Resolve(_description, _descriptionResourceKey, culture, _appResources);
+            var appDescription =
+                TigerCliAppText.Resolve(_description, _descriptionResourceKey, culture, _appResources)
+                ?? TigerCliAppText.Resolve(
+                    _defaultCommand?.Description,
+                    _defaultCommand?.DescriptionResourceKey,
+                    culture,
+                    _appResources);
             TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName}[/]", appDescription);
             TigerConsole.MarkupLine("");
 

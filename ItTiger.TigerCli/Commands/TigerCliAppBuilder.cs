@@ -42,6 +42,8 @@ public sealed class TigerCliAppBuilder
     private readonly List<TigerCliCommandAliasRegistration> _aliases = new();
     private Type? _defaultHandlerType;
     private Func<object>? _defaultFactory;
+    private string? _defaultDescription;
+    private bool _defaultResolveHandlerResultAsExitKind;
     private TigerCliExitCodePolicy _exitCodePolicy = new();
     private TigerCliInteractionMode _interactionMode = TigerCliInteractionMode.SemiInteractive;
     private TigerCliPromptMode? _promptMode;
@@ -387,6 +389,8 @@ public sealed class TigerCliAppBuilder
     {
         _defaultHandlerType = typeof(THandler);
         _defaultFactory = null;
+        _defaultDescription = null;
+        _defaultResolveHandlerResultAsExitKind = false;
         return this;
     }
 
@@ -401,6 +405,370 @@ public sealed class TigerCliAppBuilder
         ArgumentNullException.ThrowIfNull(factory);
         _defaultHandlerType = typeof(THandler);
         _defaultFactory = () => factory();
+        _defaultDescription = null;
+        _defaultResolveHandlerResultAsExitKind = false;
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a parameterless delegate as the default command. Delegate commands are intended
+    /// for tiny utilities, demos, smoke apps, and simple automation; use command handler and
+    /// settings classes when the command needs binding, prompting, providers, or reusable behavior.
+    /// A normally completed action resolves through the app's success exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(Action handler, string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            _ =>
+            {
+                handler();
+                return Task.FromResult((int)TigerCliExitKind.Success);
+            },
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers a settings-aware action as the default delegate command. The action receives the
+    /// framework-created <see cref="TigerCliSettings"/> instance and successful completion resolves
+    /// through the app's success exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Action<TigerCliSettings> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            settings =>
+            {
+                handler(settings);
+                return Task.FromResult((int)TigerCliExitKind.Success);
+            },
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers a raw-integer-returning delegate as the default command. The returned integer is
+    /// used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(Func<int> handler, string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            _ => Task.FromResult(handler()),
+            description,
+            resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers a settings-aware raw-integer-returning delegate as the default command. The
+    /// returned integer is used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<TigerCliSettings, int> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            settings => Task.FromResult(handler(settings)),
+            description,
+            resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers an exit-kind-returning delegate as the default command. The returned
+    /// <see cref="TigerCliExitKind"/> is resolved through the app's exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<TigerCliExitKind> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            _ => Task.FromResult((int)handler()),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers a settings-aware exit-kind-returning delegate as the default command. The returned
+    /// <see cref="TigerCliExitKind"/> is resolved through the app's exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<TigerCliSettings, TigerCliExitKind> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            settings => Task.FromResult((int)handler(settings)),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous raw-integer-returning delegate as the default command. The
+    /// returned integer is used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<Task<int>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            _ => handler(),
+            description,
+            resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous, settings-aware raw-integer-returning delegate as the default
+    /// command. The returned integer is used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<TigerCliSettings, Task<int>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(handler, description, resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous exit-kind-returning delegate as the default command. The returned
+    /// <see cref="TigerCliExitKind"/> is resolved through the app's exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<Task<TigerCliExitKind>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            async _ => (int)await handler().ConfigureAwait(false),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous, settings-aware exit-kind-returning delegate as the default
+    /// command. The returned <see cref="TigerCliExitKind"/> is resolved through the app's
+    /// exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddDefaultCommand(
+        Func<TigerCliSettings, Task<TigerCliExitKind>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddDefaultDelegate(
+            async settings => (int)await handler(settings).ConfigureAwait(false),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    private TigerCliAppBuilder AddDefaultDelegate(
+        Func<TigerCliSettings, Task<int>> handler,
+        string? description,
+        bool resolveHandlerResultAsExitKind)
+    {
+        _defaultHandlerType = typeof(DefaultDelegateCommandHandler);
+        _defaultFactory = () => new DefaultDelegateCommandHandler(handler);
+        _defaultDescription = description;
+        _defaultResolveHandlerResultAsExitKind = resolveHandlerResultAsExitKind;
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a parameterless delegate as a flat named command. Delegate commands are intended
+    /// for tiny utilities, demos, smoke apps, and simple automation; use command handler and
+    /// settings classes when the command needs binding, prompting, providers, or reusable behavior.
+    /// A normally completed action resolves through the app's success exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Action handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            _ =>
+            {
+                handler();
+                return Task.FromResult((int)TigerCliExitKind.Success);
+            },
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers a settings-aware action as a flat named delegate command. The action receives the
+    /// framework-created <see cref="TigerCliSettings"/> instance and successful completion resolves
+    /// through the app's success exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Action<TigerCliSettings> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            settings =>
+            {
+                handler(settings);
+                return Task.FromResult((int)TigerCliExitKind.Success);
+            },
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers a raw-integer-returning delegate as a flat named command. The returned integer is
+    /// used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<int> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            _ => Task.FromResult(handler()),
+            description,
+            resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers a settings-aware raw-integer-returning delegate as a flat named command. The
+    /// returned integer is used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<TigerCliSettings, int> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            settings => Task.FromResult(handler(settings)),
+            description,
+            resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers an exit-kind-returning delegate as a flat named command. The returned
+    /// <see cref="TigerCliExitKind"/> is resolved through the app's exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<TigerCliExitKind> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            _ => Task.FromResult((int)handler()),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers a settings-aware exit-kind-returning delegate as a flat named command. The
+    /// returned <see cref="TigerCliExitKind"/> is resolved through the app's exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<TigerCliSettings, TigerCliExitKind> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            settings => Task.FromResult((int)handler(settings)),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous raw-integer-returning delegate as a flat named command. The
+    /// returned integer is used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<Task<int>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            _ => handler(),
+            description,
+            resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous, settings-aware raw-integer-returning delegate as a flat named
+    /// command. The returned integer is used as the process exit code without exit-policy remapping.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<TigerCliSettings, Task<int>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(name, handler, description, resolveHandlerResultAsExitKind: false);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous exit-kind-returning delegate as a flat named command. The returned
+    /// <see cref="TigerCliExitKind"/> is resolved through the app's exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<Task<TigerCliExitKind>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            async _ => (int)await handler().ConfigureAwait(false),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    /// <summary>
+    /// Registers an asynchronous, settings-aware exit-kind-returning delegate as a flat named
+    /// command. The returned <see cref="TigerCliExitKind"/> is resolved through the app's
+    /// exit-code policy.
+    /// </summary>
+    public TigerCliAppBuilder AddCommand(
+        string name,
+        Func<TigerCliSettings, Task<TigerCliExitKind>> handler,
+        string? description = null)
+    {
+        ArgumentNullException.ThrowIfNull(handler);
+        return AddNamedDelegate(
+            name,
+            async settings => (int)await handler(settings).ConfigureAwait(false),
+            description,
+            resolveHandlerResultAsExitKind: true);
+    }
+
+    private TigerCliAppBuilder AddNamedDelegate(
+        string name,
+        Func<TigerCliSettings, Task<int>> handler,
+        string? description,
+        bool resolveHandlerResultAsExitKind)
+    {
+        AddNamedCommand(
+            typeof(NamedDelegateCommandHandler),
+            name,
+            configure: null,
+            description,
+            descriptionResourceKey: null,
+            () => new NamedDelegateCommandHandler(handler),
+            resolveHandlerResultAsExitKind);
         return this;
     }
 
@@ -468,7 +836,8 @@ public sealed class TigerCliAppBuilder
         Action<TigerCliCommandBuilder>? configure,
         string? description,
         string? descriptionResourceKey,
-        Func<object>? factory)
+        Func<object>? factory,
+        bool resolveHandlerResultAsExitKind = false)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Command name must not be empty.", nameof(name));
@@ -493,7 +862,8 @@ public sealed class TigerCliAppBuilder
             editLoader: commandBuilder.EditLoader,
             titleAppend: commandBuilder.TitleAppend,
             titleSet: commandBuilder.TitleSet,
-            commandMenuMode: commandBuilder.CommandMenuMode));
+            commandMenuMode: commandBuilder.CommandMenuMode,
+            resolveHandlerResultAsExitKind: resolveHandlerResultAsExitKind));
     }
 
     /// <summary>
@@ -926,6 +1296,8 @@ public sealed class TigerCliAppBuilder
             _commandGroups,
             _defaultHandlerType,
             _defaultFactory,
+            _defaultDescription,
+            _defaultResolveHandlerResultAsExitKind,
             _exitCodePolicy,
             _interactionMode,
             _commandInteractionModes,

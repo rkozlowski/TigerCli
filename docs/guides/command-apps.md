@@ -283,6 +283,29 @@ greet --help
 
 For a public default-command operation sample, see [Folder Copy](../examples/folder-copy.md). For the primary named-command app shape (`list`/`show`, providers, command menu, and typed exit codes), start with [ROI Cities](../getting-started.md).
 
+### Delegate Commands For Tiny Tools
+
+For a tiny utility, smoke test, demo, or simple automation command, a default command or flat named
+command may be registered directly with a delegate:
+
+```csharp
+var app = TigerCliApp.CreateBuilder()
+    .UseAssemblyMetadata(typeof(SmokeApp).Assembly)
+    .AddDefaultCommand(() => TigerCliExitKind.Success)
+    .AddCommand("ping", () => 0, "Runs a quick connectivity check.")
+    .Build();
+```
+
+Delegates may be synchronous or return `Task<int>` / `Task<TigerCliExitKind>`, and may optionally
+receive the framework-created `TigerCliSettings` instance. `Action` maps to framework success,
+`TigerCliExitKind` uses the configured exit-code policy, and `int` is returned as-is.
+
+This is only a convenience layer over the normal command pipeline. It does not infer arguments or
+options from lambda parameters and does not add prompts, providers, typed settings, or command
+groups. Use settings and command handler classes for full applications, especially when they need
+typed input, validation, selectors, prompting, providers, localization, command groups, or reusable
+command behavior.
+
 ## Adding Commands
 
 Register named commands with `AddCommand`. A top-level command name is a single token. Multi-token command paths are produced only by command groups, which own their child commands — see [Command Groups](#command-groups).
