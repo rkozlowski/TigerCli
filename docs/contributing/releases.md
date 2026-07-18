@@ -121,6 +121,11 @@ and one input:
 
 - `version`: required package version, default `0.8.1`. It must match `Version.props`.
 
+Both workflow jobs use GitHub-hosted Windows runners. Release validation must run on Windows because
+the test suite includes Windows path semantics, and Windows is also the canonical platform for
+DocSamples PNG drift comparison. Do not switch release validation to Linux or skip platform-sensitive
+tests to make the gate pass.
+
 Create a GitHub environment named `release`. Configure required reviewers and deployment branch/tag
 restrictions appropriate for the repository. The workflow's validation job does not publish. After
 it uploads the inspected package artifact, the publish job waits for the `release` environment's

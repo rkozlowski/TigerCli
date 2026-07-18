@@ -21,7 +21,7 @@ concurrency:
 jobs:
   validate:
     name: Build, test, pack, and inspect
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       contents: read
     steps:
@@ -70,7 +70,8 @@ jobs:
           --filter "FullyQualifiedName~DocExamplesDriftTests"
 
       # GitHub-hosted runners provide the normal, unrestricted process environment required by
-      # AGENTS.md. The existing documentation workflow uses the same Ubuntu DocFX path.
+      # AGENTS.md. Release validation uses Windows because the test suite covers Windows path
+      # semantics and DocSamples performs its canonical PNG comparison on Windows.
       - name: Build DocFX site
         run: dotnet docfx docs/api-docfx/docfx.json
 
@@ -189,7 +190,7 @@ jobs:
   publish:
     name: Approve and publish
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     environment: release
     permissions:
       contents: read
@@ -208,14 +209,14 @@ jobs:
           path: artifacts/packages
 
       - name: Verify NuGet.org Trusted Publishing configuration
-        shell: bash
+        shell: pwsh
         env:
           NUGET_USER: ${{ vars.NUGET_USER }}
         run: |
-          if [ -z "$NUGET_USER" ]; then
-            echo "::error::Set the NUGET_USER repository variable to the nuget.org profile username used by the Trusted Publishing policy."
-            exit 1
-          fi
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_USER)) {
+              Write-Error "Set the NUGET_USER repository variable to the nuget.org profile username used by the Trusted Publishing policy."
+              exit 1
+          }
 
       # Configure a nuget.org Trusted Publishing policy for owner rkozlowski, repository TigerCli,
       # workflow publish-packages.yml, and environment release before running this job.
@@ -226,57 +227,57 @@ jobs:
           user: ${{ vars.NUGET_USER }}
 
       - name: Publish ItTiger.Core to GitHub Packages
-        shell: bash
+        shell: pwsh
         env:
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          dotnet nuget push "artifacts/packages/ItTiger.Core.${RELEASE_VERSION}.nupkg" \
-            --source https://nuget.pkg.github.com/rkozlowski/index.json \
-            --api-key "$GITHUB_PACKAGES_TOKEN" \
-            --skip-duplicate \
+          dotnet nuget push "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.nupkg" `
+            --source https://nuget.pkg.github.com/rkozlowski/index.json `
+            --api-key "$env:GITHUB_PACKAGES_TOKEN" `
+            --skip-duplicate `
             --no-symbols
 
       - name: Publish ItTiger.TigerCli to GitHub Packages
-        shell: bash
+        shell: pwsh
         env:
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.${RELEASE_VERSION}.nupkg" \
-            --source https://nuget.pkg.github.com/rkozlowski/index.json \
-            --api-key "$GITHUB_PACKAGES_TOKEN" \
-            --skip-duplicate \
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg" `
+            --source https://nuget.pkg.github.com/rkozlowski/index.json `
+            --api-key "$env:GITHUB_PACKAGES_TOKEN" `
+            --skip-duplicate `
             --no-symbols
 
       - name: Publish ItTiger.Core to NuGet.org
-        shell: bash
+        shell: pwsh
         env:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          dotnet nuget push "artifacts/packages/ItTiger.Core.${RELEASE_VERSION}.nupkg" \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key "$NUGET_API_KEY" \
-            --skip-duplicate \
+          dotnet nuget push "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.nupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key "$env:NUGET_API_KEY" `
+            --skip-duplicate `
             --no-symbols
-          dotnet nuget push "artifacts/packages/ItTiger.Core.${RELEASE_VERSION}.snupkg" \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key "$NUGET_API_KEY" \
+          dotnet nuget push "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.snupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key "$env:NUGET_API_KEY" `
             --skip-duplicate
 
       - name: Publish ItTiger.TigerCli to NuGet.org
-        shell: bash
+        shell: pwsh
         env:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.${RELEASE_VERSION}.nupkg" \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key "$NUGET_API_KEY" \
-            --skip-duplicate \
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key "$env:NUGET_API_KEY" `
+            --skip-duplicate `
             --no-symbols
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.${RELEASE_VERSION}.snupkg" \
-            --source https://api.nuget.org/v3/index.json \
-            --api-key "$NUGET_API_KEY" \
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.snupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key "$env:NUGET_API_KEY" `
             --skip-duplicate
