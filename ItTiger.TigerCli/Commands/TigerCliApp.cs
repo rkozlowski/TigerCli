@@ -4278,6 +4278,9 @@ public sealed class TigerCliApp
                 : exitCode;
         }
 
+        if (result is TigerCliExitKind exitKind)
+            return _exitCodePolicy.Resolve(exitKind);
+
         if (result is Enum enumExitCode)
             return Convert.ToInt32(enumExitCode);
 
@@ -4639,7 +4642,9 @@ public sealed class TigerCliApp
 
     private Type? ResolveExitCodeHelpType(TigerCliCommandRegistration? command)
     {
-        if (command?.Name != null && command.ExitCodeType != null)
+        if (command?.Name != null
+            && command.ExitCodeType != null
+            && command.ExitCodeType != typeof(TigerCliExitKind))
             return command.ExitCodeType;
 
         return _exitCodePolicy.DocumentedExitCodeType;

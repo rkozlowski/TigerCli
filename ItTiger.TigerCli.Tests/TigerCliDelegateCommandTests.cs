@@ -40,6 +40,19 @@ public sealed class TigerCliDelegateCommandTests
     }
 
     [Fact]
+    public async Task ExitKindDelegate_UsesDirectTigerCliExitKindPolicy()
+    {
+        var app = Builder()
+            .AddCommand("find", () => TigerCliExitKind.NotFound)
+            .UseTigerCliExitKindExitCodes()
+            .Build();
+
+        var result = await RunAsync(app, "find");
+
+        Assert.Equal(11, result.ExitCode);
+    }
+
+    [Fact]
     public async Task DefaultInt_ReturnsRawIntegerExit()
     {
         var app = Builder()
@@ -50,6 +63,19 @@ public sealed class TigerCliDelegateCommandTests
         var result = await RunAsync(app);
 
         Assert.Equal(37, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task RawIntDelegate_IsNotRemappedByDirectTigerCliExitKindPolicy()
+    {
+        var app = Builder()
+            .AddDefaultCommand(() => 73)
+            .UseTigerCliExitKindExitCodes()
+            .Build();
+
+        var result = await RunAsync(app);
+
+        Assert.Equal(73, result.ExitCode);
     }
 
     [Fact]

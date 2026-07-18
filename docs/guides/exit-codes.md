@@ -13,6 +13,55 @@ The preferred TigerCli model is:
 
 Raw integer handlers are still supported for simple tools and migration paths, but enum-backed exit codes are the preferred Tiger style.
 
+## TigerCliExitKind For Small Apps
+
+Small apps may use `TigerCliExitKind` itself as their documented process exit enum:
+
+```csharp
+var app = TigerCliApp.CreateBuilder()
+    .UseAssemblyMetadata(typeof(SmokeApp).Assembly)
+    .UseTigerCliExitKindExitCodes()
+    .AddDefaultCommand(() => TigerCliExitKind.NotFound)
+    .Build();
+```
+
+`UseTigerCliExitKindExitCodes()` maps every declared kind to its own numeric value and exposes the
+enum through `--help-errors`: `Success` is `0`, `HelpShown` is intentionally `1`, `GenericFail` is
+`2`, and the remaining values continue through `NotSupported` at `14`. Raw `int` command results
+remain raw and are never remapped.
+
+This is a compact starting contract, not a requirement that larger apps expose TigerCli's values
+forever. An app can later define its own exit enum and use the normal `UseExitCodes(...)` and
+`ExitKind(...)` policy calls.
+
+## Portable Outcomes From Reusable Commands
+
+Reusable command libraries may return `TigerCliExitKind` as a semantic outcome without choosing the
+consuming process's exit codes:
+
+```csharp
+internal sealed class FindCommand
+    : TigerCliAsyncCommandHandler<FindSettings, TigerCliExitKind>
+{
+    public override Task<TigerCliExitKind> ExecuteAsync(FindSettings settings) =>
+        Task.FromResult(TigerCliExitKind.NotFound);
+}
+```
+
+The consuming app maps that normal result into its own contract through the same policy used for
+framework outcomes:
+
+```csharp
+.UseExitCodes<MyExitCode>(MyExitCode.Ok, MyExitCode.Failed)
+    .ExitKind(TigerCliExitKind.NotFound, MyExitCode.NotFound)
+    .ExitKind(TigerCliExitKind.AlreadyExists, MyExitCode.AlreadyExists)
+```
+
+`NotFound`, `AlreadyExists`, `Conflict`, and `NotSupported` are routine portable outcomes in this
+model and roll up to `TigerCliExitCategory.Execution`. Return them normally; do not throw an
+exception to express routine command flow. `TigerCliCommandException` remains available for
+exceptional failures or adaptation boundaries that must carry a classified kind and message.
+
 ## Basic Enum-Backed Exit Codes
 
 Define an enum that represents the app contract:
@@ -334,7 +383,11 @@ See [app testing](app-testing.md) for stdout/stderr capture, prompt answers, cul
 
 - Do not return random magic integers from every command.
 - Do not document exit codes manually when `--help-errors` can generate them from the enum.
-- Do not treat `TigerCliExitKind` and app enum members as the same thing.
+- Do not assume a reusable command's `TigerCliExitKind` numeric value is the consuming app's final
+  process code; it resolves through the app policy unless `UseTigerCliExitKindExitCodes()` explicitly
+  selects the direct small-app contract.
+- Do not throw exceptions for routine `NotFound`, `AlreadyExists`, `Conflict`, or `NotSupported`
+  outcomes; return the kind normally.
 - Do not over-map: the outcome baseline already covers every success and error kind. Add `Category`/`Range`/`Kind` only where you need more precision.
 - Do not use `DescriptionAttribute` as a localized text mechanism.
 - Do not rely on raw integer handlers unless that escape hatch is intentional.

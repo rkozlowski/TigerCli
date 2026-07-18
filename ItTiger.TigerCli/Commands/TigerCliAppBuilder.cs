@@ -1071,6 +1071,27 @@ public sealed class TigerCliAppBuilder
     }
 
     /// <summary>
+    /// Uses each declared <see cref="TigerCliExitKind"/> numeric value directly as the process exit
+    /// code and documents <see cref="TigerCliExitKind"/> through <c>--help-errors</c>. This compact
+    /// policy is intended for small apps that do not need an app-specific exit enum. In particular,
+    /// <see cref="TigerCliExitKind.Success"/> maps to <c>0</c> and
+    /// <see cref="TigerCliExitKind.HelpShown"/> maps to <c>1</c>. Later
+    /// <see cref="ExitCategory(TigerCliExitCategory, int)"/>,
+    /// <see cref="ExitRange(TigerCliExitKind, TigerCliExitKind, int)"/>, and
+    /// <see cref="ExitKind(TigerCliExitKind, int)"/> calls may refine the policy normally.
+    /// </summary>
+    public TigerCliAppBuilder UseTigerCliExitKindExitCodes()
+    {
+        _exitCodePolicy = new TigerCliExitCodePolicy(
+            (int)TigerCliExitKind.Success,
+            (int)TigerCliExitKind.GenericFail,
+            typeof(TigerCliExitKind),
+            useKindValuesAsBaseline: true);
+
+        return this;
+    }
+
+    /// <summary>
     /// Overrides the exit code for every framework kind in <paramref name="category"/>. Beats the
     /// outcome baseline; loses to <see cref="ExitRange(TigerCliExitKind, TigerCliExitKind, int)"/> and
     /// <see cref="ExitKind(TigerCliExitKind, int)"/>. Refines the current exit-code policy (the

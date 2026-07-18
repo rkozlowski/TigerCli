@@ -291,6 +291,7 @@ command may be registered directly with a delegate:
 ```csharp
 var app = TigerCliApp.CreateBuilder()
     .UseAssemblyMetadata(typeof(SmokeApp).Assembly)
+    .UseTigerCliExitKindExitCodes()
     .AddDefaultCommand(() => TigerCliExitKind.Success)
     .AddCommand("ping", () => 0, "Runs a quick connectivity check.")
     .Build();
@@ -299,6 +300,9 @@ var app = TigerCliApp.CreateBuilder()
 Delegates may be synchronous or return `Task<int>` / `Task<TigerCliExitKind>`, and may optionally
 receive the framework-created `TigerCliSettings` instance. `Action` maps to framework success,
 `TigerCliExitKind` uses the configured exit-code policy, and `int` is returned as-is.
+`UseTigerCliExitKindExitCodes()` is a compact policy for minimal apps: each kind's declared number
+is the process exit code, including `HelpShown = 1`. A reusable command library may also return
+`TigerCliExitKind` normally and let its consuming app map that outcome to an app-specific exit enum.
 
 This is only a convenience layer over the normal command pipeline. It does not infer arguments or
 options from lambda parameters and does not add prompts, providers, typed settings, or command

@@ -34,6 +34,15 @@ public sealed class TigerCliExitCodeTests
         CommandFailed = 11
     }
 
+    [Description("Consumer application exit codes")]
+    private enum ConsumerExitCode
+    {
+        Ok = 0,
+        Failed = 50,
+        NotFound = 51,
+        AlreadyExists = 52
+    }
+
     private sealed class EmptySettings : TigerCliSettings
     {
     }
@@ -62,6 +71,18 @@ public sealed class TigerCliExitCodeTests
     private sealed class CommandSpecificEnumCommand : TigerCliAsyncCommandHandler<EmptySettings, CommandExitCode>
     {
         public override Task<CommandExitCode> ExecuteAsync(EmptySettings settings) => Task.FromResult(CommandExitCode.CommandFailed);
+    }
+
+    private sealed class PortableNotFoundCommand : TigerCliAsyncCommandHandler<EmptySettings, TigerCliExitKind>
+    {
+        public override Task<TigerCliExitKind> ExecuteAsync(EmptySettings settings) =>
+            Task.FromResult(TigerCliExitKind.NotFound);
+    }
+
+    private sealed class PortableAlreadyExistsCommand : TigerCliAsyncCommandHandler<EmptySettings, TigerCliExitKind>
+    {
+        public override Task<TigerCliExitKind> ExecuteAsync(EmptySettings settings) =>
+            Task.FromResult(TigerCliExitKind.AlreadyExists);
     }
 
     [Fact]
@@ -144,6 +165,153 @@ public sealed class TigerCliExitCodeTests
         var result = await RunCapturedAsync(app, []);
 
         Assert.Equal(42, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_MapsSuccessToZero()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .AddDefaultCommand(() => TigerCliExitKind.Success)
+            .UseTigerCliExitKindExitCodes()
+            .Build();
+
+        var result = await RunCapturedAsync(app, []);
+
+        Assert.Equal(0, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_MapsHelpShownToOne()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .UseTigerCliExitKindExitCodes()
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["--help"]);
+
+        Assert.Equal(1, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_MapsNotFoundToEleven()
+    {
+        var result = await RunDirectKindAsync(TigerCliExitKind.NotFound);
+
+        Assert.Equal(11, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_MapsAlreadyExistsToTwelve()
+    {
+        var result = await RunDirectKindAsync(TigerCliExitKind.AlreadyExists);
+
+        Assert.Equal(12, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_MapsConflictToThirteen()
+    {
+        var result = await RunDirectKindAsync(TigerCliExitKind.Conflict);
+
+        Assert.Equal(13, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_MapsNotSupportedToFourteen()
+    {
+        var result = await RunDirectKindAsync(TigerCliExitKind.NotSupported);
+
+        Assert.Equal(14, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task UseTigerCliExitKindExitCodes_RemainsRefinableThroughNormalPolicyLayers()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .AddDefaultCommand(() => TigerCliExitKind.NotFound)
+            .UseTigerCliExitKindExitCodes()
+            .ExitCategory(TigerCliExitCategory.Execution, 40)
+            .ExitKind(TigerCliExitKind.NotFound, 41)
+            .Build();
+
+        var result = await RunCapturedAsync(app, []);
+
+        Assert.Equal(41, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task TypedTigerCliExitKind_NotFound_MapsToConsumerExitEnum()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .AddCommand<PortableNotFoundCommand>("find")
+            .UseExitCodes(ConsumerExitCode.Ok, ConsumerExitCode.Failed)
+            .ExitKind(TigerCliExitKind.NotFound, ConsumerExitCode.NotFound)
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["find"]);
+
+        Assert.Equal((int)ConsumerExitCode.NotFound, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task TypedTigerCliExitKind_AlreadyExists_MapsToConsumerExitEnum()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .SetDefaultCommand<PortableAlreadyExistsCommand>()
+            .UseExitCodes(ConsumerExitCode.Ok, ConsumerExitCode.Failed)
+            .ExitKind(TigerCliExitKind.AlreadyExists, ConsumerExitCode.AlreadyExists)
+            .Build();
+
+        var result = await RunCapturedAsync(app, []);
+
+        Assert.Equal((int)ConsumerExitCode.AlreadyExists, result.ExitCode);
+    }
+
+    [Fact]
+    public async Task TypedTigerCliExitKind_HelpUsesConsumerExitEnum()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .AddCommand<PortableNotFoundCommand>("find")
+            .UseExitCodes(ConsumerExitCode.Ok, ConsumerExitCode.Failed)
+            .ExitKind(TigerCliExitKind.NotFound, ConsumerExitCode.NotFound)
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["find", "--help-errors"]);
+
+        Assert.Equal((int)ConsumerExitCode.Ok, result.ExitCode);
+        Assert.Contains("Consumer application exit codes", result.Stdout);
+        Assert.Contains("51", result.Stdout);
+        Assert.Contains("NotFound", result.Stdout);
+        Assert.DoesNotContain("TigerCli command outcomes", result.Stdout);
+    }
+
+    [Fact]
+    public async Task TigerCliExitKindExitHelp_IncludesPortableApplicationOutcomes()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .UseTigerCliExitKindExitCodes()
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["--help-errors"]);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("TigerCli command outcomes", result.Stdout);
+        Assert.Contains("11", result.Stdout);
+        Assert.Contains("NotFound", result.Stdout);
+        Assert.Contains("The requested resource or entity was not found.", result.Stdout);
+        Assert.Contains("12", result.Stdout);
+        Assert.Contains("AlreadyExists", result.Stdout);
+        Assert.Contains("13", result.Stdout);
+        Assert.Contains("Conflict", result.Stdout);
+        Assert.Contains("14", result.Stdout);
+        Assert.Contains("NotSupported", result.Stdout);
     }
 
     [Fact]
@@ -273,6 +441,23 @@ public sealed class TigerCliExitCodeTests
         Assert.Equal(8, (int)TigerCliExitKind.UnhandledException);
         Assert.Equal(9, (int)TigerCliExitKind.Cancelled);
         Assert.Equal(10, (int)TigerCliExitKind.ProviderError);
+        Assert.Equal(11, (int)TigerCliExitKind.NotFound);
+        Assert.Equal(12, (int)TigerCliExitKind.AlreadyExists);
+        Assert.Equal(13, (int)TigerCliExitKind.Conflict);
+        Assert.Equal(14, (int)TigerCliExitKind.NotSupported);
+    }
+
+    [Theory]
+    [InlineData(TigerCliExitKind.NotFound)]
+    [InlineData(TigerCliExitKind.AlreadyExists)]
+    [InlineData(TigerCliExitKind.Conflict)]
+    [InlineData(TigerCliExitKind.NotSupported)]
+    public void PortableApplicationKinds_RollUpToExecution(TigerCliExitKind kind)
+    {
+        var policy = new TigerCliExitCodePolicy(0, 1);
+        policy.SetCategory(TigerCliExitCategory.Execution, 42);
+
+        Assert.Equal(42, policy.Resolve(kind));
     }
 
     [Fact]
@@ -481,5 +666,17 @@ public sealed class TigerCliExitCodeTests
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
+    }
+
+    private static Task<(int ExitCode, string Stdout, string Stderr)> RunDirectKindAsync(
+        TigerCliExitKind kind)
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("tool")
+            .AddDefaultCommand(() => kind)
+            .UseTigerCliExitKindExitCodes()
+            .Build();
+
+        return RunCapturedAsync(app, []);
     }
 }

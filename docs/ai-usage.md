@@ -57,6 +57,12 @@ return await MyApp.Create().RunAsync(args);
   utilities, demos, smoke tests, and simple automation. Do not use them when typed settings,
   arguments/options, prompts, providers, validation, selectors, command groups, localization, or
   reusable command behavior are needed.
+- A minimal app may combine delegate commands with `UseTigerCliExitKindExitCodes()` to expose the
+  declared `TigerCliExitKind` values directly. Reusable command libraries may return
+  `TigerCliExitKind` and let the consuming app map it with `ExitKind(...)`.
+- Return routine `NotFound`, `AlreadyExists`, `Conflict`, and `NotSupported` outcomes normally. Do
+  not use exceptions for normal command flow; reserve `TigerCliCommandException` for exceptional
+  failures or adaptation boundaries.
 
 ```csharp
 builder.AddCommandGroup("connections", group => group

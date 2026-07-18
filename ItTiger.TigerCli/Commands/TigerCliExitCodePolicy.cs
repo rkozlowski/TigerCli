@@ -10,6 +10,7 @@ internal sealed class TigerCliExitCodePolicy
 {
     private readonly int _successCode;
     private readonly int _errorCode;
+    private readonly bool _useKindValuesAsBaseline;
     private readonly Dictionary<TigerCliExitKind, int> _kindOverrides = new();
     private readonly Dictionary<TigerCliExitKind, int> _rangeOverrides = new();
     private readonly Dictionary<TigerCliExitCategory, int> _categoryOverrides = new();
@@ -19,13 +20,20 @@ internal sealed class TigerCliExitCodePolicy
     /// <summary>
     /// Creates a policy with the mandatory outcome baseline. The parameterless defaults
     /// (<c>Success = 0</c>, <c>Error = -1</c>) reproduce the framework's built-in behavior for apps
-    /// that never call <c>UseExitCodes</c>.
+    /// that never call <c>UseExitCodes</c>. The direct-kind baseline is used only by
+    /// <c>UseTigerCliExitKindExitCodes</c>; kind, range, and category overrides retain their normal
+    /// precedence above it.
     /// </summary>
-    public TigerCliExitCodePolicy(int successCode = 0, int errorCode = -1, Type? documentedExitCodeType = null)
+    public TigerCliExitCodePolicy(
+        int successCode = 0,
+        int errorCode = -1,
+        Type? documentedExitCodeType = null,
+        bool useKindValuesAsBaseline = false)
     {
         _successCode = successCode;
         _errorCode = errorCode;
         DocumentedExitCodeType = documentedExitCodeType;
+        _useKindValuesAsBaseline = useKindValuesAsBaseline;
     }
 
     public int Resolve(TigerCliExitKind kind)
@@ -39,6 +47,9 @@ internal sealed class TigerCliExitCodePolicy
         var category = TigerCliExitClassification.CategoryOf(kind);
         if (_categoryOverrides.TryGetValue(category, out var categoryCode))
             return categoryCode;
+
+        if (_useKindValuesAsBaseline)
+            return (int)kind;
 
         return TigerCliExitClassification.OutcomeOf(category) == TigerCliExitOutcome.Success
             ? _successCode
