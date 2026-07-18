@@ -30,9 +30,8 @@ public static class RoiCitiesApp
             .AddCommand("list", () => new ListCommand(store), "Lists the cities.")
             .AddCommand("show", () => new ShowCommand(store), "Shows details for one city.")
             .ConfigureProviders(providers => providers.Add<string>("cities", _ =>
-                store.All
-                    .Select(city => new OptionItem<string>(city.Name, $"{city.Name} ({city.Province})"))
-                    .ToArray()))
+                [.. store.All.Select(city =>
+                    new OptionItem<string>(city.Name, $"{city.Name} ({city.Province})"))]))
             .Build();
     }
 }

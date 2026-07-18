@@ -6,35 +6,26 @@ namespace ItTiger.TigerCli.Commands;
 /// and may add category, range, and kind overrides. Resolution uses the most specific configured
 /// layer: kind → range → category → outcome baseline.
 /// </summary>
-internal sealed class TigerCliExitCodePolicy
+/// <remarks>
+/// The parameterless defaults (<c>Success = 0</c>, <c>Error = -1</c>) reproduce the framework's
+/// built-in behavior. The direct-kind baseline is used only by
+/// <c>UseTigerCliExitKindExitCodes</c>; kind, range, and category overrides retain their normal
+/// precedence above it.
+/// </remarks>
+internal sealed class TigerCliExitCodePolicy(
+    int successCode = 0,
+    int errorCode = -1,
+    Type? documentedExitCodeType = null,
+    bool useKindValuesAsBaseline = false)
 {
-    private readonly int _successCode;
-    private readonly int _errorCode;
-    private readonly bool _useKindValuesAsBaseline;
-    private readonly Dictionary<TigerCliExitKind, int> _kindOverrides = new();
-    private readonly Dictionary<TigerCliExitKind, int> _rangeOverrides = new();
-    private readonly Dictionary<TigerCliExitCategory, int> _categoryOverrides = new();
+    private readonly int _successCode = successCode;
+    private readonly int _errorCode = errorCode;
+    private readonly bool _useKindValuesAsBaseline = useKindValuesAsBaseline;
+    private readonly Dictionary<TigerCliExitKind, int> _kindOverrides = [];
+    private readonly Dictionary<TigerCliExitKind, int> _rangeOverrides = [];
+    private readonly Dictionary<TigerCliExitCategory, int> _categoryOverrides = [];
 
-    public Type? DocumentedExitCodeType { get; }
-
-    /// <summary>
-    /// Creates a policy with the mandatory outcome baseline. The parameterless defaults
-    /// (<c>Success = 0</c>, <c>Error = -1</c>) reproduce the framework's built-in behavior for apps
-    /// that never call <c>UseExitCodes</c>. The direct-kind baseline is used only by
-    /// <c>UseTigerCliExitKindExitCodes</c>; kind, range, and category overrides retain their normal
-    /// precedence above it.
-    /// </summary>
-    public TigerCliExitCodePolicy(
-        int successCode = 0,
-        int errorCode = -1,
-        Type? documentedExitCodeType = null,
-        bool useKindValuesAsBaseline = false)
-    {
-        _successCode = successCode;
-        _errorCode = errorCode;
-        DocumentedExitCodeType = documentedExitCodeType;
-        _useKindValuesAsBaseline = useKindValuesAsBaseline;
-    }
+    public Type? DocumentedExitCodeType { get; } = documentedExitCodeType;
 
     public int Resolve(TigerCliExitKind kind)
     {

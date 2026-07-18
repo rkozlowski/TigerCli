@@ -13,6 +13,12 @@ TigerCli is a C#/.NET 10 solution centered on `ItTiger.TigerCli/`, the main libr
 - `dotnet test ItTiger.TigerCli.Tests/ --filter "FullyQualifiedName~MethodName"` runs targeted tests.
 - `dotnet run --project RoiCities.Basic -- --help` and `dotnet run --project FolderCopy -- --help` run the public sample apps.
 
+## Validation Process Safety
+
+Run long-running validation commands as separate shell or tool calls in sandboxed or restricted environments. Do not chain `dotnet build`, `dotnet test`, DocSamples, DocFX, or Roslyn verifier commands into one invocation. Wait for each command to return its own result before starting the next so timeouts and interruptions are unambiguous.
+
+After an interrupted or hung `dotnet test`, DocFX, or Roslyn verifier run, inspect running `dotnet`, test host, MSBuild/build-host, DocFX, and verifier processes. Use start times, parent processes, and command lines where available to identify processes created by the interrupted run. Terminate only those processes, confirm that no orphaned processes from that run remain, and then retry the validation command. Do not indiscriminately stop unrelated `dotnet` processes. Treat restricted named-pipe or build-host failures as execution-environment failures and rerun the affected command in the normal/non-sandbox environment when required.
+
 ## DocFX / API Docs
 
 Run DocFX when XML comments, DocFX configuration, generated API reference content, or `docs/reference/api-map.md` may be affected:
