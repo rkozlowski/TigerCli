@@ -15,13 +15,19 @@ TigerCli is still evolving. The core direction is deliberate, but docs and examp
 Install the main TigerCli package:
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.8.1
+dotnet add package ItTiger.TigerCli --version 0.9.0
 ```
 
 `ItTiger.Core` is also available separately for shared support utilities:
 
 ```bash
-dotnet add package ItTiger.Core --version 0.8.1
+dotnet add package ItTiger.Core --version 0.9.0
+```
+
+The optional PNG rendering sink is packaged separately for documentation and visual artifacts:
+
+```bash
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.0
 ```
 
 ## What It Looks Like

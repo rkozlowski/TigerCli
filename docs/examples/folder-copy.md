@@ -26,7 +26,7 @@ TigerCliApp.CreateBuilder()
     .SetDefaultCommand<FolderCopyCommand>();
 ```
 
-Its identity, description, and shared `0.8.1` version live in the project metadata and are imported with `UseAssemblyMetadata(...)`, the preferred pattern for a normal executable app (see [command apps → app metadata](../guides/command-apps.md#app-metadata)). That shape is useful for operation tools where the app's main behavior is obvious from the executable name:
+Its identity, description, and shared `0.9.0` version live in the project metadata and are imported with `UseAssemblyMetadata(...)`, the preferred pattern for a normal executable app (see [command apps → app metadata](../guides/command-apps.md#app-metadata)). That shape is useful for operation tools where the app's main behavior is obvious from the executable name:
 
 ```bash
 folder-copy --source C:\Input --destination C:\Output

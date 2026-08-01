@@ -8,7 +8,7 @@ on:
       version:
         description: Package version already recorded in Version.props
         required: true
-        default: "0.8.1"
+        default: "0.9.0"
         type: string
 
 permissions:
@@ -94,6 +94,45 @@ jobs:
           --no-restore
           --output artifacts/packages
 
+      - name: Pack ItTiger.TigerCli.PngSink
+        run: >-
+          dotnet pack ItTiger.TigerCli.PngSink/ItTiger.TigerCli.PngSink.csproj
+          -c Release
+          --no-build
+          --no-restore
+          --output artifacts/packages
+
+      - name: List produced packages
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $expected = @(
+              "ItTiger.Core.$env:RELEASE_VERSION.nupkg"
+              "ItTiger.Core.$env:RELEASE_VERSION.snupkg"
+              "ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg"
+              "ItTiger.TigerCli.$env:RELEASE_VERSION.snupkg"
+              "ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg"
+              "ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.snupkg"
+          ) | Sort-Object
+          $actual = @(
+              Get-ChildItem -LiteralPath artifacts/packages -File |
+                  Where-Object { $_.Extension -in ".nupkg", ".snupkg" } |
+                  Select-Object -ExpandProperty Name
+          ) | Sort-Object
+
+          $difference = Compare-Object -ReferenceObject $expected -DifferenceObject $actual
+          if ($difference) {
+              $difference | Format-Table | Out-String | Write-Host
+              throw "Produced package files do not match the expected release set."
+          }
+
+          Get-ChildItem -LiteralPath artifacts/packages -File |
+              Sort-Object Name |
+              Format-Table Name, Length
+
       - name: Inspect packages
         shell: pwsh
         env:
@@ -108,6 +147,10 @@ jobs:
               },
               @{
                   Id = "ItTiger.TigerCli"
+                  Icon = "TigerCli.png"
+              },
+              @{
+                  Id = "ItTiger.TigerCli.PngSink"
                   Icon = "TigerCli.png"
               }
           )
@@ -154,6 +197,29 @@ jobs:
                   if ([string]$metadata.icon -ne $package.Icon -or $null -eq $archive.GetEntry($package.Icon)) {
                       throw "$packagePath does not contain the configured root icon '$($package.Icon)'."
                   }
+                  if ([string]::IsNullOrWhiteSpace([string]$metadata.authors) -or
+                      [string]::IsNullOrWhiteSpace([string]$metadata.description) -or
+                      [string]$metadata.projectUrl -ne "https://www.ittiger.net/projects/tigercli/") {
+                      throw "$packagePath has incomplete authors, description, or project URL metadata."
+                  }
+                  if ($metadata.license.GetAttribute("type") -ne "expression" -or
+                      [string]$metadata.license.InnerText -ne "MIT") {
+                      throw "$packagePath does not contain the expected MIT license expression."
+                  }
+                  if ($metadata.repository.GetAttribute("type") -ne "git" -or
+                      $metadata.repository.GetAttribute("url") -ne "https://github.com/rkozlowski/TigerCli") {
+                      throw "$packagePath does not contain the expected repository metadata."
+                  }
+                  if ($null -eq $archive.GetEntry("lib/net10.0/$id.dll") -or
+                      $null -eq $archive.GetEntry("lib/net10.0/$id.xml")) {
+                      throw "$packagePath does not contain the expected net10.0 assembly and XML documentation."
+                  }
+
+                  if ($id -eq "ItTiger.TigerCli.PngSink" -and
+                      ($null -eq $archive.GetEntry("assets/tc_term_ico.png") -or
+                       $null -eq $archive.GetEntry("fonts/OFL.txt"))) {
+                      throw "$packagePath does not contain the expected PNG assets and bundled-font license."
+                  }
 
                   if ($id -eq "ItTiger.TigerCli") {
                       $coreDependency = @(
@@ -167,9 +233,33 @@ jobs:
                           throw "$packagePath depends on ItTiger.Core '$($coreDependency[0].GetAttribute("version"))', expected '$env:RELEASE_VERSION'."
                       }
                   }
+                  elseif ($id -eq "ItTiger.TigerCli.PngSink") {
+                      $tigerCliDependency = @(
+                          $nuspec.SelectNodes("//*[local-name()='dependency']") |
+                              Where-Object { $_.GetAttribute("id") -eq "ItTiger.TigerCli" }
+                      )
+                      if ($tigerCliDependency.Count -ne 1) {
+                          throw "$packagePath must contain exactly one ItTiger.TigerCli dependency."
+                      }
+                      if ($tigerCliDependency[0].GetAttribute("version") -ne $env:RELEASE_VERSION) {
+                          throw "$packagePath depends on ItTiger.TigerCli '$($tigerCliDependency[0].GetAttribute("version"))', expected '$env:RELEASE_VERSION'."
+                      }
+                  }
               }
               finally {
                   $archive.Dispose()
+              }
+
+              $symbolsArchive = [System.IO.Compression.ZipFile]::OpenRead(
+                  (Resolve-Path -LiteralPath $symbolsPath)
+              )
+              try {
+                  if (-not @($symbolsArchive.Entries | Where-Object { $_.FullName -like "*.pdb" })) {
+                      throw "$symbolsPath does not contain a portable PDB."
+                  }
+              }
+              finally {
+                  $symbolsArchive.Dispose()
               }
 
               Write-Host "Validated $packagePath and $symbolsPath"
@@ -184,6 +274,8 @@ jobs:
             artifacts/packages/ItTiger.Core.${{ inputs.version }}.snupkg
             artifacts/packages/ItTiger.TigerCli.${{ inputs.version }}.nupkg
             artifacts/packages/ItTiger.TigerCli.${{ inputs.version }}.snupkg
+            artifacts/packages/ItTiger.TigerCli.PngSink.${{ inputs.version }}.nupkg
+            artifacts/packages/ItTiger.TigerCli.PngSink.${{ inputs.version }}.snupkg
           if-no-files-found: error
           retention-days: 14
 
@@ -250,6 +342,18 @@ jobs:
             --skip-duplicate `
             --no-symbols
 
+      - name: Publish ItTiger.TigerCli.PngSink to GitHub Packages
+        shell: pwsh
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg" `
+            --source https://nuget.pkg.github.com/rkozlowski/index.json `
+            --api-key "$env:GITHUB_PACKAGES_TOKEN" `
+            --skip-duplicate `
+            --no-symbols
+
       - name: Publish ItTiger.Core to NuGet.org
         shell: pwsh
         env:
@@ -278,6 +382,22 @@ jobs:
             --skip-duplicate `
             --no-symbols
           dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.snupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key "$env:NUGET_API_KEY" `
+            --skip-duplicate
+
+      - name: Publish ItTiger.TigerCli.PngSink to NuGet.org
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg" `
+            --source https://api.nuget.org/v3/index.json `
+            --api-key "$env:NUGET_API_KEY" `
+            --skip-duplicate `
+            --no-symbols
+          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.snupkg" `
             --source https://api.nuget.org/v3/index.json `
             --api-key "$env:NUGET_API_KEY" `
             --skip-duplicate

@@ -4,6 +4,10 @@
 images. It is separate from `ItTiger.TigerCli`; SkiaSharp and its native assets are referenced only by
 the PNG sink package.
 
+```bash
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.0
+```
+
 `PngSink` implements `ICliRenderSink`, so it consumes the same resolved `CliTextSegment` stream as
 `AnsiSink` and `HtmlSink`. It does not introduce a parallel rendering model or a separate color
 system. [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) values are mapped through `CliColorPalette`, including the 0-255 terminal palette.

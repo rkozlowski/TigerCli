@@ -14,7 +14,7 @@ policy. The same command model can prompt a person when values are missing or fa
 TigerCli currently targets .NET 10.
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.8.1
+dotnet add package ItTiger.TigerCli --version 0.9.0
 ```
 
 ## Minimal app
@@ -91,6 +91,8 @@ command groups, localization, reusable handlers, and application-specific exit c
   prompting, TUI controls, rendering, exit policy, and testing support.
 - [ItTiger.Core](https://www.nuget.org/packages/ItTiger.Core/) — shared core helpers used by TigerCli;
   it is installed transitively with this package.
+- [ItTiger.TigerCli.PngSink](https://www.nuget.org/packages/ItTiger.TigerCli.PngSink/) — optional
+  deterministic PNG rendering for documentation artifacts, examples, and visual review.
 
 ## Links
 

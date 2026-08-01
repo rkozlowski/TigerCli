@@ -7,8 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- Shares assembly/version metadata via Version.props, but is not published as a NuGet package. -->
-    <IsPackable>false</IsPackable>
+    <PackageId>ItTiger.TigerCli.PngSink</PackageId>
+    <Description>Deterministic PNG rendering sink for TigerCli output, documentation artifacts, examples, and visual review.</Description>
+    <PackageTags>TigerCli;PNG;CLI;TUI;terminal;documentation;rendering</PackageTags>
+    <PackageIcon>TigerCli.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="..\docs\assets\TigerCli.png" Pack="true" PackagePath="\" Link="TigerCli.png" />
     <EmbeddedResource Include="Assets\*.png" />
     <EmbeddedResource Include="Fonts\*.ttf" />
     <None Update="Assets\*.png" Pack="true" PackagePath="assets\%(Filename)%(Extension)" />
