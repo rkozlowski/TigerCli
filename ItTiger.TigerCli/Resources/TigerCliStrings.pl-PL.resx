@@ -149,6 +149,18 @@
   <data name="Tui_FolderSelect_InvalidPathEntered" xml:space="preserve"><value>Wprowadzono nieprawidłową ścieżkę</value></data>
   <data name="Tui_FolderSelect_Empty" xml:space="preserve"><value>Brak dostępnych folderów</value></data>
   <data name="Tui_FolderSelect_Root" xml:space="preserve"><value>Komputer</value></data>
+  <data name="Tui_FileSelect_PathHint" xml:space="preserve"><value>Wpisz ścieżkę   Enter Zatwierdź   Tab Dalej</value></data>
+  <data name="Tui_FileSelect_ListHint" xml:space="preserve"><value>↑↓ Wybór   Enter Otwórz/Wybierz   ←/Backspace W górę   Tab Dalej   Esc Anuluj</value></data>
+  <data name="Tui_FileSelect_ButtonHint" xml:space="preserve"><value>← → Zmień   Enter Aktywuj   Tab Dalej</value></data>
+  <data name="Tui_FileSelect_Empty" xml:space="preserve"><value>Brak folderów lub pasujących plików</value></data>
+  <data name="Tui_FileOpen_InvalidPathEntered" xml:space="preserve"><value>Wprowadź ścieżkę do istniejącego pliku</value></data>
+  <data name="Tui_FileSave_InvalidPathEntered" xml:space="preserve"><value>Wprowadź ścieżkę pliku z istniejącym folderem nadrzędnym</value></data>
+  <data name="Error_FileOpen_MustExist" xml:space="preserve"><value>Opcja {0} musi wskazywać istniejący plik: {1}</value></data>
+  <data name="Error_FileSave_ParentMissing" xml:space="preserve"><value>Opcja {0} musi wskazywać plik z istniejącym folderem nadrzędnym: {1}</value></data>
+  <data name="Error_FileSave_OverwriteDenied" xml:space="preserve"><value>Opcja {0} nie może nadpisać istniejącego pliku: {1}</value></data>
+  <data name="Error_FileSave_OverwriteRequiresConfirmation" xml:space="preserve"><value>Opcja {0} wymaga potwierdzenia nadpisania istniejącego pliku, które nie jest dostępne w trybie nieinteraktywnym: {1}</value></data>
+  <data name="Error_FileSave_OverwriteDeclined" xml:space="preserve"><value>Odrzucono nadpisanie dla opcji {0}: {1}</value></data>
+  <data name="Prompt_FileSave_Overwrite" xml:space="preserve"><value>Plik już istnieje. Nadpisać '{0}'?</value></data>
   <data name="Tui_MessageBox_Hint" xml:space="preserve"><value>← → Zmień   Enter/Spacja Wybierz   Esc Anuluj</value></data>
   <data name="Tui_Button_Ok" xml:space="preserve"><value>OK</value></data>
   <data name="Tui_Button_Cancel" xml:space="preserve"><value>Anuluj</value></data>

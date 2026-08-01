@@ -176,6 +176,18 @@ public sealed class TigerCliApp
                 resolveHandlerResultAsExitKind: defaultResolveHandlerResultAsExitKind)
             : commandMenuDefault;
 
+        // File-save overwrite references are configuration, not run-time input. Validate every
+        // registered settings type while Build() is producing the app so misspellings and bad types
+        // fail before parsing or command execution.
+        foreach (var settingsType in _namedCommands
+            .Append(_defaultCommand)
+            .Where(command => command != null && !command.IsCommandMenu)
+            .Select(command => command!.SettingsType)
+            .Distinct())
+        {
+            ValidateFilePickerMetadata(settingsType);
+        }
+
         if (defaultHandlerType != null)
         {
             foreach (var cmd in _namedCommands)
@@ -606,6 +618,18 @@ public sealed class TigerCliApp
             WriteFrameworkError(culture, Esc(frameworkValidation.ErrorMessage!));
             return _exitCodePolicy.Resolve(TigerCliExitKind.ValidationError);
         }
+
+        var fileValidation = await ValidateFileOptionsAsync(
+            settings,
+            optionMeta,
+            parseResult,
+            effectiveInteractionMode,
+            promptShell,
+            promptTimeout,
+            ct,
+            culture).ConfigureAwait(false);
+        if (TryResolvePromptOutcome(fileValidation, culture, out var fileValidationExit))
+            return fileValidationExit;
 
         var integerBoundsValidation = await ValidateIntegerBoundsAsync(
             settings,
@@ -1350,6 +1374,21 @@ public sealed class TigerCliApp
                 result.Add(new TigerCliOptionMetadata(prop, attr));
         }
         return result;
+    }
+
+    private static void ValidateFilePickerMetadata(Type settingsType)
+    {
+        foreach (var property in settingsType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            var option = property.GetCustomAttribute<TigerCliOptionAttribute>();
+            if (option == null)
+                continue;
+            if (property.GetCustomAttribute<TigerCliFileOpenAttribute>() == null
+                && property.GetCustomAttribute<TigerCliFileSaveAttribute>() == null)
+                continue;
+
+            _ = new TigerCliOptionMetadata(property, option);
+        }
     }
 
     // ── Parsing ─────────────────────────────────────────────────────
@@ -2402,7 +2441,9 @@ public sealed class TigerCliApp
                 appResources,
                 IsIntegerTarget(opt.Property.PropertyType) && required ? null : currentValue,
                 opt.UseFolderPicker,
-                folderBrowser).ConfigureAwait(false);
+                folderBrowser,
+                opt.FileOpen,
+                opt.FileSave).ConfigureAwait(false);
 
         if (!valueResult.IsSuccess)
             return valueResult;
@@ -2685,7 +2726,7 @@ public sealed class TigerCliApp
         List<TigerCliOptionMetadata> options,
         TigerCliSettings settings)
     {
-        if (option.Required)
+        if (option.Required || option.UseFilePicker)
             return true;
 
         return IsOptionConditionMatch(
@@ -3680,7 +3721,9 @@ public sealed class TigerCliApp
         ResourceManager? appResources,
         object? currentValue = null,
         bool useFolderPicker = false,
-        IFolderBrowser? folderBrowser = null)
+        IFolderBrowser? folderBrowser = null,
+        TigerCliFileOpenAttribute? fileOpen = null,
+        TigerCliFileSaveAttribute? fileSave = null)
     {
         var underlying = Nullable.GetUnderlyingType(propertyType) ?? propertyType;
 
@@ -3701,6 +3744,24 @@ public sealed class TigerCliApp
                 return folder.Value is string folderPath
                     ? PromptResolutionResult.Success(folderPath)
                     : PromptResolutionResult.Canceled(folder.ResultKind);
+            }
+
+            if (fileOpen != null || fileSave != null)
+            {
+                var promptShell = shell ?? InlineShell.Instance;
+                var control = new InlineFileSelect(
+                    promptShell,
+                    folderBrowser ?? new FileSystemFolderBrowser(),
+                    save: fileSave != null,
+                    initialPath: initialValue,
+                    defaultExtension: fileSave?.DefaultExtension,
+                    defaultFileName: fileSave?.DefaultFileName,
+                    filter: fileOpen?.Filter ?? fileSave?.Filter);
+                var dialog = new InlineDialog(promptShell, prompt, control);
+                var result = await promptShell.RunModalAsync(dialog, timeout, ct).ConfigureAwait(false);
+                return result.Kind == DialogResultKind.Ok && result.Payload is string filePath
+                    ? PromptResolutionResult.Success(filePath)
+                    : PromptResolutionResult.Canceled(result.Kind);
             }
 
             var value = isSecret
@@ -4044,6 +4105,109 @@ public sealed class TigerCliApp
     private readonly record struct IntegerBounds(int? Min, int? Max)
     {
         public static IntegerBounds Empty { get; } = new(null, null);
+    }
+
+    private static async Task<PromptResolutionResult> ValidateFileOptionsAsync(
+        TigerCliSettings settings,
+        List<TigerCliOptionMetadata> options,
+        TigerCliParseResult parseResult,
+        TigerCliInteractionMode interactionMode,
+        ICliAppShell? shell,
+        TimeSpan? promptTimeout,
+        CancellationToken ct,
+        CultureInfo culture)
+    {
+        foreach (var option in options)
+        {
+            if (!option.UseFilePicker || !parseResult.OptionValues.ContainsKey(option))
+                continue;
+
+            var displayName = GetPreferredAlias(option);
+            var path = option.Property.GetValue(settings) as string;
+            if (string.IsNullOrWhiteSpace(path))
+                continue; // Required/string validation reports the standard empty-value error first.
+
+            if (option.FileOpen != null)
+            {
+                if (!File.Exists(path))
+                    return PromptResolutionResult.Failure(
+                        "Error_FileOpen_MustExist",
+                        new object[] { Esc(displayName), Esc(path) },
+                        TigerCliExitKind.ValidationError);
+                continue;
+            }
+
+            var save = option.FileSave!;
+            path = ApplyDefaultExtension(path, save.DefaultExtension);
+            option.Property.SetValue(settings, path);
+
+            string fullPath;
+            string? parent;
+            try
+            {
+                fullPath = Path.GetFullPath(path);
+                parent = Path.GetDirectoryName(fullPath);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException)
+            {
+                return PromptResolutionResult.Failure(
+                    "Error_FileSave_ParentMissing",
+                    new object[] { Esc(displayName), Esc(path) },
+                    TigerCliExitKind.ValidationError);
+            }
+
+            if (parent == null || !Directory.Exists(parent) || Directory.Exists(fullPath))
+                return PromptResolutionResult.Failure(
+                    "Error_FileSave_ParentMissing",
+                    new object[] { Esc(displayName), Esc(path) },
+                    TigerCliExitKind.ValidationError);
+
+            option.Property.SetValue(settings, fullPath);
+            if (!File.Exists(fullPath))
+                continue;
+
+            var overwriteOverride = option.OverwriteWhenProperty?.GetValue(settings) is true;
+            if (overwriteOverride || save.Overwrite == TigerCliFileOverwrite.Allow)
+                continue;
+
+            if (save.Overwrite == TigerCliFileOverwrite.Deny)
+                return PromptResolutionResult.Failure(
+                    "Error_FileSave_OverwriteDenied",
+                    new object[] { Esc(displayName), Esc(fullPath) },
+                    TigerCliExitKind.ValidationError);
+
+            if (interactionMode != TigerCliInteractionMode.SemiInteractive)
+                return PromptResolutionResult.Failure(
+                    "Error_FileSave_OverwriteRequiresConfirmation",
+                    new object[] { Esc(displayName), Esc(fullPath) },
+                    TigerCliExitKind.ValidationError);
+
+            AdoptSingletonCultureIfNoShell(shell, culture);
+            var promptShell = shell ?? InlineShell.Instance;
+            var confirmation = await TigerTui.ConfirmResultAsync(
+                promptShell,
+                TigerCliResources.Format("Prompt_FileSave_Overwrite", culture, fullPath),
+                preselect: false,
+                timeout: promptTimeout,
+                ct: ct).ConfigureAwait(false);
+            if (confirmation.ResultKind == DialogResultKind.Yes)
+                continue;
+            if (confirmation.ResultKind == DialogResultKind.No)
+                return PromptResolutionResult.Failure(
+                    "Error_FileSave_OverwriteDeclined",
+                    new object[] { Esc(displayName), Esc(fullPath) },
+                    TigerCliExitKind.ValidationError);
+            return PromptResolutionResult.UserCancellation();
+        }
+
+        return PromptResolutionResult.Success();
+    }
+
+    private static string ApplyDefaultExtension(string path, string? extension)
+    {
+        if (string.IsNullOrWhiteSpace(extension) || Path.HasExtension(path) || path.EndsWith('.'))
+            return path;
+        return path + (extension.StartsWith('.') ? extension : "." + extension);
     }
 
     // ── Framework validation ────────────────────────────────────────

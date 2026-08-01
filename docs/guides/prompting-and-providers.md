@@ -173,6 +173,8 @@ When no provider is configured, TigerCli can prompt some missing values from the
 |---|---|
 | `string` / `string?` | Text input |
 | `string` / `string?` with `[TigerCliFolderSelect]` | Folder picker |
+| `string` / `string?` with `[TigerCliFileOpen]` | Existing-file picker |
+| `string` / `string?` with `[TigerCliFileSave]` | Output-file picker |
 | `int` / `int?` | Text input with integer validation |
 | `bool?` | Confirm |
 | enum | Select |
@@ -280,6 +282,41 @@ Behavior:
 The picker browses the real filesystem by default. Apps (and tests) can override the filesystem source with `TigerCliAppBuilder.UseFolderBrowser(IFolderBrowser)`. The control behavior is documented under the folder-select section of [semi-interactive prompts](semi-interactive-prompts.md).
 
 See [Folder Copy](../examples/folder-copy.md) for the public sample that uses required `--source` and `--destination` folder-select options, prompts for missing folders in semi-interactive mode, and fails cleanly under `--non-interactive`.
+
+### File Open And Save
+
+Use [`TigerCliFileOpenAttribute`](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliFileOpenAttribute.html) for an existing input file and [`TigerCliFileSaveAttribute`](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliFileSaveAttribute.html) for an output path. Both apply to one `string` / `string?` option and make the path required: semi-interactive runs browse or accept a typed full path, while `--non-interactive` requires a supplied value and never opens a browser or confirmation prompt. The picker lists folders before files; Enter opens a folder or selects a file, and Escape cancels normally.
+
+```csharp
+public sealed class ProjectTransferSettings : TigerCliSettings
+{
+    [TigerCliOption("--input")]
+    [TigerCliFileOpen(Filter = "*.json")]
+    public string InputPath { get; set; } = string.Empty;
+
+    [TigerCliOption("--output")]
+    [TigerCliFileSave(
+        DefaultExtension = ".json",
+        DefaultFileName = "project.json",
+        Filter = "*.json",
+        Overwrite = TigerCliFileOverwrite.Prompt,
+        OverwriteWhenOption = nameof(Force))]
+    public string OutputPath { get; set; } = string.Empty;
+
+    [TigerCliOption("--force")]
+    public bool Force { get; set; }
+}
+```
+
+File open accepts only an existing file; directories and missing paths fail validation. File save requires an existing parent directory and does not create folders. `DefaultExtension` is appended when the accepted name has no extension, `DefaultFileName` seeds an empty picker, and `Filter` limits only the visible file list—not a path typed or supplied directly.
+
+[`TigerCliFileOverwrite`](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliFileOverwrite.html) controls existing output files:
+
+- `Deny` rejects the path.
+- `Prompt` asks in semi-interactive mode and fails clearly under `--non-interactive`.
+- `Allow` accepts without asking.
+
+`OverwriteWhenOption` names a `bool` or `bool?` property on the same settings type. After all options are bound, `true` permits overwrite without a warning; `false` or `null` leaves the static policy in effect. An unknown property or wrong type is rejected when the app is built. With `Allow`, the override is a harmless no-op.
 
 ### Multi-Select (Select Zero Or Many)
 

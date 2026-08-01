@@ -77,6 +77,18 @@ internal sealed class TigerCliOptionMetadata
     /// </summary>
     public bool UseFolderPicker { get; }
 
+    /// <summary>File-open picker configuration, or null when the option is not a file-open path.</summary>
+    public TigerCliFileOpenAttribute? FileOpen { get; }
+
+    /// <summary>File-save picker configuration, or null when the option is not a file-save path.</summary>
+    public TigerCliFileSaveAttribute? FileSave { get; }
+
+    /// <summary>True when the option uses either file picker.</summary>
+    public bool UseFilePicker => FileOpen != null || FileSave != null;
+
+    /// <summary>The validated overwrite-override property for a file-save option, or null.</summary>
+    public PropertyInfo? OverwriteWhenProperty { get; }
+
     /// <summary>
     /// True when the property carries <see cref="TigerCliMultiSelectAttribute"/>, so the option is a
     /// provider-backed multi-select (checklist prompt; comma/repeat non-interactive parsing).
@@ -154,13 +166,46 @@ internal sealed class TigerCliOptionMetadata
                     $"[TigerCliFolderSelect] on '{property.DeclaringType?.Name}.{property.Name}' requires a string or string? property, but the property type is '{property.PropertyType.Name}'.");
         }
 
+        FileOpen = property.GetCustomAttribute<TigerCliFileOpenAttribute>();
+        FileSave = property.GetCustomAttribute<TigerCliFileSaveAttribute>();
+        if (FileOpen != null && FileSave != null)
+            throw new InvalidOperationException(
+                $"'{property.DeclaringType?.Name}.{property.Name}' cannot combine [TigerCliFileOpen] and [TigerCliFileSave].");
+
+        if (UseFilePicker)
+        {
+            var fileUnderlying = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+            if (fileUnderlying != typeof(string))
+                throw new InvalidOperationException(
+                    $"A file picker on '{property.DeclaringType?.Name}.{property.Name}' requires a string or string? property, but the property type is '{property.PropertyType.Name}'.");
+            if (UseFolderPicker)
+                throw new InvalidOperationException(
+                    $"'{property.DeclaringType?.Name}.{property.Name}' cannot combine [TigerCliFolderSelect] with a file picker attribute.");
+        }
+
+        if (FileSave != null && !string.IsNullOrWhiteSpace(FileSave.OverwriteWhenOption))
+        {
+            var settingsType = property.DeclaringType
+                ?? throw new InvalidOperationException($"Cannot resolve the settings type for '{property.Name}'.");
+            OverwriteWhenProperty = settingsType.GetProperty(
+                FileSave.OverwriteWhenOption,
+                BindingFlags.Public | BindingFlags.Instance);
+            if (OverwriteWhenProperty == null)
+                throw new InvalidOperationException(
+                    $"[TigerCliFileSave] on '{settingsType.Name}.{property.Name}' references unknown OverwriteWhenOption property '{FileSave.OverwriteWhenOption}'.");
+            if (OverwriteWhenProperty.PropertyType != typeof(bool)
+                && OverwriteWhenProperty.PropertyType != typeof(bool?))
+                throw new InvalidOperationException(
+                    $"[TigerCliFileSave] on '{settingsType.Name}.{property.Name}' requires OverwriteWhenOption property '{OverwriteWhenProperty.Name}' to be bool or bool?, but it is '{OverwriteWhenProperty.PropertyType.Name}'.");
+        }
+
         var multiSelectAttribute = property.GetCustomAttribute<TigerCliMultiSelectAttribute>();
         UseMultiSelect = multiSelectAttribute != null;
         if (multiSelectAttribute != null)
         {
-            if (UseFolderPicker)
+            if (UseFolderPicker || UseFilePicker)
                 throw new InvalidOperationException(
-                    $"[TigerCliMultiSelect] on '{property.DeclaringType?.Name}.{property.Name}' cannot be combined with [TigerCliFolderSelect].");
+                    $"[TigerCliMultiSelect] on '{property.DeclaringType?.Name}.{property.Name}' cannot be combined with a folder or file picker attribute.");
 
             (MultiSelectElementType, MultiSelectIsArray) = ResolveMultiSelectElementType(property);
             MultiSelectAllowCustomValues = multiSelectAttribute.AllowCustomValues;
