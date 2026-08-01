@@ -8,7 +8,15 @@ TigerCli is an opinionated .NET framework for building script-safe, command-driv
 
 It is built for CLI apps that need predictable automation behavior, structured terminal output, governed input, metadata-driven help, typed exit codes, locale-aware text, and tests that run at the application boundary.
 
-TigerCli is still evolving. The core direction is deliberate, but docs and examples are being productized as the framework grows out of real TigerWrap and `tiger-sqlcmd` needs.
+TigerCli is pre-1.0 and approaching stabilization. Its documentation, examples, generated artifacts, API reference, package publishing, and release process are now part of the framework, not afterthoughts.
+
+## One Command Model, Multiple Interaction Modes
+
+Command code describes the input and operation it needs; TigerCli owns the interaction policy. The same command implementation can serve people through menus, prompts, selectors, providers, validation, and activity/progress UI, while scripts, CI jobs, and AI agents use explicit, discoverable command shapes.
+
+With `--non-interactive`, TigerCli disables prompts and command menus. A command still executes when all required input is supplied; missing input that could otherwise be prompted for fails clearly instead of blocking automation. Activities and progress run headlessly or emit stable non-interactive messages according to their configuration.
+
+Mode changes presentation and prompting policy; it should not change the business operation. App authors should not need separate interactive and automation implementations.
 
 ## Install
 
