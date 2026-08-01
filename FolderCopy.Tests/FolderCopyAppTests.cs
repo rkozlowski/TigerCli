@@ -31,8 +31,9 @@ public sealed class FolderCopyAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
-        Assert.Equal("top", File.ReadAllText(Path.Combine(destination, "top.txt")));
-        Assert.Equal("child", File.ReadAllText(Path.Combine(destination, "nested", "child.txt")));
+        var copiedFolder = Path.Combine(destination, "source");
+        Assert.Equal("top", File.ReadAllText(Path.Combine(copiedFolder, "top.txt")));
+        Assert.Equal("child", File.ReadAllText(Path.Combine(copiedFolder, "nested", "child.txt")));
         Assert.Contains("Copied", result.StdOut);
     }
 
@@ -67,7 +68,61 @@ public sealed class FolderCopyAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
-        Assert.Contains("No files to copy", result.StdOut);
+        Assert.True(Directory.Exists(Path.Combine(destination, "source")));
+        Assert.Contains("Copied empty folder", result.StdOut);
+    }
+
+    [Fact]
+    public async Task Copy_SourceWithTrailingSeparator_UsesSourceFolderName()
+    {
+        using var temp = new TempDir();
+        var source = temp.CreateDir("named-source") + Path.DirectorySeparatorChar;
+        var destination = temp.CreateDir("destination");
+        temp.WriteFile("named-source/file.txt", "content");
+
+        var result = await TigerCliAppTestHost
+            .For(FolderCopyApp.Create())
+            .WithArgs("--source", source, "--destination", destination, "--non-interactive")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
+        Assert.Equal("content", File.ReadAllText(Path.Combine(destination, "named-source", "file.txt")));
+    }
+
+    [Fact]
+    public async Task Copy_ExistingSourceNamedTarget_MergesAndOverwrites()
+    {
+        using var temp = new TempDir();
+        var source = temp.CreateDir("source");
+        var destination = temp.CreateDir("destination");
+        temp.WriteFile("source/data.txt", "new");
+        temp.WriteFile("destination/source/data.txt", "stale-content");
+        temp.WriteFile("destination/source/kept.txt", "kept");
+
+        var result = await TigerCliAppTestHost
+            .For(FolderCopyApp.Create())
+            .WithArgs("--source", source, "--destination", destination, "--non-interactive")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)FolderCopyExitCode.Ok, result.ExitCode);
+        Assert.Equal("new", File.ReadAllText(Path.Combine(destination, "source", "data.txt")));
+        Assert.Equal("kept", File.ReadAllText(Path.Combine(destination, "source", "kept.txt")));
+    }
+
+    [Fact]
+    public async Task Copy_DestinationParentWouldResolveToSource_Fails()
+    {
+        using var temp = new TempDir();
+        var source = temp.CreateDir("source");
+        temp.WriteFile("source/data.txt", "content");
+
+        var result = await TigerCliAppTestHost
+            .For(FolderCopyApp.Create())
+            .WithArgs("--source", source, "--destination", temp.Path, "--non-interactive")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)FolderCopyExitCode.CopyFailed, result.ExitCode);
+        Assert.Contains("copy target is the source", result.StdErr);
     }
 
     [Fact]

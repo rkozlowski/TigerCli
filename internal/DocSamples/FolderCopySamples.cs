@@ -60,6 +60,7 @@ internal static class FolderCopySamples
 
     private const string SourcePath = @"C:\Trip";
     private const string DestinationPath = @"D:\Backup";
+    private const string CopyTargetPath = @"D:\Backup\Trip";
     private const string WindowTitle = "folder-copy";
 
     // The fixed sample copy: Windows-style display paths (pure strings — nothing touches the real
@@ -263,7 +264,7 @@ internal static class FolderCopySamples
     {
         var plan = SamplePlan();
         var storyboard = BuildStoryboard(plan);
-        var spec = FolderCopyCommand.BuildActivitySpec(new FolderCopySettings(), plan, DestinationPath);
+        var spec = FolderCopyCommand.BuildActivitySpec(new FolderCopySettings(), plan, CopyTargetPath);
 
         var shell = DocTerminal.CreateShell(useManualClock: true);
         var operationDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

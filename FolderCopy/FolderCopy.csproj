@@ -10,7 +10,7 @@
     <AssemblyName>folder-copy</AssemblyName>
     <RootNamespace>FolderCopy</RootNamespace>
     <Product>Folder Copy</Product>
-    <Description>Recursively copies the contents of one folder into another.</Description>
+    <Description>Recursively copies a source folder into a destination parent folder.</Description>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

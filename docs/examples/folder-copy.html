@@ -15,7 +15,7 @@
 <p>Metadata-driven help for the single-default-command app: name and description come from the project file via UseAssemblyMetadata, plus the two required folder options.</p>
 <pre class="tc-source">folder-copy --help</pre>
 <pre class="tigercli"><span style="color:#5FFF00">folder-copy</span>
-  Recursively copies the contents of one folder into another.
+  Recursively copies a source folder into a destination parent folder.
 
 <span style="color:#00FFFF">Usage:</span>
   <span style="color:#5FFF00">folder-copy</span> [options]
@@ -25,7 +25,7 @@
       Source folder to copy from.
       Required.
   <span style="color:#5FFF00">-d</span>, <span style="color:#5FFF00">--destination</span> &lt;value&gt;
-      Destination folder to copy into.
+      Parent folder that receives the copied source folder.
       Required.
   <span style="color:#5FFF00">-h</span>, <span style="color:#5FFF00">--help</span>
       Show help
@@ -55,7 +55,7 @@ Copyright (c) 2026 IT Tiger
 <p>The rich copy activity dialog, captured mid-copy from the sample's own activity spec on a scripted TestShell with a manual clock: the current file with its own progress bar, the files-copied and total-size bars (all ProgressBarStyle.Dash), and the elapsed/ETA line. The bracketed glyph on the top border is the activity spinner overlay; Esc maps to the Cancel button.</p>
 <pre class="tc-source">folder-copy --source C:\Trip --destination D:\Backup</pre>
 <pre class="tigercli"><span style="color:#C0C0C0; background-color:#00005F">╔</span><span style="color:#C0C0C0; background-color:#00005F">[</span><span style="color:#C0C0C0; background-color:#00005F">⠴</span><span style="color:#C0C0C0; background-color:#00005F">]</span><span style="color:#C0C0C0; background-color:#00005F">══════════════════════════════════════════════════════════════════════════════</span><span style="color:#C0C0C0; background-color:#00005F">═</span><span style="color:#C0C0C0; background-color:#00005F">╗</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
-<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">                     Copying 6 files (56.0 MB) to D:\Backup…                      </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
+<span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">                  Copying 6 files (56.0 MB) to D:\Backup\Trip…                    </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
 <span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">        File: video\family-picnic.mp4                                             </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
 <span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">     Current: </span><span style="color:#00FFFF; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#808080; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#C0C0C0; background-color:#00005F"> 48.0%                    </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>
 <span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#00005F">       Files: </span><span style="color:#00FFFF; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#808080; background-color:#00005F">▰▰▰▰▰▰▰▰▰▰▰▰▰▰</span><span style="color:#C0C0C0; background-color:#00005F"> 66.7% </span><span style="color:#00FF00; background-color:#00005F">4/6</span><span style="color:#C0C0C0; background-color:#00005F">                </span><span style="color:#C0C0C0; background-color:#00005F">║</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">                                   </span>

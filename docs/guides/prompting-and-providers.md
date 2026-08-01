@@ -180,6 +180,10 @@ When no provider is configured, TigerCli can prompt some missing values from the
 | enum | Select |
 | `[Flags]` enum | Multi-select |
 
+See the [File Copy sample](../examples/file-copy.md) for a complete command-menu app that combines
+file-open, file-save, folder-select, overwrite confirmation, a `--force` override, and headless
+execution.
+
 Here a missing positional value is rendered as the framework-owned text-input prompt:
 
 ![Parser-driven text input prompt](../examples/png/roi-cities-basic-show-prompt.png)

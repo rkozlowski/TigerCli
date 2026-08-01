@@ -22,11 +22,11 @@ All app wiring lives in [`FolderCopyApp.Create`](../../FolderCopy/FolderCopyApp.
 
 ```csharp
 TigerCliApp.CreateBuilder()
-    .UseAssemblyMetadata(typeof(FolderCopyApp).Assembly, enableVersion: false)
+    .UseAssemblyMetadata(typeof(FolderCopyApp).Assembly)
     .SetDefaultCommand<FolderCopyCommand>();
 ```
 
-Its identity and description live in the project file — `<AssemblyName>folder-copy</AssemblyName>` (which is also the executable name) and `<Description>` — and are imported with `UseAssemblyMetadata(...)`, the preferred pattern for a normal executable app (see [command apps → app metadata](../guides/command-apps.md#app-metadata)). `enableVersion: false` reads the metadata without turning on `--version`, since this sample has no version. That shape is useful for operation tools where the app's main behavior is obvious from the executable name:
+Its identity, description, and shared `0.8.1` version live in the project metadata and are imported with `UseAssemblyMetadata(...)`, the preferred pattern for a normal executable app (see [command apps → app metadata](../guides/command-apps.md#app-metadata)). That shape is useful for operation tools where the app's main behavior is obvious from the executable name:
 
 ```bash
 folder-copy --source C:\Input --destination C:\Output
@@ -42,10 +42,12 @@ The command surface is intentionally small: source and destination are required 
 [TigerCliFolderSelect]
 public string? Source { get; set; }
 
-[TigerCliOption("-d|--destination", Required = true, Description = "Destination folder to copy into.")]
+[TigerCliOption("-d|--destination", Required = true, Description = "Parent folder that receives the copied source folder.")]
 [TigerCliFolderSelect]
 public string? Destination { get; set; }
 ```
+
+The destination is the parent folder, not the final copy root. For example, `folder-copy -s C:\Projects\TigerQuery -d R:\Backup` copies into `R:\Backup\TigerQuery`. A trailing separator on the source does not change its folder name. If the source-named target already exists, files are merged into it and matching files are overwritten; unrelated existing files remain.
 
 They are options rather than positional arguments because the folder picker is an option-level prompt. The trade-off is a named CLI (`--source`, `--destination`) instead of bare paths, but the result is clear prompting behavior:
 
@@ -89,7 +91,8 @@ The copy behavior is intentionally simple:
 
 - recursively enumerate files under the source root
 - preserve relative paths
-- create destination directories as needed
+- resolve the final target as `destination/source-folder-name`
+- create that source-named folder and destination directories as needed, including for an empty source
 - overwrite existing files
 - report progress while copying
 - observe cancellation before and during file I/O

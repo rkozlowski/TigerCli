@@ -27,8 +27,10 @@ public readonly record struct CopyProgress(
     long CurrentFileLength);
 
 /// <summary>
-/// Recursively copies the contents of one folder into another. Deliberately minimal: it preserves
-/// relative paths, creates destination directories as needed, and <b>overwrites</b> existing files.
+/// Plans a source folder and copies its contents into a resolved destination root. The command layer
+/// resolves that root as the destination parent plus the source folder name. This planner deliberately
+/// stays minimal: it preserves relative paths, creates destination directories as needed, and
+/// <b>overwrites</b> existing files.
 /// There is no retry, ACL preservation, symlink handling, exclude/ignore support, checksum, or mirror
 /// (delete) behavior — this is a usage example, not a production sync tool.
 /// </summary>

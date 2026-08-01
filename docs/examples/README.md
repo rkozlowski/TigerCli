@@ -1,7 +1,8 @@
 # Rendered Examples
 
 This directory contains generated rendering artifacts plus short handwritten notes for public sample
-apps, such as [Folder Copy](folder-copy.md).
+apps, such as [Folder Copy](folder-copy.md). [File Copy](file-copy.md) documents the focused
+file-open/file-save sample without adding another generated artifact set.
 
 The generated files are real TigerCli rendering captured through `HtmlSink` and `PngSink` (see
 [doc-artifacts.md](../design/doc-artifacts.md)). Curated artifacts are generated as

@@ -40,6 +40,18 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
             return FolderCopyExitCode.CopyFailed;
         }
 
+        if (!TryResolveCopyTarget(source, destination, out var copyTarget))
+        {
+            TigerConsole.MarkupErrorLine(settings.T("[Error]The source folder must have a folder name.[/]"));
+            return FolderCopyExitCode.CopyFailed;
+        }
+
+        if (PathsAreSame(source, copyTarget))
+        {
+            TigerConsole.MarkupErrorLine(settings.T("[Error]The resolved copy target is the source folder.[/]"));
+            return FolderCopyExitCode.CopyFailed;
+        }
+
         // Scanning phase: walk the source tree inside its own simple activity so a slow filesystem walk
         // shows progress feedback (and stays cancellable) instead of silently blocking before the copy.
         var scanResult = await TigerTui.RunActivityAsync(
@@ -62,23 +74,27 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
         var plan = scanResult.Value!;
         if (plan.Items.Count == 0)
         {
-            TigerConsole.MarkupLine(settings.E("[Muted]No files to copy under[/] {0}[Muted].[/]", source));
+            Directory.CreateDirectory(copyTarget);
+            TigerConsole.MarkupLine(settings.E(
+                "[Success]Copied empty folder[/] {0} [Success]to[/] {1}[Muted].[/]",
+                source,
+                copyTarget));
             return FolderCopyExitCode.Ok;
         }
 
-        var spec = BuildActivitySpec(settings, plan, destination);
+        var spec = BuildActivitySpec(settings, plan, copyTarget);
         var stopwatch = Stopwatch.StartNew();
 
         var result = await TigerTui.RunActivityAsync(spec, async (context, ct) =>
         {
-            await FolderCopyPlanner.ExecuteAsync(plan, destination,
+            await FolderCopyPlanner.ExecuteAsync(plan, copyTarget,
                 progress => ReportProgress(context, progress, stopwatch.Elapsed), ct).ConfigureAwait(false);
 
             return plan.Items.Count;
         });
 
         stopwatch.Stop();
-        return ReportOutcome(settings, result, plan, source, destination, stopwatch.Elapsed);
+        return ReportOutcome(settings, result, plan, source, copyTarget, stopwatch.Elapsed);
     }
 
     private static FolderCopyExitCode ReportOutcome(
@@ -219,5 +235,19 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
             ? StringComparison.OrdinalIgnoreCase
             : StringComparison.Ordinal;
         return string.Equals(fullA, fullB, comparison);
+    }
+
+    private static bool TryResolveCopyTarget(string source, string destinationParent, out string copyTarget)
+    {
+        var sourcePath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(source));
+        var sourceFolderName = Path.GetFileName(sourcePath);
+        if (string.IsNullOrWhiteSpace(sourceFolderName))
+        {
+            copyTarget = string.Empty;
+            return false;
+        }
+
+        copyTarget = Path.Combine(Path.GetFullPath(destinationParent), sourceFolderName);
+        return true;
     }
 }

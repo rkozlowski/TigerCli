@@ -17,18 +17,20 @@ Preserve readable prose; Markdown documentation must not become API-link soup.
 
 1. [Getting started](getting-started.md)
 2. [Folder Copy sample](examples/folder-copy.md)
-3. [Command apps](guides/command-apps.md)
-4. [Arguments and options](guides/arguments-and-options.md)
-5. [Interaction modes](guides/interaction-modes.md)
-6. [Prompting and providers](guides/prompting-and-providers.md)
-7. [Exit codes](guides/exit-codes.md)
-8. [Localization](guides/localization.md)
-9. [App testing](guides/app-testing.md)
+3. [File Copy sample](examples/file-copy.md)
+4. [Command apps](guides/command-apps.md)
+5. [Arguments and options](guides/arguments-and-options.md)
+6. [Interaction modes](guides/interaction-modes.md)
+7. [Prompting and providers](guides/prompting-and-providers.md)
+8. [Exit codes](guides/exit-codes.md)
+9. [Localization](guides/localization.md)
+10. [App testing](guides/app-testing.md)
 
 ## Examples
 
 - [Getting started / ROI Cities](getting-started.md) - the primary command-app example: app factory, `list`/`show`, selectors, providers, command menu, structured output, exit codes, and app-boundary tests
 - [Folder Copy](examples/folder-copy.md) - real-operation sample: default command, folder-select options, folder picker prompts, `RunActivityAsync`, progress bars, cancellation, non-interactive execution, and TigerCli-free planner tests
+- [File Copy](examples/file-copy.md) - menu-driven sample: file-open, file-save, folder-select, overwrite confirmation and `--force`, byte progress, and headless execution
 - [Rendered examples](examples/README.md) - generated HTML/PNG artifacts of real TigerCli rendering
 
 ## Guides

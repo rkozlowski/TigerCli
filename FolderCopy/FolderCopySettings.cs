@@ -19,7 +19,7 @@ public sealed class FolderCopySettings : TigerCliSettings
     [TigerCliFolderSelect]
     public string? Source { get; set; }
 
-    [TigerCliOption("-d|--destination", Required = true, Description = "Destination folder to copy into.")]
+    [TigerCliOption("-d|--destination", Required = true, Description = "Parent folder that receives the copied source folder.")]
     [TigerCliFolderSelect]
     public string? Destination { get; set; }
 }

@@ -95,7 +95,7 @@ Do not hand-render normal list/details output, and do not model edit as "add wit
 - Do not set `TigerCliPromptable.No` just to avoid learning the prompt system.
 - Do not manually prompt inside command handlers for values TigerCli can bind or prompt before the handler runs.
 - Respect `--non-interactive`; parser-driven prompts and prompt providers are skipped by the framework.
-- For one existing input file, put `[TigerCliFileOpen(Filter = "*.json")]` on the string option. For one output file, use `[TigerCliFileSave(DefaultExtension = ".json", DefaultFileName = "project.json", Overwrite = TigerCliFileOverwrite.Prompt, OverwriteWhenOption = nameof(Force))]`; pair the override with a `bool`/`bool?` `--force` option. File prompts require a supplied path under `--non-interactive`, and save never creates the parent directory.
+- For one existing input file, put `[TigerCliFileOpen(Filter = "*.json")]` on the string option. For one output file, use `[TigerCliFileSave(DefaultExtension = ".json", DefaultFileName = "project.json", Overwrite = TigerCliFileOverwrite.Prompt, OverwriteWhenOption = nameof(Force))]`; pair the override with a `bool`/`bool?` `--force` option. File prompts require a supplied path under `--non-interactive`, and save never creates the parent directory. See the [File Copy sample](examples/file-copy.md) for a focused end-to-end app.
 
 ```csharp
 public sealed class RunSettings : TigerCliSettings

@@ -11,7 +11,7 @@ chrome: FrameAndTitle
 title: folder-copy
 --- visible text ---
 ╔[⠴]═══════════════════════════════════════════════════════════════════════════════╗
-║                     Copying 6 files (56.0 MB) to D:\Backup…                      ║
+║                  Copying 6 files (56.0 MB) to D:\Backup\Trip…                    ║
 ║        File: video\family-picnic.mp4                                             ║
 ║     Current: ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰ 48.0%                    ║
 ║       Files: ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰ 66.7% 4/6                ║
