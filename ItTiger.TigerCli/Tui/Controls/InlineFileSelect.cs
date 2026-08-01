@@ -9,6 +9,11 @@ namespace ItTiger.TigerCli.Tui.Controls;
 /// <summary>
 /// Internal single-file picker used by command-option file-open and file-save prompts.
 /// </summary>
+/// <remarks>
+/// Initial population is synchronous because construction precedes the modal loop. During a modal
+/// session, directory navigation loads entries on a background task and shows the same top-frame
+/// spinner used by <see cref="InlineFolderSelect"/> until the modal loop applies the completed list.
+/// </remarks>
 internal sealed class InlineFileSelect : InlineMultiControl
 {
     private static readonly string FolderMarker = $"{ConsoleSymbol.ChevronRight} ";
@@ -25,6 +30,21 @@ internal sealed class InlineFileSelect : InlineMultiControl
     private readonly int _pathIndex;
     private readonly int _listIndex;
     private readonly int _buttonIndex;
+
+    private readonly SpinnerTicker _spinner;
+    private readonly InlineActivityOverlay[] _activityOverlays;
+
+    private readonly object _loadSync = new();
+    private CancellationToken _modalToken;
+    private volatile bool _modalActive;
+    private bool _loading;
+    private int _loadGeneration;
+    private bool _closed;
+    private bool _hasPending;
+    private IReadOnlyList<FilePickerEntry>? _pendingEntries;
+    private string? _pendingHighlightPath;
+    private string? _pendingPathText;
+
     private IReadOnlyList<FilePickerEntry> _entries = [];
     private string? _location;
     private string? _acceptedPath;
@@ -46,9 +66,23 @@ internal sealed class InlineFileSelect : InlineMultiControl
         _defaultFileName = string.IsNullOrWhiteSpace(defaultFileName) ? null : defaultFileName;
         _filter = string.IsNullOrWhiteSpace(filter) ? null : filter;
 
+        _spinner = new SpinnerTicker(active: false);
+        _activityOverlays =
+        [
+            new InlineActivityOverlay
+            {
+                Area = InlineDialogArea.TopFrame,
+                ColumnOffset = 1,
+                MaxLength = InlineActivityOverlay.SpinnerMaxLength,
+                Ticker = _spinner,
+                ContentFormatter = static frame => $"[{frame}]",
+                Style = Shell.Theme.Resolve(ThemeStyle.Frame).CharStyle ?? default,
+            }
+        ];
+
         var resolved = ResolveInitial(initialPath);
         _location = resolved.Location;
-        LoadEntries();
+        _entries = ReadEntries(_location);
 
         var initialText = resolved.InputPath;
         _pathInput = new InlineTextInputWidget(shell, initialText, width: shell.Viewport.Width - 10);
@@ -105,6 +139,59 @@ internal sealed class InlineFileSelect : InlineMultiControl
 
     public override InlineDialogArea DialogArea => InlineDialogArea.InFrameScrollable;
 
+    /// <inheritdoc/>
+    public override IReadOnlyList<InlineActivityOverlay> GetActivityOverlays() => _activityOverlays;
+
+    /// <inheritdoc/>
+    public override void OnModalOpened(CancellationToken modalToken)
+    {
+        _modalToken = modalToken;
+        _modalActive = true;
+    }
+
+    /// <inheritdoc/>
+    public override void OnModalClosed()
+    {
+        lock (_loadSync)
+        {
+            _closed = true;
+            _hasPending = false;
+            _pendingEntries = null;
+            _pendingHighlightPath = null;
+            _pendingPathText = null;
+        }
+
+        _modalActive = false;
+        _loading = false;
+        _spinner.Stop();
+    }
+
+    /// <inheritdoc/>
+    public override bool AdvanceState(DateTime nowUtc)
+    {
+        IReadOnlyList<FilePickerEntry> entries;
+        string? highlightPath;
+        string? pathText;
+        lock (_loadSync)
+        {
+            if (!_hasPending)
+                return false;
+
+            entries = _pendingEntries ?? [];
+            highlightPath = _pendingHighlightPath;
+            pathText = _pendingPathText;
+            _hasPending = false;
+            _pendingEntries = null;
+            _pendingHighlightPath = null;
+            _pendingPathText = null;
+        }
+
+        _loading = false;
+        _spinner.Stop();
+        ApplyEntries(entries, highlightPath, pathText);
+        return true;
+    }
+
     protected override InlineKeyResult HandleFocusedWidgetKey(KeyEvent key)
     {
         if (FocusedWidgetIndex == _pathIndex)
@@ -131,6 +218,21 @@ internal sealed class InlineFileSelect : InlineMultiControl
 
     private InlineKeyResult HandleListKey(KeyEvent key)
     {
+        if (_loading)
+        {
+            switch (key.Key)
+            {
+                case ConsoleKey.Enter:
+                case ConsoleKey.Spacebar:
+                case ConsoleKey.RightArrow:
+                case ConsoleKey.Backspace:
+                case ConsoleKey.LeftArrow:
+                    return InlineKeyResult.Handled;
+            }
+
+            return InlineKeyResult.NotHandled;
+        }
+
         switch (key.Key)
         {
             case ConsoleKey.Enter:
@@ -185,10 +287,9 @@ internal sealed class InlineFileSelect : InlineMultiControl
 
         var fileName = _save ? CurrentSaveFileName() : null;
         _location = entry.Value.Path;
-        LoadEntries();
-        _entryList.SetItems(LabelsForEntries(), SelectedIndexForPath(null));
-        _pathInput.SetText(_save ? SavePathForLocation(_location, fileName) : _location);
-        ClearValidationHint();
+        BeginLoad(
+            highlightPath: null,
+            pathText: _save ? SavePathForLocation(_location, fileName) : _location);
     }
 
     private void NavigateUp()
@@ -199,10 +300,9 @@ internal sealed class InlineFileSelect : InlineMultiControl
         var previous = _location;
         var fileName = _save ? CurrentSaveFileName() : null;
         _location = parent;
-        LoadEntries();
-        _entryList.SetItems(LabelsForEntries(), SelectedIndexForPath(previous));
-        _pathInput.SetText(_save ? SavePathForLocation(_location, fileName) : previous);
-        ClearValidationHint();
+        BeginLoad(
+            highlightPath: previous,
+            pathText: _save ? SavePathForLocation(_location, fileName) : previous);
     }
 
     private InlineKeyResult ValidatePathForOk()
@@ -240,12 +340,64 @@ internal sealed class InlineFileSelect : InlineMultiControl
         }
     }
 
-    private void LoadEntries()
+    private void BeginLoad(string? highlightPath, string? pathText)
+    {
+        ClearValidationHint();
+
+        if (!_modalActive)
+        {
+            ApplyEntries(ReadEntries(_location), highlightPath, pathText);
+            return;
+        }
+
+        int generation;
+        lock (_loadSync)
+        {
+            generation = ++_loadGeneration;
+            _hasPending = false;
+            _pendingEntries = null;
+            _pendingHighlightPath = null;
+            _pendingPathText = null;
+        }
+
+        var location = _location;
+        _loading = true;
+        _spinner.Start();
+
+        _ = Task.Run(() =>
+        {
+            var entries = ReadEntries(location);
+
+            lock (_loadSync)
+            {
+                if (_closed || generation != _loadGeneration)
+                    return;
+
+                _pendingEntries = entries;
+                _pendingHighlightPath = highlightPath;
+                _pendingPathText = pathText;
+                _hasPending = true;
+            }
+        }, _modalToken);
+    }
+
+    private void ApplyEntries(
+        IReadOnlyList<FilePickerEntry> entries,
+        string? highlightPath,
+        string? pathText)
+    {
+        _entries = entries;
+        _entryList.SetItems(LabelsForEntries(), SelectedIndexForPath(highlightPath));
+        _pathInput.SetText(pathText ?? string.Empty);
+        ClearValidationHint();
+    }
+
+    private IReadOnlyList<FilePickerEntry> ReadEntries(string? location)
     {
         var entries = new List<FilePickerEntry>();
         try
         {
-            entries.AddRange((_browser.GetEntries(_location) ?? [])
+            entries.AddRange((_browser.GetEntries(location) ?? [])
                 .Select(entry => new FilePickerEntry(entry.Label, entry.Path, IsDirectory: true)));
         }
         catch
@@ -254,12 +406,12 @@ internal sealed class InlineFileSelect : InlineMultiControl
             // custom implementation violates that contract.
         }
 
-        if (_location != null)
+        if (location != null)
         {
             try
             {
                 var pattern = _filter ?? "*";
-                entries.AddRange(Directory.EnumerateFiles(_location, pattern, SearchOption.TopDirectoryOnly)
+                entries.AddRange(Directory.EnumerateFiles(location, pattern, SearchOption.TopDirectoryOnly)
                     .OrderBy(Path.GetFileName, StringComparer.CurrentCultureIgnoreCase)
                     .Select(path => new FilePickerEntry(Path.GetFileName(path), path, IsDirectory: false)));
             }
@@ -269,7 +421,7 @@ internal sealed class InlineFileSelect : InlineMultiControl
             }
         }
 
-        _entries = entries;
+        return entries;
     }
 
     private InitialFileState ResolveInitial(string? initialPath)
