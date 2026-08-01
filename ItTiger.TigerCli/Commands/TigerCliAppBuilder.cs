@@ -12,7 +12,7 @@ namespace ItTiger.TigerCli.Commands;
 /// <summary>
 /// Fluent builder for a <see cref="TigerCliApp"/>, obtained from
 /// <see cref="TigerCliApp.CreateBuilder"/>. Configures app metadata, commands and command groups,
-/// interaction/prompt modes, providers, themes, cultures, and exit-code policy; call
+/// interaction/prompt modes, app contributions, providers, themes, cultures, and exit-code policy; call
 /// <see cref="Build"/> to produce the immutable app. All configuration methods return this
 /// builder for chaining.
 /// </summary>
@@ -67,8 +67,24 @@ public sealed class TigerCliAppBuilder
     private bool _commandMenuIsDefault;
     private string? _commandMenuDescription;
     private string? _commandMenuDescriptionResourceKey;
+    private readonly List<ITigerCliAppContribution> _contributions = new();
 
     internal TigerCliAppBuilder() { }
+
+    /// <summary>
+    /// Registers reusable app-wide configuration supplied by <paramref name="contribution"/>. The
+    /// contribution is configured when <see cref="Build"/> runs, so invalid, duplicate, reserved, or
+    /// conflicting contributed global option names fail during app construction.
+    /// </summary>
+    /// <param name="contribution">The reusable contribution the host app chooses to enable.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="contribution"/> is <c>null</c>.</exception>
+    public TigerCliAppBuilder AddContribution(ITigerCliAppContribution contribution)
+    {
+        ArgumentNullException.ThrowIfNull(contribution);
+        _contributions.Add(contribution);
+        return this;
+    }
 
     /// <summary>
     /// Overrides the command/executable name used in usage output. For a normal executable app,
@@ -1299,6 +1315,11 @@ public sealed class TigerCliAppBuilder
                     $"A command with the path '{_commandMenuName}' is already registered; the command menu cannot reuse it.");
         }
 
+        var contributionBuilder = new TigerCliAppContributionBuilder();
+        foreach (var contribution in _contributions)
+            contribution.Configure(contributionBuilder);
+        var globalOptions = contributionBuilder.GlobalOptions.Build();
+
         var (defaultCulture, supportedCultures) = ResolveCultures();
         var metadata = new TigerCliApplicationMetadata(
             _displayName ?? _applicationName,
@@ -1342,7 +1363,8 @@ public sealed class TigerCliAppBuilder
             _commandMenuIsDefault,
             _commandMenuDescription,
             _commandMenuDescriptionResourceKey,
-            _aliases);
+            _aliases,
+            globalOptions);
     }
 
     private static (string Version, string ProductVersion) ResolveAssemblyVersions(Assembly assembly)

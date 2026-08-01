@@ -95,6 +95,7 @@
   <data name="Error_UnexpectedArgument" xml:space="preserve"><value>Unexpected argument: '{0}'</value></data>
   <data name="Error_UnexpectedPositional" xml:space="preserve"><value>Unexpected positional argument after options: {0}</value></data>
   <data name="Error_OptionRequiresValue" xml:space="preserve"><value>Option '{0}' requires a value.</value></data>
+  <data name="Error_GlobalOptionRepeated" xml:space="preserve"><value>Global option '{0}' may only be specified once.</value></data>
   <data name="Error_OptionRequiresKVP" xml:space="preserve"><value>Option '{0}' requires a key-value pair (key=value or key value).</value></data>
   <data name="Error_MissingArgument" xml:space="preserve"><value>Missing required argument: &lt;{0}&gt;</value></data>
   <data name="Error_MissingOption" xml:space="preserve"><value>Missing required option: {0}</value></data>

@@ -73,6 +73,22 @@ builder.AddCommandGroup("connections", group => group
     .AddCommand<DeleteConnectionCommand>("delete"));
 ```
 
+## Reusable App Contributions
+
+- Use `ITigerCliAppContribution` when a reusable TigerCli-based library needs one app-wide CLI
+  configuration option shared across its commands.
+- The host must opt in with `TigerCliAppBuilder.AddContribution(...)`; do not register library
+  contributions implicitly.
+- In 0.9.1, use only `builder.GlobalOptions.AddOptionalString(...)`: one long name, no alias,
+  optional string value, CLI-only, and never promptable or provider-backed.
+- Apply the parsed `string?` to library-owned options or services in the callback. Return
+  `TigerCliValidationResult.Error(...)` for library-owned validation failures.
+- Do not use static value stores, inspect raw arguments in handlers, or model ordinary command
+  inputs as global contributions.
+
+See [App contributions and global options](guides/app-contributions.md) for the ownership boundary,
+lifecycle, constraints, and host composition example.
+
 ## CRUD Shape
 
 TigerCli is strongly suited to CRUD-style command apps:

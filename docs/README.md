@@ -19,12 +19,13 @@ Preserve readable prose; Markdown documentation must not become API-link soup.
 2. [Folder Copy sample](examples/folder-copy.md)
 3. [File Copy sample](examples/file-copy.md)
 4. [Command apps](guides/command-apps.md)
-5. [Arguments and options](guides/arguments-and-options.md)
-6. [Interaction modes](guides/interaction-modes.md)
-7. [Prompting and providers](guides/prompting-and-providers.md)
-8. [Exit codes](guides/exit-codes.md)
-9. [Localization](guides/localization.md)
-10. [App testing](guides/app-testing.md)
+5. [App contributions and global options](guides/app-contributions.md)
+6. [Arguments and options](guides/arguments-and-options.md)
+7. [Interaction modes](guides/interaction-modes.md)
+8. [Prompting and providers](guides/prompting-and-providers.md)
+9. [Exit codes](guides/exit-codes.md)
+10. [Localization](guides/localization.md)
+11. [App testing](guides/app-testing.md)
 
 ## Examples
 
@@ -39,6 +40,7 @@ Guides are the practical docs for building applications with TigerCli.
 
 - [Using TigerCli with AI coding agents](ai-usage.md) - compact implementation rules for AI-generated TigerCli apps
 - [Command apps](guides/command-apps.md) - build TigerCli command apps with settings, command paths, options, help, exit codes, localization, and tests
+- [App contributions and global options](guides/app-contributions.md) - let reusable libraries contribute constrained CLI-only app-wide options that hosts explicitly enable
 - [Arguments and options](guides/arguments-and-options.md) - bind positional arguments, options, repeated values, key-value options, prompts, and validation
 - [Interaction modes](guides/interaction-modes.md)
 - [Prompting and providers](guides/prompting-and-providers.md) - collect missing values safely with parser-driven prompts and provider-backed choices

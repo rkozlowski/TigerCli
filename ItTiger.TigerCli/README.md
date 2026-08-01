@@ -82,6 +82,7 @@ command groups, localization, reusable handlers, and application-specific exit c
 - Activity dialogs, spinners, cancellation, and progress bars
 - Built-in themes plus console, HTML, and test-friendly rendering sinks
 - Automation-safe `--non-interactive` behavior with no surprise prompts
+- Opt-in app contributions for constrained, reusable-library global string options
 - Configurable exit-code policy and portable `TigerCliExitKind` outcomes
 - App-level test hosting and deterministic TUI test infrastructure
 

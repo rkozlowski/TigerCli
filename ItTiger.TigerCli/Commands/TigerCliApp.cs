@@ -20,7 +20,8 @@ namespace ItTiger.TigerCli.Commands;
 /// <summary>
 /// A configured TigerCli command application: the immutable result of
 /// <see cref="TigerCliAppBuilder.Build"/>. Owns the full run pipeline — culture resolution, theme
-/// application, command resolution, parsing, prompting, validation, and handler execution — and
+/// application, command resolution, contributed global options, parsing, prompting, validation,
+/// and handler execution — and
 /// maps the outcome to a process exit code through the configured exit-code policy.
 /// Create one with <see cref="CreateBuilder"/>; instances cannot be constructed directly.
 /// </summary>
@@ -52,6 +53,7 @@ public sealed class TigerCliApp
     private readonly bool _terminalTitleManagementEnabled;
     private readonly bool _spinnerTitlePrefixEnabled;
     private readonly CommandMenuMode _commandMenuMode;
+    private readonly IReadOnlyList<TigerCliGlobalOptionRegistration> _globalOptions;
 
     // Whether TigerCli registers process/system cancellation handlers (Ctrl-C / SIGINT / SIGTERM /
     // SIGQUIT) at run start. Default-on; disabled via TigerCliAppBuilder.DisableProcessCancellation().
@@ -122,7 +124,8 @@ public sealed class TigerCliApp
         bool commandMenuIsDefault = false,
         string? commandMenuDescription = null,
         string? commandMenuDescriptionResourceKey = null,
-        List<TigerCliCommandAliasRegistration>? aliases = null)
+        List<TigerCliCommandAliasRegistration>? aliases = null,
+        IReadOnlyList<TigerCliGlobalOptionRegistration>? globalOptions = null)
     {
         _processCancellationEnabled = processCancellationEnabled;
         _commandMenuMode = commandMenuMode;
@@ -148,6 +151,7 @@ public sealed class TigerCliApp
         _appResources = appResources;
         _themeConfiguration = themeConfiguration;
         _folderBrowser = folderBrowser ?? new FileSystemFolderBrowser();
+        _globalOptions = globalOptions ?? [];
 
         // The command menu is registered as a normal command (default or named) using the internal
         // sentinel handler. It is intercepted before execution; it never runs the sentinel handler.
@@ -204,6 +208,39 @@ public sealed class TigerCliApp
         // sentinel) is known, so conflict detection and target resolution see every command path.
         _aliases = aliases ?? new List<TigerCliCommandAliasRegistration>();
         ValidateAndLinkAliases();
+        ValidateGlobalOptionCommandCollisions();
+    }
+
+    private void ValidateGlobalOptionCommandCollisions()
+    {
+        if (_globalOptions.Count == 0)
+            return;
+
+        var commands = _namedCommands
+            .Append(_defaultCommand)
+            .Where(command => command != null && !command.IsCommandMenu)
+            .Select(command => command!)
+            .GroupBy(command => command.SettingsType)
+            .Select(group => group.First());
+
+        foreach (var command in commands)
+        {
+            var commandOptionNames = command.SettingsType
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Select(property => property.GetCustomAttribute<TigerCliOptionAttribute>())
+                .Where(attribute => attribute != null)
+                .SelectMany(attribute => attribute!.Aliases)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var globalOption in _globalOptions)
+            {
+                if (commandOptionNames.Contains(globalOption.Name))
+                {
+                    throw new InvalidOperationException(
+                        $"Contributed global option '{globalOption.Name}' conflicts with a command-specific option on settings type '{command.SettingsType.Name}'.");
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -358,7 +395,17 @@ public sealed class TigerCliApp
         }
 
         var nonInteractiveRequested = args.Any(a => a is "--non-interactive");
-        var frameworkArgs = StripFrameworkOptions(args);
+        var globalOptionParse = ParseGlobalOptions(StripFrameworkOptions(args));
+        if (globalOptionParse.ErrorResourceKey != null)
+        {
+            WriteFrameworkError(culture, TigerCliResources.Format(
+                globalOptionParse.ErrorResourceKey,
+                culture,
+                globalOptionParse.ErrorArgs ?? Array.Empty<object>()));
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
+
+        var frameworkArgs = globalOptionParse.RemainingArgs;
 
         // 1. Resolve command from first positional token. When no leaf command
         // matches, a matched group prefix gives us the group context for help.
@@ -472,6 +519,21 @@ public sealed class TigerCliApp
             effectiveCommand = menuSelection.Command;
             remainingArgs = [];
             titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
+        }
+
+        var globalOptionContext = new TigerCliGlobalOptionContext(effectiveInteractionMode, culture);
+        foreach (var globalOption in _globalOptions)
+        {
+            globalOptionParse.Values.TryGetValue(globalOption, out var value);
+            var globalValidation = globalOption.Apply(globalOptionContext, value)
+                ?? throw new InvalidOperationException(
+                    $"The apply callback for contributed global option '{globalOption.Name}' returned null.");
+            if (!globalValidation.IsValid)
+            {
+                WriteFrameworkError(culture, TigerCliResources.Format(
+                    "Error_ValidationWrapper", culture, Esc(globalValidation.ErrorMessage!)));
+                return _exitCodePolicy.Resolve(TigerCliExitKind.ValidationError);
+            }
         }
 
         var effectivePromptMode = ResolvePromptMode(effectiveCommand);
@@ -1097,6 +1159,100 @@ public sealed class TigerCliApp
             result.Add(arg);
         }
         return result.ToArray();
+    }
+
+    private sealed class GlobalOptionParseResult
+    {
+        public string[] RemainingArgs { get; init; } = [];
+        public Dictionary<TigerCliGlobalOptionRegistration, string?> Values { get; init; } = new();
+        public string? ErrorResourceKey { get; init; }
+        public object[]? ErrorArgs { get; init; }
+    }
+
+    private GlobalOptionParseResult ParseGlobalOptions(string[] args)
+    {
+        if (_globalOptions.Count == 0)
+            return new GlobalOptionParseResult { RemainingArgs = args };
+
+        var byName = _globalOptions.ToDictionary(
+            option => option.Name,
+            StringComparer.OrdinalIgnoreCase);
+        var remaining = new List<string>(args.Length);
+        var values = new Dictionary<TigerCliGlobalOptionRegistration, string?>();
+        var commandSeen = false;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var token = args[i];
+            var equalsIndex = token.IndexOf('=');
+            var optionName = equalsIndex > 0 ? token[..equalsIndex] : token;
+            if (!byName.TryGetValue(optionName, out var option))
+            {
+                remaining.Add(token);
+                if (!commandSeen
+                    && !token.StartsWith("-", StringComparison.Ordinal)
+                    && IsCommandRootToken(token))
+                {
+                    commandSeen = true;
+                }
+                continue;
+            }
+
+            if (values.ContainsKey(option))
+            {
+                return new GlobalOptionParseResult
+                {
+                    RemainingArgs = remaining.ToArray(),
+                    Values = values,
+                    ErrorResourceKey = "Error_GlobalOptionRepeated",
+                    ErrorArgs = [Esc(option.Name)]
+                };
+            }
+
+            string value;
+            if (equalsIndex > 0)
+            {
+                value = token[(equalsIndex + 1)..];
+            }
+            else
+            {
+                if (i + 1 >= args.Length
+                    || args[i + 1].StartsWith("-", StringComparison.Ordinal)
+                    || (!commandSeen && IsCommandRootToken(args[i + 1])))
+                {
+                    return new GlobalOptionParseResult
+                    {
+                        RemainingArgs = remaining.ToArray(),
+                        Values = values,
+                        ErrorResourceKey = "Error_OptionRequiresValue",
+                        ErrorArgs = [Esc(option.Name)]
+                    };
+                }
+
+                value = args[++i];
+            }
+
+            values.Add(option, value);
+        }
+
+        return new GlobalOptionParseResult
+        {
+            RemainingArgs = remaining.ToArray(),
+            Values = values
+        };
+    }
+
+    private bool IsCommandRootToken(string token)
+    {
+        return _namedCommands.Any(command =>
+                command.PathTokens.Length > 0
+                && string.Equals(command.PathTokens[0], token, StringComparison.OrdinalIgnoreCase))
+            || _commandGroups.Any(group =>
+                group.PathTokens.Length > 0
+                && string.Equals(group.PathTokens[0], token, StringComparison.OrdinalIgnoreCase))
+            || _aliases.Any(alias =>
+                alias.PathTokens.Length > 0
+                && string.Equals(alias.PathTokens[0], token, StringComparison.OrdinalIgnoreCase));
     }
 
     private readonly record struct CultureResolution(
@@ -5029,6 +5185,13 @@ public sealed class TigerCliApp
         {
             var placeholder = Esc(L("Help_Builtin_Culture_ValuePlaceholder", culture));
             optionItems.Add(($"[Key]--culture[/] [Value]<{placeholder}>[/]", [Esc(L("Help_Builtin_Culture_Desc", culture))]));
+        }
+
+        foreach (var option in _globalOptions)
+        {
+            optionItems.Add((
+                $"[Key]{Esc(option.Name)}[/] [Value]<{Esc(option.ValueName)}>[/]",
+                [option.Description]));
         }
     }
 
