@@ -29,16 +29,12 @@ public sealed class ConsoleTerminalSinkTests
         }
     }
 
-    // Stream-generic sinks are wrapped so they report the terminal's layout bounds; the wrapper
-    // does not change the colour encoding these tests are about.
-    private static ICliRenderSink Encoding(ICliRenderSink sink) => TerminalBoundsSink.Unwrap(sink);
-
     [Fact]
     public void Sink_ForcedAnsi256_IsAnsiSink_NotConsoleSink()
     {
         var sink = WithColorMode(CliColorMode.Ansi256, () => new ConsoleTerminal().Sink);
 
-        Assert.IsType<AnsiSink>(Encoding(sink));
+        Assert.IsType<AnsiSink>(sink);
     }
 
     // Every sink the factory hands out writes to a console stream, so every one of them must report
@@ -70,7 +66,7 @@ public sealed class ConsoleTerminalSinkTests
     {
         var sink = WithColorMode(CliColorMode.Never, () => new ConsoleTerminal().Sink);
 
-        Assert.IsType<TextWriterSink>(Encoding(sink));
+        Assert.IsType<TextWriterSink>(sink);
     }
 
     // The interactive render loop measures against Terminal.Sink and then renders via
@@ -100,7 +96,7 @@ public sealed class ConsoleTerminalSinkTests
             Assert.IsType<ConsoleSink>(terminal.Sink);
 
             TigerConsole.ColorMode = CliColorMode.Ansi256;
-            Assert.IsType<AnsiSink>(Encoding(terminal.Sink));
+            Assert.IsType<AnsiSink>(terminal.Sink);
         }
         finally
         {

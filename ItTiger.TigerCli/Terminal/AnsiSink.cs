@@ -18,12 +18,18 @@ namespace ItTiger.TigerCli.Terminal;
 /// underline 4/24) diffed against the previous style. A reset (<see cref="AnsiSgr.Reset"/>) — which
 /// also clears decorations — is emitted before each newline and on flush whenever a style is active,
 /// so a styled background never bleeds past the line.</para>
+/// <para>This is TigerCli's terminal renderer, so it is terminal-bounded by default: it reports the
+/// terminal's width and height to the measure pass exactly as <see cref="ConsoleSink"/> does, and
+/// structured output wraps in the layout rather than relying on the terminal's own auto-wrap. Pass
+/// <see cref="CliSinkTarget.Buffer"/> when the writer is a string, file, or capture stream, so the
+/// render stays content-driven and identical on every machine.</para>
 /// </summary>
 public sealed class AnsiSink : ICliRenderSink
 {
     private readonly TextWriter _writer;
     private readonly bool _emitHyperlinks;
     private readonly bool _emitTerminalControls;
+    private readonly CliSinkTarget _target;
 
     // Tracks the style currently in effect in the output stream. Null colours and None decorations
     // mean the stream is at the terminal default (no active style), so no trailing reset is needed.
@@ -42,17 +48,36 @@ public sealed class AnsiSink : ICliRenderSink
     /// (and tests) emit no hyperlink sequences unless they opt in; <see cref="ConsoleSinkFactory"/>
     /// sets it from <see cref="TigerConsole.HyperlinkMode"/>.
     /// </summary>
-    public AnsiSink(TextWriter writer, bool emitHyperlinks = false, bool emitTerminalControls = true)
+    /// <param name="writer">The destination writer.</param>
+    /// <param name="emitHyperlinks">Whether to emit OSC 8 hyperlink sequences.</param>
+    /// <param name="emitTerminalControls">Whether to emit terminal control sequences such as the
+    /// window title.</param>
+    /// <param name="target">What the sink writes to, which decides the layout bounds it reports.
+    /// Defaults to <see cref="CliSinkTarget.Terminal"/>: a plain <c>new AnsiSink(Console.Out)</c> is
+    /// a terminal renderer and wraps to the terminal's width without further wiring. Use
+    /// <see cref="CliSinkTarget.Buffer"/> for a string, file, or capture writer.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="writer"/> is <c>null</c>.</exception>
+    public AnsiSink(
+        TextWriter writer,
+        bool emitHyperlinks = false,
+        bool emitTerminalControls = true,
+        CliSinkTarget target = CliSinkTarget.Terminal)
     {
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _emitHyperlinks = emitHyperlinks;
         _emitTerminalControls = emitTerminalControls;
+        _target = target;
     }
 
+    /// <summary>What this sink writes to; see <see cref="CliSinkTarget"/>.</summary>
+    public CliSinkTarget Target => _target;
+
     /// <inheritdoc/>
-    public int? SoftMaxWidth => null;
+    /// <remarks>Read on each access, like <see cref="ConsoleSink"/>, so a resized terminal is
+    /// honoured by the next measure pass.</remarks>
+    public int? SoftMaxWidth => TerminalCapabilities.SoftWidthFor(_target);
     /// <inheritdoc/>
-    public int? SoftMaxHeight => null;
+    public int? SoftMaxHeight => TerminalCapabilities.SoftHeightFor(_target);
     /// <inheritdoc/>
     public int? MaxWidth => null;
     /// <inheritdoc/>

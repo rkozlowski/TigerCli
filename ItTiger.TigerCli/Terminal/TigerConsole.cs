@@ -178,7 +178,7 @@ public static partial class TigerConsole
     public static string MarkupToAnsi(string markup, ITheme? theme = null)
     {
         var writer = new StringWriter();
-        var sink = new AnsiSink(writer);
+        var sink = new AnsiSink(writer, target: CliSinkTarget.Buffer);
         var styles = CreateMarkupStyleResolver(theme ?? CurrentTheme);
 
         foreach (var segment in CliMarkupParser.Parse(markup, baseStyle: null, styles, ColorAliases))

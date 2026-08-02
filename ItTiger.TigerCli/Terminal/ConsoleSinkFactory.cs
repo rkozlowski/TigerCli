@@ -27,24 +27,25 @@ internal static class ConsoleSinkFactory
     public static ICliRenderSink CreateTerminalSink() => Create(TigerConsole.ColorMode, isError: false);
 
     // Every sink returned here writes to a console stream, so every one of them reports that
-    // stream's layout bounds to the measure pass. AnsiSink and TextWriterSink are stream-generic
-    // and carry no bounds of their own, so they are wrapped; ConsoleSink/ConsoleErrorSink already
-    // read the terminal directly. Colour encoding must not decide whether output wraps.
+    // stream's layout bounds to the measure pass — colour encoding must not decide whether output
+    // wraps. AnsiSink is terminal-bounded by default and ConsoleSink/ConsoleErrorSink read the
+    // terminal directly; only TextWriterSink, which is generic by default, is told its target here.
     private static ICliRenderSink Create(CliColorMode mode, bool isError)
     {
+        var target = isError ? CliSinkTarget.ErrorTerminal : CliSinkTarget.Terminal;
+
         switch (mode)
         {
             case CliColorMode.Never:
-                return WithTerminalBounds(new TextWriterSink(isError ? Console.Error : Console.Out), isError);
+                return new TextWriterSink(isError ? Console.Error : Console.Out, target);
 
             case CliColorMode.Ansi256:
                 // ANSI is forced (possibly to a redirected stream), not capability-detected.
-                return WithTerminalBounds(
-                    new AnsiSink(
-                        isError ? Console.Error : Console.Out,
-                        EmitHyperlinks(capabilityDetected: false),
-                        emitTerminalControls: !IsRedirected(isError)),
-                    isError);
+                return new AnsiSink(
+                    isError ? Console.Error : Console.Out,
+                    EmitHyperlinks(capabilityDetected: false),
+                    emitTerminalControls: !IsRedirected(isError),
+                    target);
 
             case CliColorMode.Standard16:
                 return isError ? new ConsoleErrorSink() : new ConsoleSink();
@@ -53,18 +54,14 @@ internal static class ConsoleSinkFactory
             default:
                 var support = isError ? TerminalCapabilities.ForStderr() : TerminalCapabilities.ForStdout();
                 if (support == CliAnsiSupport.Ansi256)
-                    return WithTerminalBounds(
-                        new AnsiSink(
-                            isError ? Console.Error : Console.Out,
-                            EmitHyperlinks(capabilityDetected: true),
-                            emitTerminalControls: true),
-                        isError);
+                    return new AnsiSink(
+                        isError ? Console.Error : Console.Out,
+                        EmitHyperlinks(capabilityDetected: true),
+                        emitTerminalControls: true,
+                        target);
                 return isError ? new ConsoleErrorSink() : new ConsoleSink();
         }
     }
-
-    private static ICliRenderSink WithTerminalBounds(ICliRenderSink sink, bool isError)
-        => new TerminalBoundsSink(sink, isError);
 
     // Decides OSC 8 hyperlink emission for an ANSI sink. Always => on; Never => off; Auto => on only
     // when ANSI was capability-detected (a real terminal), not when forced (which may be redirected /

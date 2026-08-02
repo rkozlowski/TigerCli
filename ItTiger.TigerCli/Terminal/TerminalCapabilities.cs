@@ -99,6 +99,23 @@ public static class TerminalCapabilities
         catch (ArgumentOutOfRangeException) { return null; }
     }
 
+    // Layout bounds for a sink writing to the given destination. Terminal targets report the real
+    // terminal's dimensions so structured output wraps in the layout; a buffer target reports none,
+    // keeping an in-memory render content-driven and identical on every machine.
+    internal static int? SoftWidthFor(CliSinkTarget target) => target switch
+    {
+        CliSinkTarget.Terminal => GetSafeOutputWidth(),
+        CliSinkTarget.ErrorTerminal => GetSafeOutputWidth(forError: true),
+        _ => null
+    };
+
+    internal static int? SoftHeightFor(CliSinkTarget target) => target switch
+    {
+        CliSinkTarget.Terminal => GetSafeOutputHeight(),
+        CliSinkTarget.ErrorTerminal => GetSafeOutputHeight(forError: true),
+        _ => null
+    };
+
     /// <summary>Detects the stdout ANSI capability from the real process environment.</summary>
     public static CliAnsiSupport ForStdout()
     {

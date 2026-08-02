@@ -18,6 +18,60 @@ public sealed class AnsiSinkTests
     private static CliTextSegment Seg(string text, CliColor? fg = null, CliColor? bg = null)
         => new(text, new CliCharStyle(fg, bg));
 
+    // ---- Layout bounds ----
+    //
+    // AnsiSink is TigerCli's terminal renderer, not a generic stream sink: simple construction is
+    // terminal-oriented, so structured output wraps in the layout without any wrapper, factory, or
+    // caller remembering to supply bounds. When it reported "unbounded", every ANSI render measured
+    // with no ceiling and long lines were left to the terminal's own auto-wrap.
+
+    [Fact]
+    public void SoftMaxWidth_DefaultConstruction_ReportsSafeTerminalWidth()
+    {
+        var sink = new AnsiSink(new StringWriter());
+
+        Assert.Equal(CliSinkTarget.Terminal, sink.Target);
+        Assert.Equal(TerminalCapabilities.GetSafeOutputWidth(), sink.SoftMaxWidth);
+        Assert.Equal(TerminalCapabilities.GetSafeOutputHeight(), sink.SoftMaxHeight);
+    }
+
+    [Fact]
+    public void SoftMaxWidth_DefaultConstruction_StaysBoundedWithHyperlinkAndControlOptions()
+    {
+        var sink = new AnsiSink(new StringWriter(), emitHyperlinks: true, emitTerminalControls: false);
+
+        Assert.Equal(TerminalCapabilities.GetSafeOutputWidth(), sink.SoftMaxWidth);
+    }
+
+    [Fact]
+    public void SoftMaxWidth_ErrorTerminalTarget_ReportsStderrWidth()
+    {
+        var sink = new AnsiSink(new StringWriter(), target: CliSinkTarget.ErrorTerminal);
+
+        Assert.Equal(TerminalCapabilities.GetSafeOutputWidth(forError: true), sink.SoftMaxWidth);
+    }
+
+    // A string/file/capture writer is not a terminal: an in-memory render must stay content-driven
+    // and identical on every machine instead of wrapping to whatever terminal is attached.
+    [Fact]
+    public void SoftMaxWidth_BufferTarget_IsUnbounded()
+    {
+        var sink = new AnsiSink(new StringWriter(), target: CliSinkTarget.Buffer);
+
+        Assert.Null(sink.SoftMaxWidth);
+        Assert.Null(sink.SoftMaxHeight);
+    }
+
+    // Hard bounds stay unset: the terminal width is a ceiling to wrap at, not a clip boundary.
+    [Fact]
+    public void MaxBounds_AreAlwaysUnset()
+    {
+        var sink = new AnsiSink(new StringWriter());
+
+        Assert.Null(sink.MaxWidth);
+        Assert.Null(sink.MaxHeight);
+    }
+
     private static string Render(params CliTextSegment[] segments)
     {
         var writer = new StringWriter();
@@ -202,15 +256,8 @@ public sealed class AnsiSinkTests
         Assert.Contains("a=b;c d", result);
     }
 
-    [Fact]
-    public void Dimensions_AreNull()
-    {
-        var sink = new AnsiSink(new StringWriter());
-        Assert.Null(sink.SoftMaxWidth);
-        Assert.Null(sink.SoftMaxHeight);
-        Assert.Null(sink.MaxWidth);
-        Assert.Null(sink.MaxHeight);
-    }
+    // (Layout bounds are covered by the "Layout bounds" tests above: the soft bounds are now
+    // terminal-derived by default, and the hard bounds stay unset.)
 
     // ---- text decorations ----
 

@@ -1,4 +1,5 @@
-﻿using ItTiger.TigerCli.Primitives;
+﻿using ItTiger.TigerCli.Enums;
+using ItTiger.TigerCli.Primitives;
 using ItTiger.TigerCli.Rendering;
 using Microsoft.Extensions.Logging;
 
@@ -74,13 +75,16 @@ public static partial class TigerConsole
         => RenderGrid(grid, new TextWriterSink(writer));
 
     // To an ANSI SGR string (faithful 0–255 colour); useful for tests, docs, and generated examples.
+    // The sink targets a buffer, not the terminal: an in-memory render must stay content-driven and
+    // identical on every machine rather than wrapping to whatever terminal happens to be attached.
     /// <summary>
-    /// Renders a grid to an ANSI SGR string via <see cref="AnsiSink"/>.
+    /// Renders a grid to an ANSI SGR string via <see cref="AnsiSink"/>. Layout is unbounded — set
+    /// the grid's own <c>SoftMaxWidth</c> to emulate a terminal width.
     /// </summary>
     public static string RenderGridToAnsi(CliGrid grid)
     {
         var writer = new StringWriter();
-        RenderGrid(grid, new AnsiSink(writer));
+        RenderGrid(grid, new AnsiSink(writer, target: CliSinkTarget.Buffer));
         return writer.ToString();
     }
 

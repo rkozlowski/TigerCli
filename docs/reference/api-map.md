@@ -6,7 +6,7 @@ Generated from DocFX metadata. Do not edit by hand.
 
 This is a structured index of public TigerCli types for humans and AI tools. Type names link to the published DocFX reference; source paths link to the repository. Behavioral contracts live in XML documentation comments, the generated API reference, and the guides.
 
-**Coverage:** 222 public types across 19 namespaces.
+**Coverage:** 223 public types across 19 namespaces.
 
 Regenerate with:
 
@@ -89,6 +89,7 @@ dotnet run --project internal/DocSamples -- api-map
 | [CliScrollAxis](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliScrollAxis.html) | `enum` | Indicates whether an axis is pinned or scrollable in internal scroll layout. | [`ItTiger.TigerCli/Enums/CliScrollAxis.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliScrollAxis.cs) |
 | [CliScrollMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliScrollMode.html) | `enum` | Selects which axes of a hosted subgrid cell are scrollable. | [`ItTiger.TigerCli/Enums/CliScrollMode.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliScrollMode.cs) |
 | [CliScrollThumbMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliScrollThumbMode.html) | `enum` | Determines whether the scrollbar thumb represents the physical scroll offset or the logical active point (cursor) position. | [`ItTiger.TigerCli/Enums/CliScrollThumbMode.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliScrollThumbMode.cs) |
+| [CliSinkTarget](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliSinkTarget.html) | `enum` | What a text-writing render sink is writing to. | [`ItTiger.TigerCli/Enums/CliSinkTarget.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliSinkTarget.cs) |
 | [CliStylePrecedence](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliStylePrecedence.html) | `enum` | Determines whether a row style or a column style wins when both contribute the same cell style property. | [`ItTiger.TigerCli/Enums/CliStylePrecedence.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliStylePrecedence.cs) |
 | [CliTableOrientation](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableOrientation.html) | `enum` | Specifies the orientation of a CLI table. | [`ItTiger.TigerCli/Enums/CliTableOrientation.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliTableOrientation.cs) |
 | [CliTableStyleOrientationSupport](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliTableStyleOrientationSupport.html) | `enum` | Which orientations a predefined city table style (see CliTableStyles) is intended for. | [`ItTiger.TigerCli/Enums/CliTableStyleOrientationSupport.cs`](https://github.com/rkozlowski/TigerCli/blob/main/ItTiger.TigerCli/Enums/CliTableStyleOrientationSupport.cs) |
