@@ -196,6 +196,10 @@ public sealed class TigerCliHelpLayoutTests
     // be painted onto plain help text, and a theme colour that happens to equal one of those
     // fallback colours must still survive as an explicit style. Both used to be handled by
     // post-processing every rendered segment, which silently dropped real theme ink.
+    //
+    // Transparent does not mean colourless: help is a themed document, so plain body text renders as
+    // the theme's default text ink over the theme's default background (see
+    // TigerCliHelpThemeBaseTests for the base-style contract in detail).
     [Theory]
     [InlineData("dark")]
     [InlineData("light")]
@@ -224,11 +228,13 @@ public sealed class TigerCliHelpLayoutTests
             Assert.Equal(key, segments.First(segment => segment.Text == "--theme").Style.Foreground);
             Assert.Equal(value, segments.First(segment => segment.Text.Contains("<theme>", StringComparison.Ordinal)).Style.Foreground);
 
-            // Plain body text stays unstyled, so console help renders over the terminal's own
-            // background instead of claiming to repaint it.
+            // Plain body text carries the theme's document base, not the framework fallback and not
+            // the terminal's own ink.
+            var text = theme.Resolve(ThemeStyle.Text).CharStyle?.Foreground;
+            var background = theme.Resolve(ThemeStyle.Background).CharStyle?.Background;
             var body = segments.First(segment => segment.Text.Contains("Show help", StringComparison.Ordinal));
-            Assert.Null(body.Style.Foreground);
-            Assert.Null(body.Style.Background);
+            Assert.Equal(text, body.Style.Foreground);
+            Assert.Equal(background, body.Style.Background);
         }
         finally
         {

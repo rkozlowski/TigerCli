@@ -4903,7 +4903,7 @@ public sealed class TigerCliApp
                     culture,
                     _appResources);
             TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName}[/]", appDescription);
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
 
             var optionsUsage = $"[Value]{FormatOptionsUsage(culture)}[/]";
             var hasCommandsOrGroups = _namedCommands.Count > 0 || _commandGroups.Count > 0;
@@ -4913,7 +4913,7 @@ public sealed class TigerCliApp
             if (hasCommandsOrGroups)
                 usageLines.Add($"[Key]{safeAppName}[/] [Value]{FormatCommandUsage(culture)}[/] {optionsUsage}");
             TigerCliHelpRenderer.RenderSection($"[Accent]{Esc(L("Help_Usage", culture))}[/]", usageLines);
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
 
             // Top-level help lists only immediate entries: ungrouped commands and
             // top-level command groups. A group's child commands and nested subgroups are
@@ -4943,7 +4943,7 @@ public sealed class TigerCliApp
                 TigerCliHelpRenderer.RenderNameDescriptionSection(
                     $"[Accent]{Esc(L("Help_Commands", culture))}[/]",
                     commandItems);
-                TigerConsole.MarkupLine("");
+                TigerCliHelpRenderer.RenderBlankLine();
             }
 
             // Aliases are listed in their own section so command ownership is never confused: each
@@ -4968,7 +4968,7 @@ public sealed class TigerCliApp
                 TigerCliHelpRenderer.RenderNameDescriptionSection(
                     $"[Accent]{Esc(L("Help_Aliases", culture))}[/]",
                     aliasItems);
-                TigerConsole.MarkupLine("");
+                TigerCliHelpRenderer.RenderBlankLine();
             }
 
             // Show options from default command settings if available
@@ -4990,7 +4990,7 @@ public sealed class TigerCliApp
                 : [];
             if (defaultNamed != null || exactlyOneOfNotes.Count > 0)
             {
-                TigerConsole.MarkupLine("");
+                TigerCliHelpRenderer.RenderBlankLine();
                 var notes = new List<string>();
                 if (defaultNamed != null)
                     notes.Add($"[Muted]{Esc(L("Help_DefaultCommand", culture))} [Key]{Esc(defaultNamed.Name!)}[/][/]" );
@@ -5015,17 +5015,17 @@ public sealed class TigerCliApp
                     ?? TigerCliAppText.Resolve(command.Description, command.DescriptionResourceKey, culture, _appResources)
                 : TigerCliAppText.Resolve(command.Description, command.DescriptionResourceKey, culture, _appResources);
             TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName} {safeCmdName}[/]", resolvedDesc);
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
             TigerCliHelpRenderer.RenderSection(
                 $"[Accent]{Esc(L("Help_Usage", culture))}[/]",
                 [$"[Key]{safeAppName} {safeCmdName}[/]{FormatArgumentUsage(command.SettingsType)} [Value]{FormatOptionsUsage(culture)}[/]"]);
             if (alias != null)
             {
-                TigerConsole.MarkupLine("");
+                TigerCliHelpRenderer.RenderBlankLine();
                 TigerCliHelpRenderer.RenderHint(
                     $"[Muted]{TigerCliResources.Format("Help_AliasFor", culture, $"[Key]{Esc(alias.TargetPath)}[/]")}[/]");
             }
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
             PrintArguments(command.SettingsType, culture, _appResources);
             PrintOptions(command.SettingsType, culture, _cultureOptionEnabled, _appResources);
             PrintAdditionalHelpHints(
@@ -5048,12 +5048,12 @@ public sealed class TigerCliApp
         var resolvedDesc = TigerCliAppText.Resolve(
             group.Description, group.DescriptionResourceKey, culture, _appResources);
         TigerCliHelpRenderer.RenderTitleBlock($"[Key]{safeAppName} {safeGroupName}[/]", resolvedDesc);
-        TigerConsole.MarkupLine("");
+        TigerCliHelpRenderer.RenderBlankLine();
 
         TigerCliHelpRenderer.RenderSection(
             $"[Accent]{Esc(L("Help_Usage", culture))}[/]",
             [$"[Key]{safeAppName} {safeGroupName}[/] [Value]{FormatCommandUsage(culture)}[/] [Value]{FormatOptionsUsage(culture)}[/]"]);
-        TigerConsole.MarkupLine("");
+        TigerCliHelpRenderer.RenderBlankLine();
 
         // Group help lists only this group's immediate entries — child commands and nested
         // subgroups — shown with their name relative to the group prefix. Deeper commands are
@@ -5083,7 +5083,7 @@ public sealed class TigerCliApp
             TigerCliHelpRenderer.RenderNameDescriptionSection(
                 $"[Accent]{Esc(L("Help_Commands", culture))}[/]",
                 commandItems);
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
         }
 
         PrintAdditionalHelpHints(
@@ -5136,7 +5136,7 @@ public sealed class TigerCliApp
         if (!hasCopyright && !hasLinks)
             return;
 
-        TigerConsole.MarkupLine("");
+        TigerCliHelpRenderer.RenderBlankLine();
 
         var links = _metadata.Links
             .Select(link => new
@@ -5167,7 +5167,7 @@ public sealed class TigerCliApp
         if (!showExitCodeHint && !showEnvironmentHint)
             return;
 
-        TigerConsole.MarkupLine("");
+        TigerCliHelpRenderer.RenderBlankLine();
         if (showExitCodeHint)
             TigerCliHelpRenderer.RenderHint($"[Muted]{Esc(L("Help_Hint_ExitCodes", culture))}[/]");
         if (showEnvironmentHint)
@@ -5179,7 +5179,7 @@ public sealed class TigerCliApp
         var exitCodeType = ResolveExitCodeHelpType(command);
 
         if (leadingBlankLine)
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
 
         if (exitCodeType == null)
         {
@@ -5230,7 +5230,7 @@ public sealed class TigerCliApp
         CultureInfo culture)
     {
         if (leadingBlankLine)
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
 
         var items = BuildFrameworkEnvironmentVariableHelpItems(culture);
         items.AddRange(_environmentVariables.Select(variable => (
@@ -5320,7 +5320,7 @@ public sealed class TigerCliApp
         TigerCliHelpRenderer.RenderDetailSection(
             $"[Accent]{Esc(L("Help_Arguments", culture))}[/]",
             items);
-        TigerConsole.MarkupLine("");
+        TigerCliHelpRenderer.RenderBlankLine();
     }
 
     private void PrintOptions(
@@ -5358,7 +5358,7 @@ public sealed class TigerCliApp
 
         if (promptedOptions.Count > 0)
         {
-            TigerConsole.MarkupLine("");
+            TigerCliHelpRenderer.RenderBlankLine();
             var promptedItems = promptedOptions.Select(opt =>
             {
                 var details = new List<string>();
@@ -5459,7 +5459,7 @@ public sealed class TigerCliApp
         if (notes.Count == 0)
             return;
 
-        TigerConsole.MarkupLine("");
+        TigerCliHelpRenderer.RenderBlankLine();
         TigerCliHelpRenderer.RenderNoteSection(
             $"[Accent]{Esc(L("Help_Notes", culture))}[/]",
             notes.Select(note => $"[Muted]{Esc(note)}[/]").ToArray());

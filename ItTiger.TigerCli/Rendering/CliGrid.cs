@@ -64,15 +64,22 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
     };
 
     /// <summary>
-    /// Renders this grid as a transparent document block rather than as a painted box. A document
-    /// block has no surface and no right edge, so two things that are correct for a box are wrong
-    /// for it: the framework's global fallback ink (grey on black) and the alignment fill that pads
-    /// the trailing edge of each row out to the grid width. With this set, the cascade starts from a
-    /// colourless base — unstyled text keeps the terminal's own ink and explicit theme colours are
-    /// never confused with a fallback — and the last cell rendered in each left-aligned row stops at
-    /// its content, so a document block emits no trailing whitespace. Structural interior columns
-    /// (indents) still pad normally; only the trailing edge is dropped.
+    /// Renders this grid as a transparent document block rather than as a painted box. Two things
+    /// that are correct for a box are wrong for a document: the framework's global fallback ink
+    /// (grey on black), which exists to repair an unstyled box, and the alignment fill that pads the
+    /// trailing edge of each row out to the grid width. With this set, the cascade starts from a
+    /// colourless base instead of that fallback, and the last cell rendered in each left-aligned row
+    /// stops at its content, so a document block emits no trailing whitespace. Structural interior
+    /// columns (indents) still pad normally; only the trailing edge is dropped.
     /// </summary>
+    /// <remarks>
+    /// Transparent means "no fallback repair ink and no painted trailing edge", not "no colours".
+    /// The colourless base is only the root of the cascade: a document renderer supplies the block's
+    /// real base ink through <see cref="CliLayoutComponent.DefaultCellStyle"/> — help blocks pass the
+    /// selected theme's document base (its default text colour over its default background) — and
+    /// axis, row, column, and cell styles override it as usual. A block that supplies no base keeps
+    /// the terminal's own ink for unstyled text.
+    /// </remarks>
     internal bool TransparentDocument { get; set; }
 
     /// <summary>Horizontal scroll offset used by scrollable host cells.</summary>

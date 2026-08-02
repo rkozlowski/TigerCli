@@ -21,6 +21,17 @@ namespace ItTiger.TigerCli.Commands;
 /// text (the measure pass trims leading/trailing whitespace from cell content).
 /// </para>
 /// <para>
+/// Help is a themed document, so every block starts from the selected theme's document base ink —
+/// the theme's default text colour over its default background (see
+/// <c>TigerConsole.ResolveDocumentBaseCharStyle</c>). Plain body text and the structural whitespace
+/// of the indent columns therefore render on the theme's background rather than inheriting the
+/// terminal's, which is what makes a light theme readable on a dark terminal. What is painted is
+/// exactly what the block lays out: the rendered characters and the structural spaces before and
+/// between them. A document block has no painted trailing edge, so each line stops at its content
+/// and the terminal beyond it stays terminal-owned; blank separator lines have no content at all
+/// and paint nothing.
+/// </para>
+/// <para>
 /// All inputs are trusted, already-composed markup strings (escaped by the caller where needed),
 /// resolved against the active theme exactly like <see cref="TigerConsole.MarkupLine(string)"/>
 /// output. Blocks render through the ambient output sink, so color/no-color policy, the sink's
@@ -209,12 +220,36 @@ internal static class TigerCliHelpRenderer
         Render(body);
     }
 
+    /// <summary>
+    /// Emits a blank separator line between help blocks, unstyled: a separator has no content, so it
+    /// paints nothing and the row stays terminal-owned. Written straight to the sink rather than as
+    /// markup, because the markup path seeds its base style from the current console colours — which
+    /// would paint the separator with the terminal's ink instead of the selected theme's.
+    /// </summary>
+    public static void RenderBlankLine()
+    {
+        var sink = TigerConsole.GetOutputSink();
+        sink.NewLine();
+        sink.Flush();
+    }
+
     // A help block: preformatted markup content, laid out as a transparent document rather than a
     // painted box. Content wraps to whatever width the destination sink reports.
+    //
+    // The block's default cell style carries the selected theme's document base ink (Text over
+    // Background), which is the root of the block's style cascade: plain help text renders as the
+    // theme's text colour on the theme's background, and semantic roles ([Key], [Accent], [Link], …)
+    // override the foreground while inheriting that background unless they define one of their own.
+    // The theme is read per block, so a --theme selected during parsing is in effect by the time
+    // help renders.
     private static CliGrid NewBlock(int columnCount, int rowCount) => new(columnCount, rowCount)
     {
         TransparentDocument = true,
-        DefaultCellStyle = new CliCellStyle { FormattingMode = CliFormattingMode.Preformatted }
+        DefaultCellStyle = new CliCellStyle
+        {
+            FormattingMode = CliFormattingMode.Preformatted,
+            CharStyle = TigerConsole.ResolveDocumentBaseCharStyle(TigerConsole.CurrentTheme)
+        }
     };
 
     private static void Render(CliGrid grid) => TigerConsole.RenderGrid(grid, TigerConsole.GetOutputSink());

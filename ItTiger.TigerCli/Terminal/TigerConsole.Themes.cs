@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Markup;
+using ItTiger.TigerCli.Primitives;
 using ItTiger.TigerCli.Tui.Abstractions;
 using ItTiger.TigerCli.Tui.Themes;
 
@@ -71,6 +73,30 @@ public static partial class TigerConsole
     /// </summary>
     public static ThemeMarkupStyleResolver CreateMarkupStyleResolver()
         => new(CurrentTheme, CustomStyles);
+
+    // The base ink of a TigerCli-rendered document: the theme's default Text ink laid over the
+    // theme's default Background surface. The theme owns both halves, so a document renderer never
+    // has to guess a surface colour and unstyled document text never silently inherits whatever the
+    // terminal happens to be painted with.
+    //
+    // Colour channels only. Decorations belong to the semantic roles that add them (Heading is bold,
+    // Link is underlined); carrying a decoration in the document base would apply it to every glyph
+    // in the block, including the structural whitespace of indent columns and padding.
+    //
+    // Each channel falls back to the other role so a theme that defines only one of them still
+    // produces a usable base: the foreground comes from Text (then Background), the background from
+    // Background (then Text).
+    internal static CliCharStyle ResolveDocumentBaseCharStyle(ITheme theme)
+    {
+        ArgumentNullException.ThrowIfNull(theme);
+
+        var text = theme.Resolve(ThemeStyle.Text).CharStyle;
+        var background = theme.Resolve(ThemeStyle.Background).CharStyle;
+
+        return new CliCharStyle(
+            text?.Foreground ?? background?.Foreground,
+            background?.Background ?? text?.Background);
+    }
 
     /// <summary>
     /// Builds a markup style resolver for an explicit <paramref name="theme"/> while still honouring the

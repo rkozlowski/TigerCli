@@ -216,6 +216,21 @@ themes.RegisterCustomStyle("DangerZone", ThemeStyle.Error,
 
 Custom style names are **case-insensitive**, must be alphanumeric, may not be reserved keywords (`on`, `bold`, `italic`, `underline` — and, as standalone tags, the short aliases `b`/`i`/`u`), and **may not collide with a framework semantic token** (`Accent`, `Muted`, `Success`, `Warning`, `Error`, `Selected`, `Alert`, `Panel`, `Dialog`, `Heading`, `Key`, `Value`, `Path`, `Link`).
 
+## Document base: Text over Background
+
+A theme owns both halves of its default ink: the `Text` role is the default foreground, the `Background` role the default surface. TigerCli-rendered **documents** — generated help is the framework's own — start their style cascade from that pair, so:
+
+- plain, unsemantic text renders as the theme's `Text` colour **on the theme's `Background`**, not on whatever the terminal happens to be painted with;
+- structural whitespace (the indent columns that produce help's key/description shape) carries the same background, so an indented and wrapped block reads as one surface;
+- foreground-only semantic roles (`[Key]`, `[Accent]`, `[Link]`, `[Muted]`, `[Value]`, …) override the ink and **inherit** that background;
+- a role that defines its own background (`[Selected]`, `[Alert]`, `[Panel]`, `[Dialog]`, the message-box surfaces) replaces it — the base is a base, not a ceiling.
+
+This is what makes `--theme light` usable on a dark terminal: `my-tool --help --theme light` renders dark text on the light theme's surface rather than dark text on the terminal's dark background.
+
+**What is painted.** A document paints exactly what it lays out — the rendered characters and the structural spaces before and between them. It has no painted trailing edge: each line stops at its content, and the rest of the terminal row stays terminal-owned. Blank separator lines have no content and paint nothing. TigerCli deliberately does not pad help lines out to the terminal width; doing so would emit trailing whitespace and hand the line ending back to the terminal's own auto-wrap.
+
+Only the colour channels take part: decorations stay with the semantic roles that add them (`[Heading]` is bold, `[Link]` underlined), so a document's structural whitespace never inherits a decoration.
+
 ## Theme families
 
 Every theme declares a contrast **family** — dark or light — so a custom style needs only one dark/light override pair instead of one override per theme. Family is metadata, not inheritance; sealed themes stay sealed.

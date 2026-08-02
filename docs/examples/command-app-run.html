@@ -14,70 +14,70 @@
 <h2>Generated help (--help)</h2>
 <p>Metadata-driven help for the whole app: description, commands, and built-in options.</p>
 <pre class="tc-source">parser-test --help</pre>
-<pre class="tigercli"><span style="color:#5FFF00">parser-test</span>
-  <span style="color:#00FF00">TigerCli command parser manual test app.</span>
+<pre class="tigercli"><span style="color:#5FFF00; background-color:#000000">parser-test</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#00FF00; background-color:#000000">TigerCli command parser manual test app.</span>
 
-<span style="color:#00FFFF">Usage:</span>
-  <span style="color:#5FFF00">parser-test</span> <span style="color:#C0C0C0">[options]</span>
-  <span style="color:#5FFF00">parser-test</span> <span style="color:#C0C0C0">&lt;command&gt;</span> <span style="color:#C0C0C0">[options]</span>
+<span style="color:#00FFFF; background-color:#000000">Usage:</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">parser-test</span><span style="color:#C0C0C0; background-color:#000000"> [options]</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">parser-test</span><span style="color:#C0C0C0; background-color:#000000"> &lt;command&gt; [options]</span>
 
-<span style="color:#00FFFF">Commands:</span>
-  <span style="color:#5FFF00">echo</span>
-      Echoes a message.
-  <span style="color:#5FFF00">mode</span>
-      Prints the effective interaction mode.
-  <span style="color:#5FFF00">features</span>
-      Selects feature flags with a dynamic multi-select.
-  <span style="color:#5FFF00">fail</span>
-      Returns a typed failure code.
-  <span style="color:#5FFF00">throw</span>
-      Throws an exception to test UnhandledException mapping.
-  <span style="color:#5FFF00">raw</span>
-      Returns a raw integer exit code.
-  <span style="color:#5FFF00">projects</span>
-  <span style="color:#5FFF00">prompt</span>
-  <span style="color:#5FFF00">provider</span>
+<span style="color:#00FFFF; background-color:#000000">Commands:</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">echo</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Echoes a message.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">mode</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Prints the effective interaction mode.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">features</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Selects feature flags with a dynamic multi-select.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">fail</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Returns a typed failure code.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">throw</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Throws an exception to test UnhandledException mapping.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">raw</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Returns a raw integer exit code.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">projects</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">prompt</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">provider</span>
 
-<span style="color:#00FFFF">Options:</span>
-  <span style="color:#5FFF00">-n</span>, <span style="color:#5FFF00">--name</span> <span style="color:#C0C0C0">&lt;value&gt;</span>
-      Name to greet.
-  <span style="color:#5FFF00">-h</span>, <span style="color:#5FFF00">--help</span>
-      Show help
-  <span style="color:#5FFF00">--help-errors</span>
-      Show exit-code help
-  <span style="color:#5FFF00">--help-env</span>
-      Show recognized environment variables
-  <span style="color:#5FFF00">--non-interactive</span>
-      Disable interactive prompts
-  <span style="color:#5FFF00">--theme</span> <span style="color:#C0C0C0">&lt;theme&gt;</span>
-      Select the UI theme by name
-      <span style="color:#C0C0C0">dark | light | tiger-blue</span>
-  <span style="color:#5FFF00">--color</span> <span style="color:#C0C0C0">&lt;mode&gt;</span>
-      Select the color mode for this run
-      <span style="color:#C0C0C0">auto | never | 16 | 256</span>
-  <span style="color:#5FFF00">--no-color</span>
-      Disable color output (equivalent to --color never)
-  <span style="color:#5FFF00">--culture</span> <span style="color:#C0C0C0">&lt;culture&gt;</span>
-      Select UI culture for framework strings
+<span style="color:#00FFFF; background-color:#000000">Options:</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">-n</span><span style="color:#C0C0C0; background-color:#000000">, </span><span style="color:#5FFF00; background-color:#000000">--name</span><span style="color:#C0C0C0; background-color:#000000"> &lt;value&gt;</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Name to greet.</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">-h</span><span style="color:#C0C0C0; background-color:#000000">, </span><span style="color:#5FFF00; background-color:#000000">--help</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Show help</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--help-errors</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Show exit-code help</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--help-env</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Show recognized environment variables</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--non-interactive</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Disable interactive prompts</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--theme</span><span style="color:#C0C0C0; background-color:#000000"> &lt;theme&gt;</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Select the UI theme by name</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">dark | light | tiger-blue</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--color</span><span style="color:#C0C0C0; background-color:#000000"> &lt;mode&gt;</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Select the color mode for this run</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">auto | never | 16 | 256</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--no-color</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Disable color output (equivalent to --color never)</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#5FFF00; background-color:#000000">--culture</span><span style="color:#C0C0C0; background-color:#000000"> &lt;culture&gt;</span>
+<span style="color:#C0C0C0; background-color:#000000">  </span><span style="color:#C0C0C0; background-color:#000000">    </span><span style="color:#C0C0C0; background-color:#000000">Select UI culture for framework strings</span>
 
-<span style="color:#808080">For a list of exit codes, use --help-errors.</span>
-<span style="color:#808080">For recognized environment variables, use --help-env.</span>
+<span style="color:#808080; background-color:#000000">For a list of exit codes, use --help-errors.</span>
+<span style="color:#808080; background-color:#000000">For recognized environment variables, use --help-env.</span>
 </pre>
 </section>
 <section>
 <h2>Exit-code help (--help-errors)</h2>
 <p>Typed exit codes documented from the app's exit-code enum.</p>
 <pre class="tc-source">parser-test --help-errors</pre>
-<pre class="tigercli"><span style="color:#00FFFF">Exit codes:</span>
-Parser test exit codes
- <span style="color:#5FFF00">0</span>  <span style="color:#00FFFF">OK</span>                            Operation completed successfully.
-<span style="color:#5FFF00">10</span>  <span style="color:#00FFFF">Internal error</span>                Internal parser-test failure.
-<span style="color:#5FFF00">20</span>  <span style="color:#00FFFF">Invalid arguments</span>             Invalid command-line arguments.
-<span style="color:#5FFF00">22</span>  <span style="color:#00FFFF">Missing required argument</span>     A required positional argument was not provided.
-<span style="color:#5FFF00">21</span>  <span style="color:#00FFFF">Validation error</span>              Validation failed.
-<span style="color:#5FFF00">30</span>  <span style="color:#00FFFF">Intentional failure</span>           The command intentionally failed.
-<span style="color:#5FFF00">40</span>  <span style="color:#00FFFF">Unhandled exception</span>           Unhandled exception was caught by TigerCli.
-<span style="color:#5FFF00">50</span>  <span style="color:#00FFFF">Interactive input not allowed</span> Interactive input is not allowed or prompt input was canceled.
+<pre class="tigercli"><span style="color:#00FFFF; background-color:#000000">Exit codes:</span>
+<span style="color:#C0C0C0; background-color:#000000">Parser test exit codes</span>
+<span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#5FFF00; background-color:#000000">0</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">OK</span><span style="color:#C0C0C0; background-color:#000000">                            </span><span style="color:#C0C0C0; background-color:#000000">Operation completed successfully.</span>
+<span style="color:#5FFF00; background-color:#000000">10</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Internal error</span><span style="color:#C0C0C0; background-color:#000000">                </span><span style="color:#C0C0C0; background-color:#000000">Internal parser-test failure.</span>
+<span style="color:#5FFF00; background-color:#000000">20</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Invalid arguments</span><span style="color:#C0C0C0; background-color:#000000">             </span><span style="color:#C0C0C0; background-color:#000000">Invalid command-line arguments.</span>
+<span style="color:#5FFF00; background-color:#000000">22</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Missing required argument</span><span style="color:#C0C0C0; background-color:#000000">     </span><span style="color:#C0C0C0; background-color:#000000">A required positional argument was not provided.</span>
+<span style="color:#5FFF00; background-color:#000000">21</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Validation error</span><span style="color:#C0C0C0; background-color:#000000">              </span><span style="color:#C0C0C0; background-color:#000000">Validation failed.</span>
+<span style="color:#5FFF00; background-color:#000000">30</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Intentional failure</span><span style="color:#C0C0C0; background-color:#000000">           </span><span style="color:#C0C0C0; background-color:#000000">The command intentionally failed.</span>
+<span style="color:#5FFF00; background-color:#000000">40</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Unhandled exception</span><span style="color:#C0C0C0; background-color:#000000">           </span><span style="color:#C0C0C0; background-color:#000000">Unhandled exception was caught by TigerCli.</span>
+<span style="color:#5FFF00; background-color:#000000">50</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#00FFFF; background-color:#000000">Interactive input not allowed</span><span style="color:#C0C0C0; background-color:#000000"> </span><span style="color:#C0C0C0; background-color:#000000">Interactive input is not allowed or prompt input was canceled.</span>
 </pre>
 </section>
 <section>
