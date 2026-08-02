@@ -256,7 +256,7 @@ public sealed class HtmlSinkTests : TestBase
         // of the href attribute; the visible text is unaffected.
         var html = Render(
             new HtmlSinkOptions { WrapInPre = false, HyperlinkMode = HtmlHyperlinkMode.Anchor },
-            Seg("link", target: "https://e.com/a\nbc"));
+            Seg("link", target: "https://e.com/a\n\u001bbc"));
 
         Assert.Equal("<a class=\"tc-link\" href=\"https://e.com/abc\">link</a>", html);
         Assert.DoesNotContain("\n", html);

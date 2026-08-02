@@ -20,12 +20,17 @@ Help is composable: `--help`, `--help-errors`, and `--help-env` can be requested
 together. `--help-env` documents TigerCli's rendering variables plus help-only metadata registered
 by apps and reusable contributions; registration does not make TigerCli read or apply a variable.
 
+Generated help is rendered as full-width themed `CliGrid` documents. Entries intentionally use a
+key line followed by an indented description; measured wrapping preserves that indentation, while
+the theme's Text-over-Background document base paints coherent complete rows. `AnsiSink` is
+terminal-bounded by default, so help and other structured output wrap during layout.
+
 ## Installation
 
 TigerCli currently targets .NET 10.
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.9.0
+dotnet add package ItTiger.TigerCli --version 0.9.1
 ```
 
 ## Minimal app

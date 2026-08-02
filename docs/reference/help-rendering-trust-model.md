@@ -2,10 +2,14 @@
 
 ## Overview
 
-All help output in TigerCli is rendered through `TigerConsole.MarkupLine`.
-All framework error output is rendered through `TigerConsole.MarkupErrorLine`.
-No `Console.WriteLine` or `Console.Error.WriteLine` is used in help or framework
-error paths.
+All generated help output in TigerCli is composed as full-width, themed `CliGrid` document blocks
+and rendered through the normal measure/render pipeline. Each section deliberately uses a key line
+followed by indented description lines; measured wrapping preserves that structural indentation.
+The selected theme's `Text` over `Background` is the document base, including trailing fill and
+blank separator rows.
+
+All framework error output is rendered through `TigerConsole.MarkupErrorLine`. No raw
+`Console.WriteLine` or `Console.Error.WriteLine` is used in help or framework error paths.
 
 ---
 
@@ -28,10 +32,11 @@ theme styles are never reachable from markup.
 | Application links | Help footer URLs from `AddLink(...)`, `AddWebsite(...)`, `AddRepository(...)`, and `AddDocumentation(...)` are wrapped in TigerCli `[Link]…[/]` markup; visible URL text is escaped before insertion. |
 | Environment-variable descriptions | Descriptions registered through `AddEnvironmentVariable(...)` on app, group, command, and contribution builders. Names are escaped; descriptions are trusted app/library metadata. Registration is help-only and does not read the environment. |
 
-The trusted surface is unchanged by the migration to semantic tokens: the same
-framework wrappers are trusted, only the token names changed (`[cyan]`→`[Accent]`,
-`[red]`→`[Error]`, `[DarkGray]`→`[Muted]`). Raw colour markup (e.g. `[yellow]…[/]`)
-remains valid and is still resolved as before.
+The help renderer receives already-composed trusted markup strings and resolves them against the
+active theme during `CliGrid` measurement. The trusted surface is unchanged by the migration to
+semantic tokens: the same framework wrappers are trusted, only the token names changed
+(`[cyan]`→`[Accent]`, `[red]`→`[Error]`, `[DarkGray]`→`[Muted]`). Raw colour markup
+(e.g. `[yellow]…[/]`) remains valid and is still resolved as before.
 
 ---
 
@@ -126,7 +131,7 @@ by TigerCli.
 
 | Method | Role |
 |---|---|
-| `PrintHelp` | Root and command-specific help entry point |
+| `PrintHelp` | Root and command-specific help entry point; composes themed `CliGrid` document blocks |
 | `PrintApplicationMetadataFooter` | Renders configured copyright and application links |
 | `PrintVersion` | Renders opt-in `--version` and `--version-full` output |
 | `PrintOptions` | Renders argv-capable options with aliases, descriptions, defaults, and prompt-only options under `Prompted values:` without option tokens |

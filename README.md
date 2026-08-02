@@ -25,6 +25,11 @@ positionals. Root `--help`, `--version`, `--help-errors`, and `--help-env` are i
 not pre-command execution options; they share the options area, so `app --help --theme light`
 works.
 
+Generated help is rendered as full-width themed `CliGrid` documents. Entries intentionally use a
+key line followed by an indented description; measured wrapping preserves that indentation, while
+the theme's Text-over-Background document base paints coherent complete rows. `AnsiSink` is
+terminal-bounded by default, so help and other structured output wrap during layout.
+
 Mode changes presentation and prompting policy; it should not change the business operation. App authors should not need separate interactive and automation implementations.
 
 ## Install
@@ -32,19 +37,19 @@ Mode changes presentation and prompting policy; it should not change the busines
 Install the main TigerCli package:
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.9.0
+dotnet add package ItTiger.TigerCli --version 0.9.1
 ```
 
 `ItTiger.Core` is also available separately for shared support utilities:
 
 ```bash
-dotnet add package ItTiger.Core --version 0.9.0
+dotnet add package ItTiger.Core --version 0.9.1
 ```
 
 The optional PNG rendering sink is packaged separately for documentation and visual artifacts:
 
 ```bash
-dotnet add package ItTiger.TigerCli.PngSink --version 0.9.0
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.1
 ```
 
 ## What It Looks Like

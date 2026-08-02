@@ -115,6 +115,11 @@ var app = TigerCliApp.CreateBuilder()
 Colour capability and theme preference are separate decisions. TigerCli does not inspect the
 terminal background and does not auto-detect whether the user prefers a light or dark theme.
 
+Generated help paints a complete themed document surface. Direct `TigerConsole.Markup*` output is
+still line-oriented, and TigerCli cannot reliably inspect the terminal's current foreground and
+background on every platform; in some terminal contexts, direct semantic markup under the light
+theme may therefore not produce one coherent light background.
+
 Apps built with `TigerCliApp` expose `--theme <theme>` for a per-run override. Users can also set
 `TIGERCLI_THEME` once to choose the default theme preference for runs that do not pass `--theme`.
 The value is resolved through the same theme registry as `--theme`, so framework themes and

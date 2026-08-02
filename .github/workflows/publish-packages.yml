@@ -8,7 +8,7 @@ on:
       version:
         description: Package version already recorded in Version.props
         required: true
-        default: "0.9.0"
+        default: "0.9.1"
         type: string
 
 permissions:
@@ -215,10 +215,48 @@ jobs:
                       throw "$packagePath does not contain the expected net10.0 assembly and XML documentation."
                   }
 
-                  if ($id -eq "ItTiger.TigerCli.PngSink" -and
-                      ($null -eq $archive.GetEntry("assets/tc_term_ico.png") -or
-                       $null -eq $archive.GetEntry("fonts/OFL.txt"))) {
-                      throw "$packagePath does not contain the expected PNG assets and bundled-font license."
+                  if ($id -eq "ItTiger.TigerCli.PngSink") {
+                      $expectedEntries = @(
+                          "assets/tc_term_ico.png"
+                          "assets/tc_window_symbols.png"
+                          "fonts/OFL.txt"
+                          "fonts/CASCADIA-LICENSE.txt"
+                          "fonts/SOURCE.md"
+                      )
+                      foreach ($expectedEntry in $expectedEntries) {
+                          if ($null -eq $archive.GetEntry($expectedEntry)) {
+                              throw "$packagePath does not contain '$expectedEntry'."
+                          }
+                      }
+
+                      $assemblyEntry = $archive.GetEntry("lib/net10.0/$id.dll")
+                      $assemblyStream = [System.IO.MemoryStream]::new()
+                      try {
+                          $assemblyEntry.Open().CopyTo($assemblyStream)
+                          $assembly = [System.Reflection.Assembly]::Load($assemblyStream.ToArray())
+                          $resources = @($assembly.GetManifestResourceNames())
+                      }
+                      finally {
+                          $assemblyStream.Dispose()
+                      }
+
+                      $expectedFonts = @(
+                          "CascadiaMono-Bold.ttf"
+                          "CascadiaMono-BoldItalic.ttf"
+                          "CascadiaMono-Italic.ttf"
+                          "CascadiaMono-Regular.ttf"
+                          "NotoSans-Bold.ttf"
+                          "NotoSans-BoldItalic.ttf"
+                          "NotoSans-Italic.ttf"
+                          "NotoSans-Regular.ttf"
+                          "NotoSansSymbols2-Regular.ttf"
+                      )
+                      foreach ($expectedFont in $expectedFonts) {
+                          $resourceName = "ItTiger.TigerCli.PngSink.Fonts.$expectedFont"
+                          if ($resourceName -notin $resources) {
+                              throw "$packagePath does not embed font '$expectedFont'."
+                          }
+                      }
                   }
 
                   if ($id -eq "ItTiger.TigerCli") {
@@ -263,6 +301,93 @@ jobs:
               }
 
               Write-Host "Validated $packagePath and $symbolsPath"
+          }
+
+      - name: Smoke-test local packages
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Assert-PackageAsset([string]$assetsPath, [string]$packageIdentity) {
+              if (-not (Select-String -LiteralPath $assetsPath -SimpleMatch -Quiet -Pattern "`"$packageIdentity`"")) {
+                  throw "$assetsPath does not contain $packageIdentity."
+              }
+          }
+
+          $smokeRoot = Join-Path $env:RUNNER_TEMP "TigerCli-package-smoke"
+          $localFeed = New-Item -ItemType Directory -Path (Join-Path $smokeRoot "packages") -Force
+          Copy-Item "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.nupkg" $localFeed
+          Copy-Item "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg" $localFeed
+          Copy-Item "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg" $localFeed
+
+          $nugetConfig = Join-Path $smokeRoot "NuGet.Config"
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="local-release" value="$($localFeed.FullName)" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+            <packageSourceMapping>
+              <packageSource key="local-release">
+                <package pattern="ItTiger.*" />
+              </packageSource>
+              <packageSource key="nuget.org">
+                <package pattern="*" />
+              </packageSource>
+            </packageSourceMapping>
+          </configuration>
+          "@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8
+
+          Push-Location $smokeRoot
+          try {
+              dotnet new console -n TigerCliSmoke -f net10.0 --no-restore
+              dotnet add TigerCliSmoke/TigerCliSmoke.csproj package ItTiger.TigerCli --version $env:RELEASE_VERSION --no-restore
+              @'
+          using ItTiger.TigerCli.Commands;
+          using ItTiger.TigerCli.Terminal;
+
+          return await TigerCliApp.CreateBuilder()
+              .AddDefaultCommand(static () =>
+              {
+                  TigerConsole.MarkupLine("[Success]TigerCli package smoke test[/]");
+                  return TigerCliExitKind.Success;
+              })
+              .Build()
+              .RunAsync(args);
+          '@ | Set-Content TigerCliSmoke/Program.cs -Encoding utf8
+              dotnet restore TigerCliSmoke/TigerCliSmoke.csproj --configfile $nugetConfig --force --no-http-cache
+              Assert-PackageAsset "TigerCliSmoke/obj/project.assets.json" "ItTiger.TigerCli/$env:RELEASE_VERSION"
+              Assert-PackageAsset "TigerCliSmoke/obj/project.assets.json" "ItTiger.Core/$env:RELEASE_VERSION"
+              dotnet run --project TigerCliSmoke/TigerCliSmoke.csproj -c Release --no-restore -- --non-interactive
+
+              dotnet new console -n PngSinkSmoke -f net10.0 --no-restore
+              dotnet add PngSinkSmoke/PngSinkSmoke.csproj package ItTiger.TigerCli.PngSink --version $env:RELEASE_VERSION --no-restore
+              @'
+          using ItTiger.TigerCli.PngSink;
+          using ItTiger.TigerCli.Rendering;
+
+          var grid = new CliGrid(1, 1);
+          grid.Set(0, 0, "TigerCli PNG smoke test");
+          PngRenderer.RenderGridToFile(
+              grid,
+              "smoke.png",
+              new PngSinkOptions { Columns = 30, Rows = 2 });
+          '@ | Set-Content PngSinkSmoke/Program.cs -Encoding utf8
+              dotnet restore PngSinkSmoke/PngSinkSmoke.csproj --configfile $nugetConfig --force --no-http-cache
+              Assert-PackageAsset "PngSinkSmoke/obj/project.assets.json" "ItTiger.TigerCli.PngSink/$env:RELEASE_VERSION"
+              Assert-PackageAsset "PngSinkSmoke/obj/project.assets.json" "ItTiger.TigerCli/$env:RELEASE_VERSION"
+              Assert-PackageAsset "PngSinkSmoke/obj/project.assets.json" "ItTiger.Core/$env:RELEASE_VERSION"
+              dotnet run --project PngSinkSmoke/PngSinkSmoke.csproj -c Release --no-restore
+              if (-not (Test-Path -LiteralPath smoke.png -PathType Leaf)) {
+                  throw "PngSink smoke test did not create smoke.png."
+              }
+          }
+          finally {
+              Pop-Location
           }
 
       - name: Upload validated packages

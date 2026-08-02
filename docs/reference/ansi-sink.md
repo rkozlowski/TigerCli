@@ -8,11 +8,19 @@ Throughout this document `ESC` denotes the ASCII escape character `0x1B` (C# `"\
 introduces every CSI sequence.
 
 ```
+using ItTiger.TigerCli.Enums;
+
 namespace ItTiger.TigerCli.Terminal;
 
 public sealed class AnsiSink : ICliRenderSink
 {
-    public AnsiSink(TextWriter writer, bool emitHyperlinks = false, bool emitTerminalControls = true);
+    public AnsiSink(
+        TextWriter writer,
+        bool emitHyperlinks = false,
+        bool emitTerminalControls = true,
+        CliSinkTarget target = CliSinkTarget.Terminal);
+
+    public CliSinkTarget Target { get; }
 }
 ```
 
@@ -20,8 +28,9 @@ public sealed class AnsiSink : ICliRenderSink
 
 [AnsiSink](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.AnsiSink.html) renders the full ANSI **0–255** [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) palette faithfully, so it is the right sink
 for emitting colored output to ANSI-capable terminals, files, pipes, golden-file tests, generated
-documentation, and examples. When terminal controls are enabled, it also emits framework-owned
-window title updates as OSC 0 sequences through the same writer path.
+documentation, and examples. It is terminal-bounded by default; pass `CliSinkTarget.Buffer` for a
+file, pipe, string, or capture writer. When terminal controls are enabled, it also emits
+framework-owned window title updates as OSC 0 sequences through the same writer path.
 
 ### Automatic selection
 
@@ -37,7 +46,7 @@ faithfully whenever ANSI output is active. See [color-mode.md](color-mode.md) fo
 
 | | `ConsoleSink` | `AnsiSink` |
 |---|---|---|
-| Output target | `System.Console` (sets `Console.Foreground/BackgroundColor`) | a `TextWriter` (writes escape sequences) |
+| Output target | `System.Console` (sets `Console.Foreground/BackgroundColor`) | a `TextWriter` (writes escape sequences); `Target` declares whether it is a terminal or buffer |
 | `CliColor` 0–15 | rendered as the matching `ConsoleColor` | classic 16-color SGR (`30`–`37`/`90`–`97`, bg `40`–`47`/`100`–`107`) |
 | `CliColor` 16–255 | **degraded** to the nearest standard `ConsoleColor` (via `CliColorPalette` / `CliColorMapper`) | **faithful** `ESC[38;5;<n>m` / `ESC[48;5;<n>m` |
 | `null` channel | leaves the current console color as-is | resolves to the ANSI **default** (`39` fg / `49` bg) |
@@ -175,8 +184,16 @@ color." For text streams, deterministic default-channel behavior is more predict
   flushed. Completely plain output emits no reset.
 - **Reset** — emits `ESC[0m` only when a style is active and clears tracked state.
 
-`SoftMaxWidth`, `SoftMaxHeight`, `MaxWidth`, and `MaxHeight` are all `null` (the sink targets an
-arbitrary writer, not a sized terminal).
+`CliSinkTarget` separates destination layout from color encoding:
+
+- `Terminal` (the default) reports the safe stdout width and height on each measure pass.
+- `ErrorTerminal` reports the corresponding stderr bounds.
+- `Buffer` reports no soft bounds, keeping string, file, pipe, capture, and generated output
+  content-driven and machine-independent.
+
+`MaxWidth` and `MaxHeight` remain `null` for every target. `Target`, `SoftMaxWidth`, and
+`SoftMaxHeight` expose the selected destination behavior. The terminal defaults make structured
+output wrap during layout instead of relying on terminal auto-wrap.
 
 ## Examples
 
@@ -184,7 +201,7 @@ Render a grid to an ANSI-capable writer:
 
 ```csharp
 using var writer = new StringWriter();
-var sink = new AnsiSink(writer);
+var sink = new AnsiSink(writer, target: CliSinkTarget.Buffer);
 TigerConsole.RenderGrid(table.ToGrid(), sink);
 string ansi = writer.ToString();
 ```

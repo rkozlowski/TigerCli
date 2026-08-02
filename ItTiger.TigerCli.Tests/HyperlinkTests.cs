@@ -18,7 +18,7 @@ namespace ItTiger.TigerCli.Tests;
 /// </summary>
 public sealed class HyperlinkTests
 {
-    private const string Esc = "";
+    private const string Esc = "\u001b";
     private static readonly string St = Esc + "\\";
     private static string Open(string uri) => Esc + "]8;;" + uri + St;
     private static readonly string Close = Esc + "]8;;" + St;
@@ -158,7 +158,7 @@ public sealed class HyperlinkTests
 
         int escCount = 0;
         foreach (var ch in output)
-            if (ch == '')
+            if (ch == '\u001b')
                 escCount++;
         Assert.Equal(4, escCount);
     }
