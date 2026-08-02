@@ -123,6 +123,15 @@ Framework-owned execution options follow the same rule. App-wide meaning does no
 of option valid before a command path or before its required positionals. Root informational forms
 such as `my-app --help` are separate requests, not a general pre-command option area.
 
+An app whose selected command is the default/root command has an empty command path, so its options
+area starts after that command's positionals — at the first token when it declares none:
+
+```text
+my-app --acme-config settings.json               valid (default command, no positionals)
+my-app project --acme-config settings.json       valid (positional first)
+my-app --acme-config settings.json project       invalid (positional after options)
+```
+
 `--acme-config=settings.json` is also accepted. When a value itself begins with `-`, use the
 equals form so it cannot be mistaken for another option.
 

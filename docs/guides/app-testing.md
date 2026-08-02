@@ -254,13 +254,14 @@ Assert.Contains("Missing required", result.StdErr);
 Assert.DoesNotContain("unused", result.StdOut);
 ```
 
-The command menu is a root interaction rather than selected command execution. An execution option
-cannot modify it, so assert that the framework rejects the option placement:
+The command menu is reached through an empty command path, so an execution option is validly placed
+there and is accepted. The menu then refuses the run because it needs interaction — assert the
+mapped exit code, not an option-placement error:
 
 ```csharp
 var app = TigerCliApp.CreateBuilder()
     .SetApplicationName("menu-test")
-    .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InvalidArguments, 47)
+    .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InteractiveNotAllowed, 46)
     .UseCommandMenu(CommandMenuMode.Enabled)
     .AddCommand<AlphaCommand>("alpha")
     .Build();
@@ -270,13 +271,13 @@ var result = await TigerCliAppTestHost
     .WithArgs("--non-interactive")
     .RunAsync();
 
-Assert.Equal(47, result.ExitCode);
-Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
+Assert.Equal(46, result.ExitCode);
+Assert.Contains("interactive", result.StdErr);
 ```
 
 Use these patterns to prove automation-safe behavior: missing governed input fails when the app or
-selected command is effectively non-interactive, and execution options cannot be used before
-command selection.
+selected command is effectively non-interactive, and execution options cannot be used before a
+named command path or before a command's required positionals.
 
 ## Testing Cancellation
 

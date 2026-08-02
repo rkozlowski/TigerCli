@@ -6,6 +6,9 @@ TigerCli command apps are command-line applications built around a small, predic
 app <command-path> <positional-arguments> [options]
 ```
 
+An app built around a default/root command (or a command menu) has an empty command path, so its
+shape is `app <positional-arguments> [options]`.
+
 The framework owns parsing, binding, help, framework errors, interaction policy, localization, and command dispatch. Your app owns command registration, settings metadata, command behavior, and application output.
 
 ## Overview

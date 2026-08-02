@@ -12,7 +12,8 @@ namespace ItTiger.TigerCli.Testing;
 /// <see cref="WithSelectIndex"/>, <see cref="WithConfirm"/>, <see cref="WithMultiSelectIndexes"/>),
 /// redirects <see cref="Console.Out"/> and <see cref="Console.Error"/> for the duration of the run
 /// (restoring both in <c>finally</c>), pins a deterministic colour mode so captured output carries
-/// no ANSI escapes, and returns the captured output plus the exit code as a
+/// no ANSI escapes, restores the process-global active theme the run may have changed through
+/// <c>--theme</c>, and returns the captured output plus the exit code as a
 /// <see cref="TigerCliAppRunResult"/>.
 /// </summary>
 /// <remarks>
@@ -180,7 +181,7 @@ public sealed class TigerCliAppTestHost
     /// prompt timeout, and returns the exit code plus the output captured from
     /// <see cref="Console.Out"/> and <see cref="Console.Error"/>. The run is forced to a
     /// colour-free output mode so captured text never contains ANSI escape sequences; the original
-    /// console writers and colour mode are restored even when the run throws.
+    /// console writers, colour mode, and active theme are restored even when the run throws.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token passed through to the app run.</param>
     /// <returns>The exit code and captured output of the completed run.</returns>
@@ -201,6 +202,9 @@ public sealed class TigerCliAppTestHost
         // Pin a deterministic colour mode so captured output never depends on the host terminal's
         // ANSI capability (Auto could otherwise upgrade to AnsiSink and leak escape sequences).
         var originalColorMode = TigerConsole.ColorMode;
+        // A run that carries --theme (or an app theme configuration) assigns the process-global
+        // active theme. Capture it so one hosted run cannot restyle the runs that follow it.
+        var originalTheme = TigerConsole.CurrentTheme;
         using var stdout = new StringWriter(CultureInfo.InvariantCulture);
         using var stderr = new StringWriter(CultureInfo.InvariantCulture);
         var synchronizedStdout = TextWriter.Synchronized(stdout);
@@ -254,6 +258,7 @@ public sealed class TigerCliAppTestHost
             Console.SetOut(originalOut);
             Console.SetError(originalError);
             TigerConsole.ColorMode = originalColorMode;
+            TigerConsole.CurrentTheme = originalTheme;
         }
     }
 

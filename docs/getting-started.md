@@ -139,9 +139,11 @@ roi-cities show Galway --non-interactive
 ```
 
 `--non-interactive` is framework-owned and available to every TigerCli app, but it remains an
-option: it must follow the command path and required positionals. Hosts that set the app's default
-interaction mode to `NonInteractive` get the normal missing-argument error from `roi-cities show`;
-the prompt/fail decision is interaction *policy*, not command logic
+option: it must follow the command path and required positionals, so
+`roi-cities show --non-interactive Galway` is invalid. Left out entirely, the selector is still
+required — `roi-cities show --non-interactive` fails cleanly with
+`Error: Missing required argument: <city>` and a non-zero exit code instead of waiting for a key.
+The prompt/fail decision is interaction *policy*, not command logic
 ([interaction modes](guides/interaction-modes.md)).
 
 ### Testing the app boundary
@@ -207,9 +209,9 @@ Providers are registered at app, group, or command scope and can depend on earli
 
 ![roi-cities command menu](examples/png/roi-cities-extended-menu.png)
 
-The menu is a root interaction, not a selected command. Execution options do not modify it:
-`roi-cities --non-interactive` is rejected as an invalid command line. Automation should select a
-command and put the option after that command's required positionals
+The menu is reached through an empty command path, so `roi-cities --non-interactive` is a valid
+command line — and the menu refuses it with a clean, mapped exit code instead of opening a picker.
+Automation should select a command and put the option after that command's required positionals
 ([command apps → command menu](guides/command-apps.md#command-menu)).
 
 ### Typed exit codes

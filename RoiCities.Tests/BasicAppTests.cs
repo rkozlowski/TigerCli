@@ -68,7 +68,7 @@ public sealed class BasicAppTests
     }
 
     [Fact]
-    public async Task Show_NonInteractiveBeforeCity_IsRejected()
+    public async Task Show_MissingCity_NonInteractive_FailsCleanly()
     {
         var result = await TigerCliAppTestHost
             .For(RoiCitiesApp.Create())
@@ -77,7 +77,21 @@ public sealed class BasicAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
+        Assert.Contains("city", result.StdErr);
+        Assert.DoesNotContain("Corrib", result.StdOut);
+    }
+
+    [Fact]
+    public async Task Show_NonInteractiveBeforeCity_IsRejected()
+    {
+        var result = await TigerCliAppTestHost
+            .For(RoiCitiesApp.Create())
+            .WithArgs("show", "--non-interactive", "Galway")
+            .WithTextInput("unused")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Unexpected positional argument after options: Galway", result.StdErr);
         Assert.DoesNotContain("Corrib", result.StdOut);
     }
 

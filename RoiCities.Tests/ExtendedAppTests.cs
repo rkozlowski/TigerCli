@@ -54,17 +54,32 @@ public sealed class ExtendedAppTests
         Assert.Contains("Corrib", result.StdOut);
     }
 
+    /// <summary>
+    /// The menu is reached through an empty command path, so <c>--non-interactive</c> is validly
+    /// placed and accepted; the run then fails because the menu needs interaction.
+    /// </summary>
     [Fact]
-    public async Task CommandMenu_NonInteractiveWithoutCommand_IsRejected()
+    public async Task CommandMenu_NonInteractive_FailsWithMappedExitCode()
     {
         var result = await TigerCliAppTestHost
             .For(RoiCitiesApp.Create())
             .WithArgs("--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal((int)RoiCitiesExitCode.InvalidArguments, result.ExitCode);
+        Assert.Equal((int)RoiCitiesExitCode.InteractiveNotAllowed, result.ExitCode);
         Assert.Empty(result.StdOut);
-        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
+    }
+
+    [Fact]
+    public async Task Show_MissingCity_NonInteractive_FailsWithMappedExitCode()
+    {
+        var result = await TigerCliAppTestHost
+            .For(RoiCitiesApp.Create())
+            .WithArgs("show", "--non-interactive")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)RoiCitiesExitCode.MissingRequiredArgument, result.ExitCode);
+        Assert.Contains("city", result.StdErr);
     }
 
     [Fact]
@@ -72,11 +87,11 @@ public sealed class ExtendedAppTests
     {
         var result = await TigerCliAppTestHost
             .For(RoiCitiesApp.Create())
-            .WithArgs("show", "--non-interactive")
+            .WithArgs("show", "--non-interactive", "Galway")
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)RoiCitiesExitCode.InvalidArguments, result.ExitCode);
-        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
+        Assert.Contains("Unexpected positional argument after options: Galway", result.StdErr);
     }
 
     [Fact]

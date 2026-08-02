@@ -117,6 +117,27 @@ public sealed class TigerCliEnvironmentHelpTests
         Assert.Contains("Environment variables:", result.StdOut);
     }
 
+    /// <summary>
+    /// Execution options share the informational options' area, so composing them stays valid for
+    /// both the root form and a named command, and neither form executes the handler.
+    /// </summary>
+    [Theory]
+    [InlineData("--help", "--help-errors", "--help-env", "--theme", "light")]
+    [InlineData("run", "--help", "--help-errors", "--help-env", "--theme", "light")]
+    public async Task HelpSections_ComposeWithExecutionOptions(params string[] args)
+    {
+        var executed = false;
+        var result = await RunAsync(CreateApp(() => executed = true), args);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.False(executed);
+        Assert.Contains("Exit codes:", result.StdOut);
+        Assert.Contains("Environment variables:", result.StdOut);
+        Assert.DoesNotContain(ExitHint, result.StdOut);
+        Assert.DoesNotContain(EnvironmentHint, result.StdOut);
+        Assert.Empty(result.StdErr);
+    }
+
     [Theory]
     [InlineData("--help-env", "run")]
     [InlineData("process", "--help-env", "project")]

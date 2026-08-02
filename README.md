@@ -18,9 +18,12 @@ With `--non-interactive`, TigerCli disables prompts for the selected command. A 
 
 TigerCli command lines use one shape: `app <command-path> <positional-arguments> [options]`.
 Framework execution options such as `--non-interactive` and app-contributed global options are
-app-wide in meaning, but they still appear after the command path and required positionals. Root
-`--help`, `--version`, `--help-errors`, and `--help-env` are informational forms, not pre-command execution
-options.
+app-wide in meaning, but they still appear after the command path and required positionals. A
+default/root command has an empty command path, so its shape is
+`app <positional-arguments> [options]` and options may start at the first token when it declares no
+positionals. Root `--help`, `--version`, `--help-errors`, and `--help-env` are informational forms,
+not pre-command execution options; they share the options area, so `app --help --theme light`
+works.
 
 Mode changes presentation and prompting policy; it should not change the business operation. App authors should not need separate interactive and automation implementations.
 

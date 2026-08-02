@@ -8,6 +8,10 @@ app <command-path> <positional-arguments> [options]
 
 Command paths choose what to run. Positional arguments provide the required command input, usually identity or context. Options modify that command with settings, switches, and additional values.
 
+An app whose selected command is the default/root command has an empty command path, so its shape
+is `app <positional-arguments> [options]` — and with no declared positionals, options may start at
+the first token (`app --theme light`, `app --help --theme light`).
+
 Example:
 
 ```bash
@@ -533,6 +537,22 @@ app command positional --non-interactive --color never
 ```
 
 `app --non-interactive command` and `app command --non-interactive positional` are invalid.
+
+Informational and execution options share that options area, so they combine freely within it:
+
+```text
+app --help --help-env --theme light
+app command positional --help --color never
+```
+
+For a default/root command the command path is empty, so the options area starts after that
+command's positionals — at the first token when it declares none:
+
+```text
+app --theme light                 valid (no declared positionals)
+app input.txt --theme light       valid (positional first)
+app --theme light input.txt       invalid (positional after options)
+```
 
 `--culture` is available only for cultures the app supports through `SetSupportedCultures(...)` and `SetDefaultCulture(...)`. See [localization](localization.md).
 

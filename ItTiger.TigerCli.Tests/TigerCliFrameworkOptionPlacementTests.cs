@@ -77,7 +77,8 @@ public sealed class TigerCliFrameworkOptionPlacementTests
         var result = await RunAsync(CreateApp(), "process", "--non-interactive", "project");
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
+        Assert.Contains("Unexpected positional argument after options: project", result.StdErr);
+        Assert.DoesNotContain("project:", result.StdOut);
     }
 
     [Fact]
@@ -89,19 +90,48 @@ public sealed class TigerCliFrameworkOptionPlacementTests
         Assert.Contains("project:Never", result.StdOut);
     }
 
-    [Theory]
-    [InlineData("--color", "never", "color", "project")]
-    [InlineData("color", "--color", "never", "project")]
-    public async Task Color_BeforeCommandOrRequiredPositional_IsRejected(
-        string first,
-        string second,
-        string third,
-        string fourth)
+    [Fact]
+    public async Task Color_BeforeCommand_IsRejected()
     {
-        var result = await RunAsync(CreateApp(), first, second, third, fourth);
+        var result = await RunAsync(CreateApp(), "--color", "never", "color", "project");
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("Unknown option: '--color'", result.StdErr);
+    }
+
+    [Fact]
+    public async Task Color_BeforeRequiredPositional_IsRejected()
+    {
+        var result = await RunAsync(CreateApp(), "color", "--color", "never", "project");
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Unexpected positional argument after options: project", result.StdErr);
+        Assert.DoesNotContain("project:", result.StdOut);
+    }
+
+    [Theory]
+    [InlineData("--theme", "dark")]
+    [InlineData("--color", "never")]
+    [InlineData("--culture", "en-US")]
+    public async Task ExecutionOptions_AfterCommandPositionals_AreAccepted(string option, string value)
+    {
+        var result = await RunAsync(CreateApp(), "process", "project", option, value);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("project:SemiInteractive", result.StdOut);
+    }
+
+    [Theory]
+    [InlineData("--theme", "dark")]
+    [InlineData("--color", "never")]
+    [InlineData("--culture", "en-US")]
+    public async Task ExecutionOptions_BeforeCommandPositionals_AreRejected(string option, string value)
+    {
+        var result = await RunAsync(CreateApp(), "process", option, value, "project");
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("project", result.StdErr);
+        Assert.DoesNotContain("project:", result.StdOut);
     }
 
     [Theory]

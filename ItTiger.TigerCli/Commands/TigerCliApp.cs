@@ -346,7 +346,7 @@ public sealed class TigerCliApp
         TigerCliCommandAliasRegistration? matchedAlias = null;
         TigerCliCommandGroupRegistration? group = null;
         var remainingArgs = args;
-        var positionalCount = 0;
+        var positionalAreaLength = 0;
         var frameworkOptionParse = new FrameworkOptionParseResult { RemainingArgs = args };
         var globalOptionParse = new GlobalOptionParseResult { RemainingArgs = args };
 
@@ -359,21 +359,30 @@ public sealed class TigerCliApp
             var matchedNamedCommand = alias != null || command is { Name: not null };
             group = matchedNamedCommand ? null : ResolveGroup(args);
             effectiveCommand = group == null ? command ?? _defaultCommand : null;
-            remainingArgs = commandArgs;
+            remainingArgs = group != null ? args[group.PathTokens.Length..] : commandArgs;
 
-            if (effectiveCommand is { IsCommandMenu: false })
-            {
-                positionalCount = BuildArgumentMetadata(effectiveCommand.SettingsType).Count;
+            // The grammar is `app <command-path> <positional-arguments> [options]`. The options area
+            // begins after the selected command path and that command's positional area. A group
+            // prefix and the command menu take no positionals, and a default/root command has an
+            // empty command path — so for those the options area may begin at the first token.
+            var positionalCount = effectiveCommand is { IsCommandMenu: false }
+                ? BuildArgumentMetadata(effectiveCommand.SettingsType).Count
+                : 0;
+            positionalAreaLength = MeasurePositionalArea(remainingArgs, positionalCount);
 
-                // Framework execution options and contributed globals are app-wide in meaning, but
-                // syntactically remain options. Extract them only from the selected command's options
-                // area, after its required positionals.
-                frameworkOptionParse = ParseFrameworkOptions(remainingArgs, positionalCount);
-                remainingArgs = frameworkOptionParse.RemainingArgs;
+            // Framework execution options and contributed globals are app-wide in meaning, but
+            // syntactically remain options. Extract them only from the options area.
+            frameworkOptionParse = ParseFrameworkOptions(remainingArgs, positionalAreaLength);
+            remainingArgs = frameworkOptionParse.RemainingArgs;
 
-                globalOptionParse = ParseGlobalOptions(remainingArgs, positionalCount);
-                remainingArgs = globalOptionParse.RemainingArgs;
-            }
+            globalOptionParse = ParseGlobalOptions(remainingArgs, positionalAreaLength);
+            remainingArgs = globalOptionParse.RemainingArgs;
+
+            // Removing the execution options can leave a pure root informational form behind, as in
+            // `app --version --theme light`. Root informational options belong to the empty command
+            // path only, so this never applies once a named command or group prefix has matched.
+            if (!matchedNamedCommand && group == null)
+                rootInformation = ResolveRootInformation(remainingArgs);
         }
 
         // 2. Resolve culture, theme, and colour from execution options that were found in the valid
@@ -475,8 +484,10 @@ public sealed class TigerCliApp
 
         if (group != null)
         {
-            var groupArgs = args[group.PathTokens.Length..];
-            var groupInformation = ResolveCommandInformation(groupArgs, positionalCount: 0);
+            // Group-relative args with the execution options already extracted, so a group help
+            // request composes with them the same way a command's does.
+            var groupArgs = remainingArgs;
+            var groupInformation = ResolveCommandInformation(groupArgs, positionalAreaLength: 0);
             if (groupInformation.ShowHelp)
             {
                 PrintGroupHelp(
@@ -537,7 +548,7 @@ public sealed class TigerCliApp
 
         titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
 
-        var commandInformation = ResolveCommandInformation(remainingArgs, positionalCount);
+        var commandInformation = ResolveCommandInformation(remainingArgs, positionalAreaLength);
         if (commandInformation.ShowHelp)
         {
             PrintHelp(
@@ -649,6 +660,7 @@ public sealed class TigerCliApp
 
             effectiveCommand = menuSelection.Command;
             remainingArgs = [];
+            positionalAreaLength = 0;
             titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
         }
 
@@ -675,7 +687,8 @@ public sealed class TigerCliApp
         var optionMeta = BuildOptionMetadata(effectiveCommand.SettingsType);
 
         // 5. Parse remaining args as positionals followed by options
-        var parseResult = ParseArgumentsAndOptions(remainingArgs, argumentMeta, optionMeta, effectiveCommand);
+        var parseResult = ParseArgumentsAndOptions(
+            remainingArgs, argumentMeta, optionMeta, effectiveCommand, positionalAreaLength);
 
         if (parseResult.ErrorResourceKey != null)
         {
@@ -1271,10 +1284,29 @@ public sealed class TigerCliApp
             ShowProductVersion: args.Any(arg => arg == "--version-full"));
     }
 
-    private static InformationRequest ResolveCommandInformation(string[] args, int positionalCount)
+    /// <summary>
+    /// Length of the selected command's positional area: the leading run of non-option tokens,
+    /// capped at the number of positional arguments the command declares. The options area starts
+    /// immediately after it, so a command invoked with no positionals (including a default/root
+    /// command reached with an empty command path) has its options area at index 0.
+    /// </summary>
+    private static int MeasurePositionalArea(string[] args, int positionalCount)
+    {
+        var length = 0;
+        while (length < positionalCount
+            && length < args.Length
+            && !args[length].StartsWith("-", StringComparison.Ordinal))
+        {
+            length++;
+        }
+
+        return length;
+    }
+
+    private static InformationRequest ResolveCommandInformation(string[] args, int positionalAreaLength)
     {
         var firstOption = Array.FindIndex(args, arg => arg.StartsWith("-", StringComparison.Ordinal));
-        if (firstOption < 0 || firstOption > positionalCount)
+        if (firstOption < 0 || firstOption > positionalAreaLength)
             return default;
 
         var informationArgs = args[firstOption..];
@@ -1296,20 +1328,20 @@ public sealed class TigerCliApp
         public string[] ExtractedArgs { get; init; } = [];
     }
 
-    private FrameworkOptionParseResult ParseFrameworkOptions(string[] args, int positionalCount)
+    private FrameworkOptionParseResult ParseFrameworkOptions(string[] args, int positionalAreaLength)
     {
         var remaining = new List<string>(args.Length);
         var extracted = new List<string>();
-        var positionalsSeen = 0;
 
         for (int i = 0; i < args.Length; i++)
         {
             var arg = args[i];
-            if (positionalsSeen < positionalCount)
+
+            // Tokens inside the positional area are never framework options; they belong to the
+            // command and are passed through untouched.
+            if (i < positionalAreaLength)
             {
                 remaining.Add(arg);
-                if (!arg.StartsWith("-", StringComparison.Ordinal))
-                    positionalsSeen++;
                 continue;
             }
 
@@ -1367,7 +1399,7 @@ public sealed class TigerCliApp
         public object[]? ErrorArgs { get; init; }
     }
 
-    private GlobalOptionParseResult ParseGlobalOptions(string[] args, int positionalCount)
+    private GlobalOptionParseResult ParseGlobalOptions(string[] args, int positionalAreaLength)
     {
         if (_globalOptions.Count == 0)
             return new GlobalOptionParseResult { RemainingArgs = args };
@@ -1377,20 +1409,19 @@ public sealed class TigerCliApp
             StringComparer.OrdinalIgnoreCase);
         var remaining = new List<string>(args.Length);
         var values = new Dictionary<TigerCliGlobalOptionRegistration, string?>();
-        var positionalsSeen = 0;
 
         for (var i = 0; i < args.Length; i++)
         {
             var token = args[i];
             var equalsIndex = token.IndexOf('=');
             var optionName = equalsIndex > 0 ? token[..equalsIndex] : token;
-            if (positionalsSeen < positionalCount
+
+            // Tokens inside the positional area belong to the command, so a contributed global is
+            // only claimed from the options area.
+            if (i < positionalAreaLength
                 || !byName.TryGetValue(optionName, out var option))
             {
                 remaining.Add(token);
-                if (!token.StartsWith("-", StringComparison.Ordinal)
-                    && positionalsSeen < positionalCount)
-                    positionalsSeen++;
                 continue;
             }
 
@@ -1739,11 +1770,16 @@ public sealed class TigerCliApp
 
     // ── Parsing ─────────────────────────────────────────────────────
 
+    // positionalAreaLength is the number of leading tokens that belong to the command's positional
+    // area. Framework and contributed global options are removed before parsing, so a positional
+    // that followed one of them can end up first in args; this bound keeps it a placement error
+    // instead of silently binding it to an argument.
     private static TigerCliParseResult ParseArgumentsAndOptions(
         string[] args,
         List<TigerCliArgumentMetadata> arguments,
         List<TigerCliOptionMetadata> options,
-        TigerCliCommandRegistration? command)
+        TigerCliCommandRegistration? command,
+        int positionalAreaLength)
     {
         var aliasMap = new Dictionary<string, TigerCliOptionMetadata>(StringComparer.OrdinalIgnoreCase);
         foreach (var opt in options)
@@ -1785,6 +1821,21 @@ public sealed class TigerCliApp
                         ArgumentValues = argumentValues,
                         OptionValues = optionValues,
                         ErrorResourceKey = "Error_UnexpectedArgument",
+                        ErrorArgs = new object[] { Esc(token) },
+                        ErrorExitKind = TigerCliExitKind.InvalidArguments
+                    };
+                }
+
+                if (argumentIndex >= positionalAreaLength)
+                {
+                    // The token sits past the positional area, so an option preceded it on the
+                    // command line even though that option was extracted before parsing.
+                    return new TigerCliParseResult
+                    {
+                        ResolvedCommand = command,
+                        ArgumentValues = argumentValues,
+                        OptionValues = optionValues,
+                        ErrorResourceKey = "Error_UnexpectedPositional",
                         ErrorArgs = new object[] { Esc(token) },
                         ErrorExitKind = TigerCliExitKind.InvalidArguments
                     };

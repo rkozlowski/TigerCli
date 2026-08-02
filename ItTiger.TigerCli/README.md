@@ -11,8 +11,10 @@ policy. The same command model can prompt a person when values are missing or fa
 
 Command execution follows `app <command-path> <positional-arguments> [options]`. Framework
 execution options and contributed global options are app-wide in meaning but still belong after the
-command path and required positionals. Root informational forms such as `app --help` remain
-separate from command execution.
+command path and required positionals. A default/root command has an empty command path, so its
+shape is `app <positional-arguments> [options]`. Root informational forms such as `app --help`
+remain separate from command execution, and combine with execution options in the same options
+area (`app --help --theme light`).
 
 Help is composable: `--help`, `--help-errors`, and `--help-env` can be requested independently or
 together. `--help-env` documents TigerCli's rendering variables plus help-only metadata registered

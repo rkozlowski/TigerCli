@@ -14,6 +14,18 @@ app <command-path> <positional-arguments> [options]
 
 Command paths select behavior. Positional arguments provide required command context. Options modify the selected command.
 
+A default/root command, a command menu, and the root informational forms are reached through an
+*empty* command path, so for them the same shape collapses to:
+
+```text
+app <positional-arguments> [options]
+```
+
+A default command that declares no positional arguments therefore accepts options from the first
+token: `app --theme light` and `app --help --theme light` are valid. A default command that does
+declare positionals still takes them first: `app input.txt --theme light` is valid and
+`app --theme light input.txt` is not.
+
 ## Why This Exists
 
 TigerCli is script-safe first. A strict shape keeps command parsing predictable for users, tests, generated help, and parser-driven prompts. It also makes dependent prompts possible because required context is resolved before optional modifiers.
@@ -31,6 +43,9 @@ TigerCli is script-safe first. A strict shape keeps command parsing predictable 
   `--theme`, and `--color`, follow the same placement rule. Their meaning is app-wide; their syntax
   is still that of an option.
 - App-contributed global options follow the same rule and do not participate in command selection.
+- The options area starts after the selected command path and that command's positional area. An
+  empty command path contributes no tokens, so a default/root command with no positionals has its
+  options area at the first token.
 
 For example:
 
@@ -53,6 +68,11 @@ only as root requests when no command is being executed. They do not create an e
 command execution: command help sections are written as `app command positional --help`,
 `app command positional --help-errors`, or `app command positional --help-env`, and
 `app --help-env command` is invalid.
+
+Because informational options and execution options share the same options area, they compose with
+each other. `app --help --help-errors --help-env --theme light` and
+`app command --help --help-env --color never` are valid; the informational output is rendered with
+the requested presentation and no command handler runs.
 
 ## Prompting Implications
 

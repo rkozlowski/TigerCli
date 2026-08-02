@@ -162,12 +162,16 @@ app <command-path> <positional-arguments> [options]
 
 - Positional arguments are required and come before options.
 - Options are unordered after positionals.
+- A default/root command has an empty command path, so its shape is
+  `app <positional-arguments> [options]`; with no declared positionals its options area starts at
+  the first token (`app --theme light`).
 - Framework-owned execution options such as `--non-interactive`, `--culture`, `--theme`, and
   `--color` are app-wide in meaning but still belong after the command path and required
   positionals. Contributed global options follow the same rule.
 - Root `--help`, `--help-errors`, `--help-env`, and opt-in `--version` / `--version-full` are informational forms,
   not permission to put execution options before a command. Use `app command --help` for command
-  help; `app --help command` is invalid.
+  help; `app --help command` is invalid. They share the options area with execution options, so
+  `app --help --help-env --theme light` is valid.
 - Do not define app options that conflict with framework-owned options.
 - `--help`, `--help-errors`, and `--help-env` are composable. Normal help hints only at sections not
   included in the current request; command forms still follow normal option placement.

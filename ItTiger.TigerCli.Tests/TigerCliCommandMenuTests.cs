@@ -396,8 +396,33 @@ public sealed class TigerCliCommandMenuTests
         Assert.DoesNotContain("ran=bravo", stdout);
     }
 
+    /// <summary>
+    /// The menu is reached through an empty command path with no positionals, so a framework
+    /// execution option sits in a valid options area and is accepted. The run then fails on the
+    /// menu's own interactivity requirement rather than on option placement.
+    /// </summary>
     [Fact]
-    public async Task NonInteractive_WithoutSelectedCommand_IsRejected()
+    public async Task NonInteractive_MenuFailsCleanly()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("menu-test")
+            .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InteractiveNotAllowed, 46)
+            .UseCommandMenu(CommandMenuMode.Enabled)
+            .AddCommand<AlphaCommand>("alpha")
+            .Build();
+
+        var result = await TigerCliAppTestHost
+            .For(app)
+            .WithArgs("--non-interactive")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(46, result.ExitCode);
+        Assert.DoesNotContain("ran=alpha", result.StdOut);
+        Assert.Contains("interactive", result.StdErr);
+    }
+
+    [Fact]
+    public async Task UnknownOption_BeforeMenuSelection_IsRejected()
     {
         var app = TigerCliApp.CreateBuilder()
             .SetApplicationName("menu-test")
@@ -408,12 +433,12 @@ public sealed class TigerCliCommandMenuTests
 
         var result = await TigerCliAppTestHost
             .For(app)
-            .WithArgs("--non-interactive")
+            .WithArgs("--not-a-framework-option")
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(47, result.ExitCode);
         Assert.DoesNotContain("ran=alpha", result.StdOut);
-        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
+        Assert.Contains("Unknown option: '--not-a-framework-option'", result.StdErr);
     }
 
     // ── Layout ───────────────────────────────────────────────────────

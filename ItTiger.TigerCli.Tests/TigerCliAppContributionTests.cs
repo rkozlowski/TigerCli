@@ -221,7 +221,66 @@ public sealed class TigerCliAppContributionTests
         var result = await RunCapturedAsync(app, ["run", OptionName, "before.json", "project"]);
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains($"Unknown option: '{OptionName}'", result.Stderr);
+        Assert.Contains("Unexpected positional argument after options: project", result.Stderr);
+    }
+
+    // ── Default/root command placement ──────────────────────────────
+
+    /// <summary>
+    /// A default command has an empty command path, so with no positionals its options area starts
+    /// at the first token and a contributed global is claimed there.
+    /// </summary>
+    [Fact]
+    public async Task OptionOnDefaultCommand_AppliesSuppliedValue()
+    {
+        string? appliedValue = null;
+        var executed = false;
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .AddContribution(new Contribution(builder => AddOption(
+                builder,
+                (_, value) =>
+                {
+                    appliedValue = value;
+                    return TigerCliValidationResult.Success();
+                })))
+            .SetDefaultCommand(() => new ObservingCommand(() => executed = true))
+            .Build();
+
+        var result = await RunCapturedAsync(app, [OptionName, "root.json"]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("root.json", appliedValue);
+        Assert.True(executed);
+    }
+
+    [Fact]
+    public async Task OptionAfterDefaultCommandPositional_AppliesSuppliedValue()
+    {
+        string? appliedValue = null;
+        string? observedTarget = null;
+        var app = CreatePositionalDefaultApp(
+            value => appliedValue = value,
+            settings => observedTarget = settings.Target);
+
+        var result = await RunCapturedAsync(app, ["project", OptionName, "after.json"]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("after.json", appliedValue);
+        Assert.Equal("project", observedTarget);
+    }
+
+    [Fact]
+    public async Task OptionBeforeDefaultCommandPositional_IsRejected()
+    {
+        var app = CreatePositionalDefaultApp(
+            _ => { },
+            _ => Assert.Fail("Command must not execute."));
+
+        var result = await RunCapturedAsync(app, [OptionName, "before.json", "project"]);
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Unexpected positional argument after options: project", result.Stderr);
     }
 
     [Fact]
@@ -448,6 +507,23 @@ public sealed class TigerCliAppContributionTests
             .SetApplicationName("test-app")
             .AddContribution(new Contribution(builder => AddOption(builder, apply)))
             .AddCommand("run", () => new ObservingCommand(execute))
+            .Build();
+    }
+
+    private static TigerCliApp CreatePositionalDefaultApp(
+        Action<string?> applied,
+        Action<PositionalSettings> execute)
+    {
+        return TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .AddContribution(new Contribution(builder => AddOption(
+                builder,
+                (_, value) =>
+                {
+                    applied(value);
+                    return TigerCliValidationResult.Success();
+                })))
+            .SetDefaultCommand(() => new PositionalCommand(execute))
             .Build();
     }
 
