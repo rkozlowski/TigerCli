@@ -333,8 +333,49 @@ public sealed class TigerCliApp
         TimeSpan? promptTimeout = default,
         CancellationToken ct = default)
     {
-        // 0. Resolve culture (before any help/error rendering).
-        var cultureResolution = ResolveRunCulture(args);
+        var rootInformation = ResolveRootInformation(args);
+
+        // 0. Apply app appearance configuration before resolving the valid execution options that
+        // may override it. Root informational forms do not accept execution/presentation options.
+        ApplyThemeConfiguration();
+
+        TigerCliCommandRegistration? effectiveCommand = null;
+        TigerCliCommandAliasRegistration? matchedAlias = null;
+        TigerCliCommandGroupRegistration? group = null;
+        var remainingArgs = args;
+        var positionalCount = 0;
+        var frameworkOptionParse = new FrameworkOptionParseResult { RemainingArgs = args };
+        var globalOptionParse = new GlobalOptionParseResult { RemainingArgs = args };
+
+        if (!rootInformation.IsRootForm)
+        {
+            // 1. Resolve the command from the leading command path. Execution options are not
+            // removed first: placing one before a named command must not select that command.
+            var (command, alias, commandArgs) = ResolveCommand(args);
+            matchedAlias = alias;
+            var matchedNamedCommand = alias != null || command is { Name: not null };
+            group = matchedNamedCommand ? null : ResolveGroup(args);
+            effectiveCommand = group == null ? command ?? _defaultCommand : null;
+            remainingArgs = commandArgs;
+
+            if (effectiveCommand is { IsCommandMenu: false })
+            {
+                positionalCount = BuildArgumentMetadata(effectiveCommand.SettingsType).Count;
+
+                // Framework execution options and contributed globals are app-wide in meaning, but
+                // syntactically remain options. Extract them only from the selected command's options
+                // area, after its required positionals.
+                frameworkOptionParse = ParseFrameworkOptions(remainingArgs, positionalCount);
+                remainingArgs = frameworkOptionParse.RemainingArgs;
+
+                globalOptionParse = ParseGlobalOptions(remainingArgs, positionalCount);
+                remainingArgs = globalOptionParse.RemainingArgs;
+            }
+        }
+
+        // 2. Resolve culture, theme, and colour from execution options that were found in the valid
+        // options area. Invalidly placed options remain for the normal parser to reject.
+        var cultureResolution = ResolveRunCulture(frameworkOptionParse.ExtractedArgs);
         var culture = cultureResolution.Culture;
 
         if (!cultureResolution.Success)
@@ -347,14 +388,18 @@ public sealed class TigerCliApp
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
 
-        // 0a-theme. Apply the app's theme/style/colour-alias policy to the active console appearance
-        // before any theme resolution or output rendering. This registers the app's custom themes and
-        // makes its colour aliases and custom styles active for the run.
-        ApplyThemeConfiguration();
+        if (globalOptionParse.ErrorResourceKey != null)
+        {
+            WriteFrameworkError(culture, TigerCliResources.Format(
+                globalOptionParse.ErrorResourceKey,
+                culture,
+                globalOptionParse.ErrorArgs ?? Array.Empty<object>()));
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
 
-        // 0b. Resolve the framework --theme option or environment default (before any help/output
+        // Resolve the framework --theme option or environment default (before any help/output
         // rendering) so the selected theme applies to the run's themed output (e.g. CliTable).
-        var themeResolution = ResolveRunTheme(args);
+        var themeResolution = ResolveRunTheme(frameworkOptionParse.ExtractedArgs);
         if (!themeResolution.Success)
         {
             var supportedThemes = string.Join(", ", GetEnabledThemeNames());
@@ -370,11 +415,11 @@ public sealed class TigerCliApp
         if (themeResolution.Theme != null)
             TigerConsole.CurrentTheme = themeResolution.Theme;
 
-        // 0c. Resolve the framework --color / --no-color option and apply it to the process-global
+        // Resolve the framework --color / --no-color option and apply it to the process-global
         // colour mode before any output rendering. CLI wins over the app's configured default. The
         // framework only claims --color when the value is a recognized mode (auto|never|16|256), so
         // an app may still define its own --color option for other values.
-        TigerConsole.ColorMode = ResolveRunColorMode(args);
+        TigerConsole.ColorMode = ResolveRunColorMode(frameworkOptionParse.ExtractedArgs);
 
         using var outputSinkScope = TigerConsole.EnsureOutputSinkScope(out var outputSink);
         using var outputPresetScope = CliOutputPresetContext.Push(_defaultOutputPresets);
@@ -388,62 +433,49 @@ public sealed class TigerCliApp
         var appTitle = GetApplicationDisplayName();
         titleSession?.SetBaseTitle(appTitle);
 
-        if (_metadata.VersionEnabled && args.Any(a => a is "--version" or "--version-full"))
+        if (rootInformation.ShowVersion || rootInformation.ShowProductVersion)
         {
-            PrintVersion(culture, showVersion: args.Any(a => a is "--version"), showProductVersion: args.Any(a => a is "--version-full"));
+            PrintVersion(culture, rootInformation.ShowVersion, rootInformation.ShowProductVersion);
             return _exitCodePolicy.Resolve(TigerCliExitKind.Success);
         }
 
-        var nonInteractiveRequested = args.Any(a => a is "--non-interactive");
-        var frameworkArgs = StripFrameworkOptions(args);
-
-        // 1. Resolve command from first positional token. When no leaf command
-        // matches, a matched group prefix gives us the group context for help.
-        var (command, matchedAlias, remainingArgs) = ResolveCommand(frameworkArgs);
-        var matchedNamedCommand = matchedAlias != null || command is { Name: not null };
-        var group = matchedNamedCommand ? null : ResolveGroup(frameworkArgs);
-        var effectiveCommand = command ?? _defaultCommand;
-        if (effectiveCommand != null)
-            titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
-
-        // Contributed globals are app-wide in meaning, but syntactically remain command options.
-        // Resolve the command path first, then extract them only after that command's positionals.
-        var globalOptionParse = effectiveCommand != null
-            ? ParseGlobalOptions(
-                remainingArgs,
-                effectiveCommand.IsCommandMenu
-                    ? 0
-                    : BuildArgumentMetadata(effectiveCommand.SettingsType).Count)
-            : new GlobalOptionParseResult { RemainingArgs = remainingArgs };
-        if (globalOptionParse.ErrorResourceKey != null)
+        if (rootInformation.ShowHelp)
         {
-            WriteFrameworkError(culture, TigerCliResources.Format(
-                globalOptionParse.ErrorResourceKey,
-                culture,
-                globalOptionParse.ErrorArgs ?? Array.Empty<object>()));
-            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+            PrintHelp(_defaultCommand, culture);
+            if (rootInformation.ShowExitCodeHelp)
+                PrintExitCodeHelp(_defaultCommand, leadingBlankLine: true, culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
         }
 
-        remainingArgs = globalOptionParse.RemainingArgs;
-
-        // 2. Pre-scan for help anywhere in args
-        var showHelp = frameworkArgs.Any(a => a is "-h" or "--help");
-        var showExitCodeHelp = frameworkArgs.Any(a => a is "--help-errors");
-        if (showHelp)
+        if (rootInformation.ShowExitCodeHelp)
         {
-            if (group != null)
+            PrintExitCodeHelp(_defaultCommand, leadingBlankLine: false, culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+        }
+
+        if (group != null)
+        {
+            var groupArgs = args[group.PathTokens.Length..];
+            var groupInformation = ResolveCommandInformation(groupArgs, positionalCount: 0);
+            if (groupInformation.ShowHelp)
+            {
                 PrintGroupHelp(group, culture);
-            else
-                PrintHelp(effectiveCommand, culture, matchedAlias);
-            if (showExitCodeHelp)
-                PrintExitCodeHelp(effectiveCommand, leadingBlankLine: true, culture);
-            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
-        }
+                if (groupInformation.ShowExitCodeHelp)
+                    PrintExitCodeHelp(null, leadingBlankLine: true, culture);
+                return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+            }
 
-        if (showExitCodeHelp)
-        {
-            PrintExitCodeHelp(effectiveCommand, leadingBlankLine: false, culture);
-            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+            if (groupInformation.ShowExitCodeHelp)
+            {
+                PrintExitCodeHelp(null, leadingBlankLine: false, culture);
+                return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+            }
+
+            if (groupArgs.Length > 0 && groupArgs[0].StartsWith("-", StringComparison.Ordinal))
+            {
+                WriteUnknownOption(culture, groupArgs[0]);
+                return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+            }
         }
 
         // 3a. A matched group prefix with no leaf subcommand shows the group's help.
@@ -456,16 +488,43 @@ public sealed class TigerCliApp
         // 3b. No command resolved and no default → show help
         if (effectiveCommand == null)
         {
-            if (frameworkArgs.Length > 0 && FindGlobalOption(frameworkArgs[0]) is { } globalOption)
+            if (args.Length > 0 && args[0].StartsWith("-", StringComparison.Ordinal))
             {
-                WriteFrameworkError(culture, TigerCliResources.Format(
-                    "Error_UnknownOption", culture, Esc(globalOption.Name)));
+                WriteUnknownOption(culture, args[0]);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
             }
 
             PrintHelp(null, culture);
             return _exitCodePolicy.Resolve(TigerCliExitKind.NoCommand);
         }
+
+        titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
+
+        var commandInformation = ResolveCommandInformation(remainingArgs, positionalCount);
+        if (commandInformation.ShowHelp)
+        {
+            PrintHelp(effectiveCommand, culture, matchedAlias);
+            if (commandInformation.ShowExitCodeHelp)
+                PrintExitCodeHelp(effectiveCommand, leadingBlankLine: true, culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+        }
+
+        if (commandInformation.ShowExitCodeHelp)
+        {
+            PrintExitCodeHelp(effectiveCommand, leadingBlankLine: false, culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+        }
+
+        if (effectiveCommand.IsCommandMenu
+            && remainingArgs.Length > 0
+            && remainingArgs[0].StartsWith("-", StringComparison.Ordinal))
+        {
+            WriteUnknownOption(culture, remainingArgs[0]);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
+
+        var nonInteractiveRequested = frameworkOptionParse.ExtractedArgs.Any(
+            arg => arg == "--non-interactive");
 
         if (!TryResolveInteractionMode(effectiveCommand, nonInteractiveRequested, out var effectiveInteractionMode))
         {
@@ -1128,54 +1187,118 @@ public sealed class TigerCliApp
             new SelectCell(marker, formattingMode: CliFormattingMode.Raw));
     }
 
-    private string[] StripFrameworkOptions(string[] args)
+    private readonly record struct InformationRequest(
+        bool IsRootForm,
+        bool ShowHelp,
+        bool ShowExitCodeHelp,
+        bool ShowVersion,
+        bool ShowProductVersion);
+
+    private InformationRequest ResolveRootInformation(string[] args)
     {
-        var result = new List<string>(args.Length);
+        if (args.Length == 0)
+            return default;
+
+        var hasVersion = args.Any(arg => arg is "--version" or "--version-full");
+        if (hasVersion && !_metadata.VersionEnabled)
+            return default;
+
+        if (args.Any(arg => arg is not ("-h" or "--help" or "--help-errors" or "--version" or "--version-full")))
+            return default;
+
+        return new InformationRequest(
+            IsRootForm: true,
+            ShowHelp: args.Any(arg => arg is "-h" or "--help"),
+            ShowExitCodeHelp: args.Any(arg => arg == "--help-errors"),
+            ShowVersion: args.Any(arg => arg == "--version"),
+            ShowProductVersion: args.Any(arg => arg == "--version-full"));
+    }
+
+    private static InformationRequest ResolveCommandInformation(string[] args, int positionalCount)
+    {
+        var firstOption = Array.FindIndex(args, arg => arg.StartsWith("-", StringComparison.Ordinal));
+        if (firstOption < 0 || firstOption > positionalCount)
+            return default;
+
+        var informationArgs = args[firstOption..];
+        if (informationArgs.Any(arg => arg is not ("-h" or "--help" or "--help-errors")))
+            return default;
+
+        return new InformationRequest(
+            IsRootForm: false,
+            ShowHelp: informationArgs.Any(arg => arg is "-h" or "--help"),
+            ShowExitCodeHelp: informationArgs.Any(arg => arg == "--help-errors"),
+            ShowVersion: false,
+            ShowProductVersion: false);
+    }
+
+    private sealed class FrameworkOptionParseResult
+    {
+        public string[] RemainingArgs { get; init; } = [];
+        public string[] ExtractedArgs { get; init; } = [];
+    }
+
+    private FrameworkOptionParseResult ParseFrameworkOptions(string[] args, int positionalCount)
+    {
+        var remaining = new List<string>(args.Length);
+        var extracted = new List<string>();
+        var positionalsSeen = 0;
+
         for (int i = 0; i < args.Length; i++)
         {
             var arg = args[i];
-            if (arg == "--non-interactive")
-                continue;
-
-            if (arg == "--theme")
+            if (positionalsSeen < positionalCount)
             {
-                // Consume the following value if present.
-                if (i + 1 < args.Length)
-                    i++;
+                remaining.Add(arg);
+                if (!arg.StartsWith("-", StringComparison.Ordinal))
+                    positionalsSeen++;
                 continue;
             }
-            if (arg.StartsWith("--theme=", StringComparison.Ordinal))
-                continue;
 
-            if (arg == "--no-color")
+            if (arg is "--non-interactive" or "--no-color")
+            {
+                extracted.Add(arg);
                 continue;
+            }
+
+            if (arg == "--theme" || (_cultureOptionEnabled && arg == "--culture"))
+            {
+                extracted.Add(arg);
+                if (i + 1 < args.Length)
+                    extracted.Add(args[++i]);
+                continue;
+            }
+
+            if (arg.StartsWith("--theme=", StringComparison.Ordinal)
+                || (_cultureOptionEnabled && arg.StartsWith("--culture=", StringComparison.Ordinal)))
+            {
+                extracted.Add(arg);
+                continue;
+            }
+
             // Only strip --color when its value is a recognized mode; otherwise leave it for the
             // app (which may define its own --color option).
             if (arg == "--color" && i + 1 < args.Length && TryParseColorMode(args[i + 1], out _))
             {
-                i++; // consume the recognized mode value
+                extracted.Add(arg);
+                extracted.Add(args[++i]);
                 continue;
             }
             if (arg.StartsWith("--color=", StringComparison.Ordinal)
                 && TryParseColorMode(arg["--color=".Length..], out _))
-                continue;
-
-            if (_cultureOptionEnabled)
             {
-                if (arg == "--culture")
-                {
-                    // Consume the following value if present.
-                    if (i + 1 < args.Length)
-                        i++;
-                    continue;
-                }
-                if (arg.StartsWith("--culture=", StringComparison.Ordinal))
-                    continue;
+                extracted.Add(arg);
+                continue;
             }
 
-            result.Add(arg);
+            remaining.Add(arg);
         }
-        return result.ToArray();
+
+        return new FrameworkOptionParseResult
+        {
+            RemainingArgs = remaining.ToArray(),
+            ExtractedArgs = extracted.ToArray()
+        };
     }
 
     private sealed class GlobalOptionParseResult
@@ -1256,12 +1379,12 @@ public sealed class TigerCliApp
         };
     }
 
-    private TigerCliGlobalOptionRegistration? FindGlobalOption(string token)
+    private static void WriteUnknownOption(CultureInfo culture, string token)
     {
         var equalsIndex = token.IndexOf('=');
         var optionName = equalsIndex > 0 ? token[..equalsIndex] : token;
-        return _globalOptions.FirstOrDefault(option =>
-            string.Equals(option.Name, optionName, StringComparison.OrdinalIgnoreCase));
+        WriteFrameworkError(culture, TigerCliResources.Format(
+            "Error_UnknownOption", culture, Esc(optionName)));
     }
 
     private readonly record struct CultureResolution(

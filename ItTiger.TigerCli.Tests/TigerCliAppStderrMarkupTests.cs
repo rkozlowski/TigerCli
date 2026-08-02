@@ -118,9 +118,10 @@ public sealed class TigerCliAppStderrMarkupTests
     [Fact]
     public async Task MissingRequiredArgument_EscapesDisplayName_WithBracketsInName()
     {
-        var app = App<BracketArgCommand>();
+        var app = App<BracketArgCommand>(builder =>
+            builder.SetInteractionMode(TigerCliInteractionMode.NonInteractive));
 
-        var result = await RunCapturedAsync(app, ["--non-interactive"]);
+        var result = await RunCapturedAsync(app, []);
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Equal(string.Empty, result.Stdout);
@@ -261,13 +262,14 @@ public sealed class TigerCliAppStderrMarkupTests
         }
     }
 
-    private static TigerCliApp App<TCommand>()
+    private static TigerCliApp App<TCommand>(Action<TigerCliAppBuilder>? configure = null)
         where TCommand : class, new()
     {
-        return TigerCliApp.CreateBuilder()
+        var builder = TigerCliApp.CreateBuilder()
             .SetApplicationName("stderr-test")
-            .SetDefaultCommand<TCommand>()
-            .Build();
+            .SetDefaultCommand<TCommand>();
+        configure?.Invoke(builder);
+        return builder.Build();
     }
 
     private static async Task<(int ExitCode, string Stdout, string Stderr)> RunCapturedAsync(

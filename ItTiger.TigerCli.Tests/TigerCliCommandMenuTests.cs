@@ -397,11 +397,11 @@ public sealed class TigerCliCommandMenuTests
     }
 
     [Fact]
-    public async Task NonInteractive_MenuFailsCleanly()
+    public async Task NonInteractive_WithoutSelectedCommand_IsRejected()
     {
         var app = TigerCliApp.CreateBuilder()
             .SetApplicationName("menu-test")
-            .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InteractiveNotAllowed, 46)
+            .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InvalidArguments, 47)
             .UseCommandMenu(CommandMenuMode.Enabled)
             .AddCommand<AlphaCommand>("alpha")
             .Build();
@@ -411,9 +411,9 @@ public sealed class TigerCliCommandMenuTests
             .WithArgs("--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(46, result.ExitCode);
+        Assert.Equal(47, result.ExitCode);
         Assert.DoesNotContain("ran=alpha", result.StdOut);
-        Assert.Contains("interactive", result.StdErr);
+        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
     }
 
     // ── Layout ───────────────────────────────────────────────────────
@@ -471,7 +471,7 @@ public sealed class TigerCliCommandMenuTests
             TigerConsole.ColorMode = CliColorMode.Never;
             Console.SetOut(TextWriter.Synchronized(stdout));
             Console.SetError(TextWriter.Synchronized(stderr));
-            var exitCode = await app.RunAsync(args.Append("--no-color").ToArray(), shell);
+            var exitCode = await app.RunAsync(args, shell);
             return (exitCode, stdout.ToString());
         }
         finally

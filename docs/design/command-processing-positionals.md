@@ -27,6 +27,30 @@ TigerCli is script-safe first. A strict shape keeps command parsing predictable 
 - Positional arguments are always required.
 - Options come after positionals and are unordered relative to other options.
 - Once option parsing starts, later positional values are rejected.
+- Framework-owned execution and presentation options, such as `--non-interactive`, `--culture`,
+  `--theme`, and `--color`, follow the same placement rule. Their meaning is app-wide; their syntax
+  is still that of an option.
+- App-contributed global options follow the same rule and do not participate in command selection.
+
+For example:
+
+```text
+file-copy copy-to-file source.txt target.txt --non-interactive
+my-app run positional --acme-config settings.json
+```
+
+The following forms are invalid because an execution option appears before the command path or
+before required positional context:
+
+```text
+file-copy --non-interactive copy-to-file source.txt target.txt
+my-app run --acme-config settings.json positional
+```
+
+Root informational forms such as `app --help`, `app --version`, and `app --help-errors` are handled
+only as root requests when no command is being executed. They do not create an exception for
+command execution: command help is written as `app command --help`, and `app --help command` is
+invalid.
 
 ## Prompting Implications
 
@@ -40,7 +64,9 @@ This supports flows where later prompts depend on earlier context, such as choos
 
 ## Boundaries
 
-TigerCli intentionally does not support freely interleaving positionals and options. That flexibility would make generated help, prompt ordering, and app-level tests less predictable.
+TigerCli intentionally does not support freely interleaving positionals and options or extracting
+app-wide execution options before command selection. That flexibility would make generated help,
+prompt ordering, and app-level tests less predictable.
 
 ## Related Docs
 

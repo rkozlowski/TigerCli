@@ -68,7 +68,7 @@ public sealed class BasicAppTests
     }
 
     [Fact]
-    public async Task Show_MissingCity_NonInteractive_FailsCleanly()
+    public async Task Show_NonInteractiveBeforeCity_IsRejected()
     {
         var result = await TigerCliAppTestHost
             .For(RoiCitiesApp.Create())
@@ -77,7 +77,7 @@ public sealed class BasicAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("city", result.StdErr);
+        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
         Assert.DoesNotContain("Corrib", result.StdOut);
     }
 

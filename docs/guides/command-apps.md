@@ -874,7 +874,9 @@ Using `CommandMenuMode.Inherit` at the app level turns the menu surface on while
 - Command names and descriptions (including localized `descriptionResourceKey` values) are reused from the existing command metadata.
 - Help, version, and the menu command itself are never listed in the menu (and the menu command is hidden from help).
 - Selecting a command resumes the normal pipeline, so any missing arguments/options are prompted exactly as if the command had been typed.
-- The menu requires a semi-interactive session; running it with `--non-interactive` fails cleanly.
+- The menu is a root interaction, not a selected command. `app --non-interactive` is rejected as an
+  invalid command line; automation selects a command and places `--non-interactive` after that
+  command's required positionals.
 - An empty eligible set shows a clear "No commands are available." message.
 
 ## Edit Commands

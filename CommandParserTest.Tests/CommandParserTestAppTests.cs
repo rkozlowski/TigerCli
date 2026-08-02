@@ -108,8 +108,7 @@ public sealed class CommandParserTestAppTests
     {
         var result = await TigerCliAppTestHost
             .For(CommandParserTestApp.Create())
-            .WithArgs("prompt", "smoke", "--culture", "pl-PL")
-            .WithTextInput("Riley")
+            .WithArgs("prompt", "smoke", "Riley", "--culture", "pl-PL")
             .WithSelectIndex(1)
             .WithMultiSelectIndexes(0, 2)
             .RunAsync(TestContext.Current.CancellationToken);
@@ -122,13 +121,11 @@ public sealed class CommandParserTestAppTests
     }
 
     [Fact]
-    public async Task ProviderSmoke_PolishSelectsLanguageNeutralKeys()
+    public async Task ProviderSmoke_PolishBindsLanguageNeutralKeys()
     {
         var result = await TigerCliAppTestHost
             .For(CommandParserTestApp.Create())
-            .WithArgs("provider", "smoke", "--culture", "pl-PL")
-            .WithSelectIndex(1)
-            .WithSelectIndex(0)
+            .WithArgs("provider", "smoke", "demo", "sandbox", "--culture", "pl-PL")
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, result.ExitCode);
@@ -142,7 +139,7 @@ public sealed class CommandParserTestAppTests
     {
         var result = await TigerCliAppTestHost
             .For(CommandParserTestApp.Create())
-            .WithArgs("prompt", "smoke", "--culture", "pl-PL", "--non-interactive")
+            .WithArgs("prompt", "smoke", "Riley", "--culture", "pl-PL", "--non-interactive")
             .WithTextInput("unused")
             .WithSelectIndex(2)
             .WithMultiSelectIndexes(1)

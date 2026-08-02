@@ -248,7 +248,7 @@ themes.DisableTheme("tiger-blue");
 A disabled theme behaves exactly like an unknown theme for that app:
 
 ```text
---theme tiger-blue            → error (unsupported theme)
+my-app render report --theme tiger-blue → error (unsupported theme)
 TIGERCLI_THEME=tiger-blue     → error (invalid theme)
 ```
 

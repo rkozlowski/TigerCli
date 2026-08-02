@@ -294,7 +294,7 @@ public sealed class TigerCliAppContributionTests
             interactiveShell);
         var nonInteractive = await RunCapturedAsync(
             app,
-            ["--non-interactive", "run", OptionName, "same.json"],
+            ["run", OptionName, "same.json", "--non-interactive"],
             nonInteractiveShell);
 
         Assert.Equal(0, interactive.ExitCode);

@@ -182,13 +182,10 @@ public sealed class TigerCliAppMetadataLocalizationTests
         Assert.Contains("Greet someone", rootEn.Stdout);
         Assert.DoesNotContain("Fallback greet", rootEn.Stdout);
 
-        var rootPl = await RunCapturedAsync(app, ["--culture", "pl-PL", "--help"]);
-        Assert.Contains("Pozdrów kogoś", rootPl.Stdout);
-
         var cmdEn = await RunCapturedAsync(app, ["greet", "--help"]);
         Assert.Contains("Greet someone", cmdEn.Stdout);
 
-        var cmdPl = await RunCapturedAsync(app, ["--culture", "pl-PL", "greet", "--help"]);
+        var cmdPl = await RunCapturedAsync(app, ["greet", "--culture", "pl-PL", "--help"]);
         Assert.Contains("Pozdrów kogoś", cmdPl.Stdout);
     }
 
@@ -287,7 +284,7 @@ public sealed class TigerCliAppMetadataLocalizationTests
         Assert.Contains("Target (EN)", en.Stdout);
         Assert.DoesNotContain("Target to process.", en.Stdout);
 
-        var pl = await RunCapturedAsync(app, ["--culture", "pl-PL", "--help"]);
+        var pl = await RunCapturedAsync(app, ["sample", "--culture", "pl-PL", "--help"]);
         Assert.Contains("Cel (PL)", pl.Stdout);
     }
 
@@ -345,6 +342,7 @@ public sealed class TigerCliAppMetadataLocalizationTests
         var app = TigerCliApp.CreateBuilder()
             .SetApplicationName("tool")
             .SetSupportedCultures("en-US", "pl-PL")
+            .SetDefaultCulture("pl-PL")
             .SetDefaultCommand<ProviderCommand>()
             .ConfigurePrompts<ProviderSettings>(prompts =>
             {
@@ -359,7 +357,7 @@ public sealed class TigerCliAppMetadataLocalizationTests
         var shell = new TestShell();
         shell.Terminal.EnqueueKey(ConsoleKey.Enter);
 
-        var result = await RunWithShellAsync(app, ["--culture", "pl-PL"], shell);
+        var result = await RunWithShellAsync(app, [], shell);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Single(seenCultures);
@@ -378,6 +376,7 @@ public sealed class TigerCliAppMetadataLocalizationTests
         var app = TigerCliApp.CreateBuilder()
             .SetApplicationName("tool")
             .SetSupportedCultures("en-US", "pl-PL")
+            .SetDefaultCulture("pl-PL")
             .UseAppResources(rm)
             .SetDefaultCommand<ProviderCommand>()
             .ConfigurePrompts<ProviderSettings>(prompts =>
@@ -394,7 +393,7 @@ public sealed class TigerCliAppMetadataLocalizationTests
         var shell = new TestShell();
         shell.Terminal.EnqueueKey(ConsoleKey.Enter);
 
-        var result = await RunWithShellAsync(app, ["--culture", "pl-PL"], shell);
+        var result = await RunWithShellAsync(app, [], shell);
 
         Assert.Equal(0, result.ExitCode);
         // Polish label rendered into the prompt, while bound value stays "local".

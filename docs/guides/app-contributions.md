@@ -92,6 +92,10 @@ my-app run --acme-config settings.json
 
 Contributed global options do not participate in or change command selection.
 
+Framework-owned execution options follow the same rule. App-wide meaning does not make either kind
+of option valid before a command path or before its required positionals. Root informational forms
+such as `my-app --help` are separate requests, not a general pre-command option area.
+
 `--acme-config=settings.json` is also accepted. When a value itself begins with `-`, use the
 equals form so it cannot be mistaken for another option.
 
@@ -102,9 +106,10 @@ reserved, and reliably detectable command-option collisions fail.
 
 For a command run, TigerCli then:
 
-1. resolves framework run settings such as culture, theme, and color;
-2. resolves the command path;
-3. extracts contributed global options from the command's options area, after its positionals;
+1. recognizes an exact root informational form, when present;
+2. resolves the command path from the leading command tokens;
+3. extracts framework execution options and contributed global options from the command's options
+   area, after its positionals;
 4. resolves the interaction mode and any command-menu selection;
 5. invokes each contributed option callback once, using `null` for an absent option;
 6. binds, prompts for, and validates command settings; and

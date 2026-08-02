@@ -1,4 +1,5 @@
 using ItTiger.TigerCli.Commands;
+using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Markup;
 using ItTiger.TigerCli.Terminal;
 
@@ -79,10 +80,12 @@ public sealed class TigerCliCommandPathAndArgumentTests
     [Fact]
     public async Task MissingPositionalArgument_UsesMissingRequiredArgumentPolicy()
     {
-        var app = CreateProjectsApp(builder => builder.UseExitCodes(0, -9)
+        var app = CreateProjectsApp(builder => builder
+            .SetInteractionMode(TigerCliInteractionMode.NonInteractive)
+            .UseExitCodes(0, -9)
             .ExitKind(TigerCliExitKind.MissingRequiredArgument, 77));
 
-        var result = await RunCapturedAsync(app, ["projects", "sp-add", "local", "--non-interactive"]);
+        var result = await RunCapturedAsync(app, ["projects", "sp-add", "local"]);
 
         Assert.Equal(77, result.ExitCode);
         Assert.Contains("Missing required argument: <project>", result.Stderr);

@@ -85,10 +85,15 @@ Apps built with `TigerCliApp` expose a framework option:
 --no-color            # alias for --color never
 ```
 
+These are presentation options, so they appear after the selected command path and all required
+positional arguments. `my-tool render report --color never` is valid;
+`my-tool --color never render report` is not.
+
 - The CLI option wins over the app default (`TigerCliAppBuilder.SetColorMode(...)`).
 - Environment variables influence `Auto` detection only; they do not override an explicit
   `--color`/`SetColorMode`.
-- Recognized framework values and `--no-color` are stripped from the command's arguments.
+- Recognized framework values and `--no-color` are extracted from the command's valid options area
+  before settings binding.
 - **Collision-friendly:** `--color` is only claimed by the framework when its value is a recognized
   mode (`auto`, `never`, `16`, `256`). Any other `--color <value>` is left for the application, so an
   app may keep its own `--color` option. (Consequently the four mode literals are reserved for an app
@@ -101,8 +106,8 @@ var app = TigerCliApp.CreateBuilder()
     .SetDefaultCommand<MyCommand>()
     .Build();
 
-// my-tool --color 256   -> faithful 256-colour ANSI
-// my-tool --no-color    -> plain text
+// my-tool render report --color 256   -> faithful 256-colour ANSI
+// my-tool render report --no-color    -> plain text
 ```
 
 ## Theme preference

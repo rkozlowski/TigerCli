@@ -206,16 +206,14 @@ public sealed class TigerCliAppTestHost
         var synchronizedStdout = TextWriter.Synchronized(stdout);
         var synchronizedStderr = TextWriter.Synchronized(stderr);
 
-        // Styled capture: push HtmlSink scopes for stdout and stderr so the whole run renders into
-        // them (TigerCliApp.RunAsync keeps an already-pushed output scope). The live sinks run with
-        // WrapInPre = false — HtmlSink's <pre> wrapper closes permanently on the first Flush, and a
-        // run flushes once per markup call — so the requested wrapping is applied at completion.
-        // The scopes pin a plain base style so unstyled output carries no machine-dependent console
-        // colours. --no-color pinning below stays: it keeps anything outside the scopes plain.
+        // Push deterministic capture sinks so tests do not need to mutate the command line with a
+        // framework --no-color option. Styled capture uses HtmlSink; plain capture uses TextWriterSink.
+        // TigerCliApp.RunAsync keeps an already-pushed output scope, and the scopes pin a plain base
+        // style so unstyled output carries no machine-dependent console colours.
         StringWriter? htmlStdout = null;
         StringWriter? htmlStderr = null;
-        IDisposable? htmlOutputScope = null;
-        IDisposable? htmlErrorScope = null;
+        IDisposable? outputScope;
+        IDisposable? errorScope;
         if (_htmlCaptureEnabled)
         {
             var liveOptions = new HtmlSinkOptions
@@ -226,8 +224,13 @@ public sealed class TigerCliAppTestHost
             };
             htmlStdout = new StringWriter(CultureInfo.InvariantCulture);
             htmlStderr = new StringWriter(CultureInfo.InvariantCulture);
-            htmlOutputScope = TigerConsole.PushOutputSink(new HtmlSink(htmlStdout, liveOptions), plainBaseStyle: true);
-            htmlErrorScope = TigerConsole.PushErrorSink(new HtmlSink(htmlStderr, liveOptions), plainBaseStyle: true);
+            outputScope = TigerConsole.PushOutputSink(new HtmlSink(htmlStdout, liveOptions), plainBaseStyle: true);
+            errorScope = TigerConsole.PushErrorSink(new HtmlSink(htmlStderr, liveOptions), plainBaseStyle: true);
+        }
+        else
+        {
+            outputScope = TigerConsole.PushOutputSink(new TextWriterSink(synchronizedStdout), plainBaseStyle: true);
+            errorScope = TigerConsole.PushErrorSink(new TextWriterSink(synchronizedStderr), plainBaseStyle: true);
         }
 
         try
@@ -235,11 +238,7 @@ public sealed class TigerCliAppTestHost
             TigerConsole.ColorMode = CliColorMode.Never;
             Console.SetOut(synchronizedStdout);
             Console.SetError(synchronizedStderr);
-            // Force Never via the framework option too: RunAsync applies the app's configured colour
-            // mode, which would otherwise overwrite the global set above. --no-color is stripped
-            // before command parsing, so the command never sees it.
-            var effectiveArgs = _args.Append("--no-color").ToArray();
-            var exitCode = await _app.RunAsync(effectiveArgs, shell, _promptTimeout, cancellationToken).ConfigureAwait(false);
+            var exitCode = await _app.RunAsync(_args, shell, _promptTimeout, cancellationToken).ConfigureAwait(false);
             synchronizedStdout.Flush();
             synchronizedStderr.Flush();
             return new TigerCliAppRunResult(exitCode, stdout.ToString(), stderr.ToString())
@@ -250,8 +249,8 @@ public sealed class TigerCliAppTestHost
         }
         finally
         {
-            htmlErrorScope?.Dispose();
-            htmlOutputScope?.Dispose();
+            errorScope.Dispose();
+            outputScope.Dispose();
             Console.SetOut(originalOut);
             Console.SetError(originalError);
             TigerConsole.ColorMode = originalColorMode;

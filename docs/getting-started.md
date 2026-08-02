@@ -132,15 +132,17 @@ This is where TigerCli differs from a plain argument parser. Run `roi-cities sho
 
 ![roi-cities show prompts for the missing city](examples/png/roi-cities-basic-show-prompt.png)
 
-Run the same thing under automation, and it fails cleanly instead:
+For command-line automation, supply the required selector before the execution option:
 
 ```bash
-roi-cities show --non-interactive
-# stderr: Error: Missing required argument: <city>
-# exit code: non-zero — the run never waits for a key
+roi-cities show Galway --non-interactive
 ```
 
-`--non-interactive` is framework-owned and available to every TigerCli app. The prompt/fail decision is interaction *policy*, not command logic ([interaction modes](guides/interaction-modes.md)).
+`--non-interactive` is framework-owned and available to every TigerCli app, but it remains an
+option: it must follow the command path and required positionals. Hosts that set the app's default
+interaction mode to `NonInteractive` get the normal missing-argument error from `roi-cities show`;
+the prompt/fail decision is interaction *policy*, not command logic
+([interaction modes](guides/interaction-modes.md)).
 
 ### Testing the app boundary
 
@@ -205,7 +207,10 @@ Providers are registered at app, group, or command scope and can depend on earli
 
 ![roi-cities command menu](examples/png/roi-cities-extended-menu.png)
 
-The menu is interaction, so `roi-cities --non-interactive` refuses it with a clean, mapped exit code instead of opening a picker ([command apps → command menu](guides/command-apps.md#command-menu)).
+The menu is a root interaction, not a selected command. Execution options do not modify it:
+`roi-cities --non-interactive` is rejected as an invalid command line. Automation should select a
+command and put the option after that command's required positionals
+([command apps → command menu](guides/command-apps.md#command-menu)).
 
 ### Typed exit codes
 
@@ -225,7 +230,12 @@ public enum RoiCitiesExitCode
 }
 ```
 
-Framework outcomes (invalid arguments, a missing selector under `--non-interactive`, a cancelled prompt) map onto the same enum through [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html) `ExitKind` calls, and `roi-cities --help-errors` documents the whole contract to users and scripts from the `[TigerText]` labels — see the [generated render](examples/roi-cities.html) and [exit codes](guides/exit-codes.md).
+Framework outcomes (invalid arguments, a missing selector when the effective mode is
+non-interactive, a cancelled prompt) map onto the same enum through
+[TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html)
+`ExitKind` calls, and `roi-cities --help-errors` documents the whole contract to users and scripts
+from the `[TigerText]` labels — see the [generated render](examples/roi-cities.html) and
+[exit codes](guides/exit-codes.md).
 
 ### Metadata polish
 

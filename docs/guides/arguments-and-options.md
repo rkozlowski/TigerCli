@@ -505,7 +505,7 @@ Command-line parsing still uses enum member names. See [localization](localizati
 
 ## Framework-Owned Options
 
-TigerCli owns several framework options. They are removed before command settings binding and should not be defined as app options.
+TigerCli owns several framework options. They should not be defined as app options.
 
 | Option | Purpose |
 |---|---|
@@ -515,6 +515,22 @@ TigerCli owns several framework options. They are removed before command setting
 | `--help-errors` | Show documented exit-code help when an exit-code enum is configured. |
 | `--non-interactive` | Disable prompting for the current run. |
 | `--culture <culture>` | Select the active framework UI culture for the current run. `--culture=pl-PL` also works. |
+| `--theme <theme>` | Select the theme for the current run. |
+| `--color auto\|never\|16\|256`, `--no-color` | Select the output color mode for the current run. |
+
+The informational options are valid at the app root only when they form a root request, such as
+`app --help` or `app --version`. For a command, write `app command --help` or
+`app command --help-errors`.
+
+Execution and presentation options are app-wide in meaning, but TigerCli extracts them only from
+the selected command's options area. They must follow the command path and all required positional
+arguments, just like contributed global options:
+
+```text
+app command positional --non-interactive --color never
+```
+
+`app --non-interactive command` and `app command --non-interactive positional` are invalid.
 
 `--culture` is available only for cultures the app supports through `SetSupportedCultures(...)` and `SetDefaultCulture(...)`. See [localization](localization.md).
 

@@ -81,10 +81,17 @@
 </pre>
 </section>
 <section>
-<h2>Basic — --non-interactive fails cleanly</h2>
-<p>The same missing argument under --non-interactive: no prompt, an error on stderr, and a non-zero exit code — automation never hangs on a question.</p>
-<pre class="tc-source">roi-cities show --non-interactive</pre>
-<pre class="tigercli"><span style="color:#FF0000">Error:</span> Missing required argument: &lt;city&gt;
+<h2>Basic — explicit non-interactive execution</h2>
+<p>The framework-owned execution option follows the command and its required city selector. The same business operation runs without prompting.</p>
+<pre class="tc-source">roi-cities show Galway --non-interactive</pre>
+<pre class="tigercli"><span style="color:#00FF00; background-color:#000000">          Galway          </span>
+<span style="color:#808080; background-color:#00005F">┌</span><span style="color:#808080; background-color:#00005F">─────────────</span><span style="color:#808080; background-color:#00005F">┬</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┐</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Name:       </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#5FFF00; background-color:#00005F"> Galway   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> County:     </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Galway   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Province:   </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Connacht </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> Population: </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> 85,910   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">│</span><span style="color:#FFFF00; background-color:#00005F"> River:      </span><span style="color:#808080; background-color:#00005F">│</span><span style="color:#C0C0C0; background-color:#00005F"> Corrib   </span><span style="color:#808080; background-color:#00005F">│</span>
+<span style="color:#808080; background-color:#00005F">└</span><span style="color:#808080; background-color:#00005F">─────────────</span><span style="color:#808080; background-color:#00005F">┴</span><span style="color:#808080; background-color:#00005F">──────────</span><span style="color:#808080; background-color:#00005F">┘</span>
 </pre>
 </section>
 <section>

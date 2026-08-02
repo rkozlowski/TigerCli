@@ -112,7 +112,7 @@ public sealed class CommandParserTestLocalizationTests
 
         var result = await RunCapturedAsync(
             app,
-            ["projects", "sp-add", "--culture", "en-US", "local", "Billing", "--schema", "sales"]);
+            ["projects", "sp-add", "local", "Billing", "--culture", "en-US", "--schema", "sales"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("projects sp-add connection=local project=Billing schema=sales", result.Stdout);
@@ -125,7 +125,7 @@ public sealed class CommandParserTestLocalizationTests
 
         var result = await RunCapturedAsync(
             app,
-            ["projects", "sp-add", "--culture", "pl-PL", "local", "Billing", "--schema", "sales"]);
+            ["projects", "sp-add", "local", "Billing", "--culture", "pl-PL", "--schema", "sales"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("projects sp-add połączenie=local projekt=Billing schemat=sales", result.Stdout);
@@ -138,7 +138,7 @@ public sealed class CommandParserTestLocalizationTests
 
         var result = await RunCapturedAsync(
             app,
-            ["prompt", "smoke", "--culture", "en-US", "Riley", "--mode", "Fast", "--features", "Logging"]);
+            ["prompt", "smoke", "Riley", "--culture", "en-US", "--mode", "Fast", "--features", "Logging"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("name=Riley; mode=Fast; features=Logging", result.Stdout);
@@ -151,7 +151,7 @@ public sealed class CommandParserTestLocalizationTests
 
         var result = await RunCapturedAsync(
             app,
-            ["prompt", "smoke", "--culture", "pl-PL", "Riley", "--mode", "Fast", "--features", "Logging"]);
+            ["prompt", "smoke", "Riley", "--culture", "pl-PL", "--mode", "Fast", "--features", "Logging"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("nazwa=Riley; tryb=Fast; funkcje=Logging", result.Stdout);
@@ -164,7 +164,7 @@ public sealed class CommandParserTestLocalizationTests
 
         var result = await RunCapturedAsync(
             app,
-            ["provider", "smoke", "--culture", "en-US", "local", "billing"]);
+            ["provider", "smoke", "local", "billing", "--culture", "en-US"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("connection=local; project=billing", result.Stdout);
@@ -177,7 +177,7 @@ public sealed class CommandParserTestLocalizationTests
 
         var result = await RunCapturedAsync(
             app,
-            ["provider", "smoke", "--culture", "pl-PL", "local", "billing"]);
+            ["provider", "smoke", "local", "billing", "--culture", "pl-PL"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("połączenie=local; projekt=billing", result.Stdout);
@@ -256,9 +256,9 @@ public sealed class CommandParserTestLocalizationTests
     [Fact]
     public async Task HelpErrors_English_LocalizesSourceTextTigerTextEnum()
     {
-        var app = CreateRemainingCommandsApp();
+        var app = CreateRemainingCommandsApp("en-US");
 
-        var result = await RunCapturedAsync(app, ["--culture", "en-US", "--help-errors"]);
+        var result = await RunCapturedAsync(app, ["--help-errors"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Parser test exit codes", result.Stdout);
@@ -269,9 +269,9 @@ public sealed class CommandParserTestLocalizationTests
     [Fact]
     public async Task HelpErrors_Polish_LocalizesSourceTextTigerTextEnum()
     {
-        var app = CreateRemainingCommandsApp();
+        var app = CreateRemainingCommandsApp("pl-PL");
 
-        var result = await RunCapturedAsync(app, ["--culture", "pl-PL", "--help-errors"]);
+        var result = await RunCapturedAsync(app, ["--help-errors"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Kody zakończenia testu parsera", result.Stdout);
@@ -299,11 +299,12 @@ public sealed class CommandParserTestLocalizationTests
             .Build();
     }
 
-    private static TigerCliApp CreateRemainingCommandsApp()
+    private static TigerCliApp CreateRemainingCommandsApp(string defaultCulture = "en-US")
     {
         return TigerCliApp.CreateBuilder()
             .SetApplicationName("parser-test")
             .SetSupportedCultures("en-US", "pl-PL")
+            .SetDefaultCulture(defaultCulture)
             .UseAppResources(ParserResources)
             .UseExitCodes<global::CommandParserTest.ParserTestExitCode>(
                     global::CommandParserTest.ParserTestExitCode.Ok,

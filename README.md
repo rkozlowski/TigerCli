@@ -14,7 +14,13 @@ TigerCli is pre-1.0 and approaching stabilization. Its documentation, examples, 
 
 Command code describes the input and operation it needs; TigerCli owns the interaction policy. The same command implementation can serve people through menus, prompts, selectors, providers, validation, and activity/progress UI, while scripts, CI jobs, and AI agents use explicit, discoverable command shapes.
 
-With `--non-interactive`, TigerCli disables prompts and command menus. A command still executes when all required input is supplied; missing input that could otherwise be prompted for fails clearly instead of blocking automation. Activities and progress run headlessly or emit stable non-interactive messages according to their configuration.
+With `--non-interactive`, TigerCli disables prompts for the selected command. A command still executes when all required input is supplied; missing input that could otherwise be prompted for fails clearly instead of blocking automation. An app configured to run non-interactively also refuses command menus. Activities and progress run headlessly or emit stable non-interactive messages according to their configuration.
+
+TigerCli command lines use one shape: `app <command-path> <positional-arguments> [options]`.
+Framework execution options such as `--non-interactive` and app-contributed global options are
+app-wide in meaning, but they still appear after the command path and required positionals. Root
+`--help`, `--version`, and `--help-errors` are informational forms, not pre-command execution
+options.
 
 Mode changes presentation and prompting policy; it should not change the business operation. App authors should not need separate interactive and automation implementations.
 

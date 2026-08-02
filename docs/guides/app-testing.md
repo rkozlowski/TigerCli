@@ -121,12 +121,14 @@ Prefer durable assertions such as `Assert.Contains(...)` for help and formatted 
 
 ## Testing Help and Localized Help
 
-Pass `--help` just as a user would. If the app supports `--culture`, include it in `WithArgs(...)`.
+Pass `--help` just as a user would. To select a culture for command help, put `--culture` after the
+command path and its required positionals. For localized root help, configure that app instance's
+default culture and pass the root form `--help` by itself.
 
 ```csharp
 var result = await TigerCliAppTestHost
     .For(MyApp.Create())
-    .WithArgs("--help", "--culture", "pl-PL")
+    .WithArgs("greet", "Ala", "--culture", "pl-PL", "--help")
     .RunAsync();
 
 Assert.Equal(0, result.ExitCode);
@@ -252,12 +254,13 @@ Assert.Contains("Missing required", result.StdErr);
 Assert.DoesNotContain("unused", result.StdOut);
 ```
 
-The command menu is also interaction, so a non-interactive run of a menu app fails cleanly rather than opening a picker. Map the interaction-not-allowed kind to assert the exact code:
+The command menu is a root interaction rather than selected command execution. An execution option
+cannot modify it, so assert that the framework rejects the option placement:
 
 ```csharp
 var app = TigerCliApp.CreateBuilder()
     .SetApplicationName("menu-test")
-    .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InteractiveNotAllowed, 46)
+    .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.InvalidArguments, 47)
     .UseCommandMenu(CommandMenuMode.Enabled)
     .AddCommand<AlphaCommand>("alpha")
     .Build();
@@ -267,11 +270,13 @@ var result = await TigerCliAppTestHost
     .WithArgs("--non-interactive")
     .RunAsync();
 
-Assert.Equal(46, result.ExitCode);
-Assert.Contains("interactive", result.StdErr);
+Assert.Equal(47, result.ExitCode);
+Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
 ```
 
-Use these patterns to prove automation-safe behavior: missing governed input fails, and interactive surfaces are refused, instead of a script or CI job hanging on a prompt.
+Use these patterns to prove automation-safe behavior: missing governed input fails when the app or
+selected command is effectively non-interactive, and execution options cannot be used before
+command selection.
 
 ## Testing Cancellation
 
@@ -377,7 +382,7 @@ public sealed class MyAppTests
     [Fact]
     public async Task Help_Polish_WritesLocalizedFrameworkAndAppText()
     {
-        var result = await RunAsync("--help", "--culture", "pl-PL");
+        var result = await RunAsync("prompt", "smoke", "--culture", "pl-PL", "--help");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Użycie:", result.StdOut);
@@ -444,8 +449,8 @@ public sealed class MyAppTests
 
 ## Capturing Styled Output As HTML
 
-By default the host captures plain text (it pins `--no-color`). For documentation artifacts or
-styled-output assertions, opt in to HTML capture:
+By default the host captures plain text through deterministic capture sinks without adding command-
+line arguments. For documentation artifacts or styled-output assertions, opt in to HTML capture:
 
 ```csharp
 var result = await TigerCliAppTestHost

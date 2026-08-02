@@ -324,7 +324,7 @@ public sealed class TigerCliLocalizationTests
             .AddCommand<ExplicitArgumentCommand>("run", "Run")
             .Build();
 
-        var result = await RunCapturedAsync(app, ["--culture", "pl-PL", "run", "--help"]);
+        var result = await RunCapturedAsync(app, ["run", "sample", "--culture", "pl-PL", "--help"]);
 
         Assert.Contains("tool run <target> [opcje]", result.Stdout);
         Assert.Contains("<target>", result.Stdout);

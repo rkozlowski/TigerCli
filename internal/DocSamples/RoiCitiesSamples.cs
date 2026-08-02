@@ -81,14 +81,14 @@ internal static class RoiCitiesSamples
                 expectedExitCode: 0)));
 
         var basicNonInteractive = await CaptureRunAsync(
-            BasicApp.RoiCitiesApp.Create(), "show", "--non-interactive");
-        Require(basicNonInteractive.ExitCode != 0, "basic non-interactive exit", basicNonInteractive.ExitCode);
+            BasicApp.RoiCitiesApp.Create(), "show", "Galway", "--non-interactive");
+        Require(basicNonInteractive.ExitCode == 0, "basic non-interactive exit", basicNonInteractive.ExitCode);
         sections.Add(new DocPage.Section(
-            "Basic — --non-interactive fails cleanly",
-            "The same missing argument under --non-interactive: no prompt, an error on stderr, "
-            + "and a non-zero exit code — automation never hangs on a question.",
-            "roi-cities show --non-interactive",
-            basicNonInteractive.StdErrHtml!));
+            "Basic — explicit non-interactive execution",
+            "The framework-owned execution option follows the command and its required city "
+            + "selector. The same business operation runs without prompting.",
+            "roi-cities show Galway --non-interactive",
+            basicNonInteractive.StdOutHtml!));
 
         // ---- extended app ----------------------------------------------------------------------
 
@@ -189,7 +189,7 @@ internal static class RoiCitiesSamples
             TigerConsole.ColorMode = CliColorMode.Never;
 
             var shell = DocTerminal.CreateShell();
-            var run = app.RunAsync([.. args, "--no-color"], shell);
+            var run = app.RunAsync(args, shell);
 
             await shell.Terminal.WaitForRenderCountAsync(1, StepTimeout);
             var grid = shell.Terminal.LastRenderedGrid

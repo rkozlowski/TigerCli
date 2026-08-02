@@ -75,8 +75,9 @@ and `Resources/TigerCliStrings.pl-PL.resx` (Polish satellite). The accessor
 `TigerCliResources.Get(key, culture)` / `Format(key, culture, args)` requires an
 explicit `CultureInfo`; the framework never reads `CultureInfo.CurrentUICulture`.
 
-The resolved culture for a run is computed before any help or error is rendered:
-`--culture` (if supported), else the app default. Help, parser errors, framework
+The resolved culture for a command run is computed before any help or error is rendered:
+`--culture` from the command's valid options area (if supported), else the app default. Exact root
+informational forms use the app default culture. Help, parser errors, framework
 validation errors, prompt-failure messages, the `--help-errors` framework
 heading, built-in `--version` / `--version-full` lines, standard application link labels, and TUI built-in labels (`Yes`, `No`, MultiSelect hint, empty state) all
 read from the resolved culture.

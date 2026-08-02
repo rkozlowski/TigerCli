@@ -42,7 +42,7 @@ return TigerCliApp.CreateBuilder()
 Then users can select a supported culture for the current run:
 
 ```bash
-my-tool --culture pl-PL --help
+my-tool greet Alice --culture pl-PL --help
 my-tool greet Alice --culture pl-PL
 ```
 
@@ -113,12 +113,17 @@ Default culture:    pl-PL
 Supported cultures: pl-PL, en-US
 ```
 
-`--culture` is a framework-owned global option. It is not bound to command settings, and commands should not define their own `--culture` option.
+`--culture` is a framework-owned execution option with app-wide meaning. It is not bound to
+command settings, and commands should not define their own `--culture` option. It still follows
+TigerCli's command grammar and appears after the command path and required positionals.
 
 ```bash
-tool --culture en-US --help
-tool --culture pl-PL --help
+tool greet Alice --culture en-US --help
+tool greet Alice --culture pl-PL --help
 ```
+
+To localize a root informational form such as `tool --help`, configure the app's default culture;
+root informational forms do not accept an execution-time `--culture` prefix.
 
 If the requested culture is not supported by the app, TigerCli fails through framework error handling. The error is rendered using the app default culture.
 
@@ -346,7 +351,7 @@ using ItTiger.TigerCli.Testing;
 
 var result = await TigerCliAppTestHost
     .For(MyApp.Create())
-    .WithArgs("--culture", "pl-PL", "--help")
+    .WithArgs("greet", "Ala", "--culture", "pl-PL", "--help")
     .RunAsync();
 
 Assert.Equal(0, result.ExitCode);

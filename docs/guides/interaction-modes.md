@@ -18,6 +18,12 @@ supplied.
 TigerCli defaults to `SemiInteractive`. Passing `--non-interactive` reduces the effective mode to
 `NonInteractive`; TigerCli does not provide a user-facing option that increases interaction.
 
+`--non-interactive` is an execution option, so it follows the normal command grammar. Put it after
+the command path and required positional arguments, for example
+`app command positional --non-interactive`. It is invalid before the command or before a required
+positional. Mode changes presentation and prompting policy; it does not change the business
+operation selected by the command path.
+
 ## Semi-Interactive Command Execution
 
 Semi-interactive mode guides one command invocation. The command may come directly from command-line

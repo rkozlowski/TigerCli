@@ -610,9 +610,11 @@ public sealed class TigerCliEditCommandTests
                 loaderCalled = true;
                 return TigerCliEditLoad<PromptableSelectorSettings>.Found(new PromptableSelectorSettings());
             },
-            builder => builder.UseExitCodes(0, -1).ExitKind(TigerCliExitKind.MissingRequiredArgument, 66));
+            builder => builder
+                .SetInteractionMode(TigerCliInteractionMode.NonInteractive)
+                .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.MissingRequiredArgument, 66));
 
-        var result = await RunCapturedAsync(app, ["edit", "--non-interactive"], new TestShell());
+        var result = await RunCapturedAsync(app, ["edit"], new TestShell());
 
         Assert.Equal(66, result.ExitCode);
         Assert.False(loaderCalled);
@@ -712,9 +714,11 @@ public sealed class TigerCliEditCommandTests
                         "The value cannot be an empty string or composed entirely of whitespace.", "name");
                 return TigerCliEditLoad<MergeSettings>.Found(new MergeSettings());
             },
-            builder => builder.UseExitCodes(0, -1).ExitKind(TigerCliExitKind.MissingRequiredArgument, 66));
+            builder => builder
+                .SetInteractionMode(TigerCliInteractionMode.NonInteractive)
+                .UseExitCodes(0, -1).ExitKind(TigerCliExitKind.MissingRequiredArgument, 66));
 
-        var result = await RunCapturedAsync(app, ["edit", "--non-interactive"], new TestShell());
+        var result = await RunCapturedAsync(app, ["edit"], new TestShell());
 
         Assert.Equal(66, result.ExitCode); // missing-argument error, not an unhandled exception
         Assert.False(loaderCalled);        // loader was never called with an empty selector

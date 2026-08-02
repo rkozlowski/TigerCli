@@ -162,7 +162,12 @@ app <command-path> <positional-arguments> [options]
 
 - Positional arguments are required and come before options.
 - Options are unordered after positionals.
-- Framework-owned options include `--help`, `--help-errors`, `--non-interactive`, `--culture`, and opt-in `--version` / `--version-full`.
+- Framework-owned execution options such as `--non-interactive`, `--culture`, `--theme`, and
+  `--color` are app-wide in meaning but still belong after the command path and required
+  positionals. Contributed global options follow the same rule.
+- Root `--help`, `--help-errors`, and opt-in `--version` / `--version-full` are informational forms,
+  not permission to put execution options before a command. Use `app command --help` for command
+  help; `app --help command` is invalid.
 - Do not define app options that conflict with framework-owned options.
 - Labels are display-only. Keys and command-line values should remain stable and language-neutral.
 - A selector is the input that carries the object key. The command (`add`, `show`, `edit`, or

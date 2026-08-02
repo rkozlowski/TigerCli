@@ -647,13 +647,14 @@ public sealed class TigerCliApplicationMetadataTests
         var app = TigerCliApp.CreateBuilder()
             .SetApplicationName("narzedzie")
             .SetSupportedCultures("en-US", "pl-PL")
+            .SetDefaultCulture("pl-PL")
             .SetVersion("1.2.3")
             .SetDefaultCommand<EmptyCommand>()
             .Build();
 
-        var version = await RunCapturedAsync(app, ["--culture", "pl-PL", "--version"]);
-        var productVersion = await RunCapturedAsync(app, ["--culture", "pl-PL", "--version-full"]);
-        var help = await RunCapturedAsync(app, ["--culture", "pl-PL", "--help"]);
+        var version = await RunCapturedAsync(app, ["--version"]);
+        var productVersion = await RunCapturedAsync(app, ["--version-full"]);
+        var help = await RunCapturedAsync(app, ["--help"]);
 
         Assert.Contains("narzedzie wersja 1.2.3", version.Stdout);
         Assert.Contains("narzedzie wersja produktu 1.2.3", productVersion.Stdout);

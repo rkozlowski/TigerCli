@@ -9,6 +9,11 @@ activity and progress UI, validation, app-provided choices, themes, and a predic
 policy. The same command model can prompt a person when values are missing or fail clearly under
 `--non-interactive` when automation must not wait for input.
 
+Command execution follows `app <command-path> <positional-arguments> [options]`. Framework
+execution options and contributed global options are app-wide in meaning but still belong after the
+command path and required positionals. Root informational forms such as `app --help` remain
+separate from command execution.
+
 ## Installation
 
 TigerCli currently targets .NET 10.

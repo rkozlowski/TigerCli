@@ -55,27 +55,28 @@ public sealed class ExtendedAppTests
     }
 
     [Fact]
-    public async Task CommandMenu_NonInteractive_FailsWithMappedExitCode()
+    public async Task CommandMenu_NonInteractiveWithoutCommand_IsRejected()
     {
         var result = await TigerCliAppTestHost
             .For(RoiCitiesApp.Create())
             .WithArgs("--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal((int)RoiCitiesExitCode.InteractiveNotAllowed, result.ExitCode);
+        Assert.Equal((int)RoiCitiesExitCode.InvalidArguments, result.ExitCode);
         Assert.Empty(result.StdOut);
+        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
     }
 
     [Fact]
-    public async Task Show_MissingCity_NonInteractive_FailsWithMappedExitCode()
+    public async Task Show_NonInteractiveBeforeCity_IsRejected()
     {
         var result = await TigerCliAppTestHost
             .For(RoiCitiesApp.Create())
             .WithArgs("show", "--non-interactive")
             .RunAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal((int)RoiCitiesExitCode.MissingRequiredArgument, result.ExitCode);
-        Assert.Contains("city", result.StdErr);
+        Assert.Equal((int)RoiCitiesExitCode.InvalidArguments, result.ExitCode);
+        Assert.Contains("Unknown option: '--non-interactive'", result.StdErr);
     }
 
     [Fact]
