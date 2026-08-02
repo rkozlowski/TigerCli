@@ -635,6 +635,7 @@ For an app with command paths and arguments, help includes:
 - command options
 - framework options
 - an exit-code hint when documented exit codes are configured
+- an environment-variable hint when recognized variables are available
 
 Example shape:
 
@@ -651,9 +652,31 @@ Options:
       Schema name.
   -h, --help
       Show help.
+  --help-env
+      Show recognized environment variables.
+  --color <mode>
+      Select the color mode for this run.
+      auto | never | 16 | 256
+  --no-color
+      Disable color output (equivalent to --color never).
 
 For a list of exit codes, use --help-errors.
+For recognized environment variables, use --help-env.
 ```
+
+Help sections compose without advertising a section that is already present:
+
+```text
+my-tool projects sp-add local Billing --help
+my-tool projects sp-add local Billing --help-errors
+my-tool projects sp-add local Billing --help-env
+my-tool projects sp-add local Billing --help --help-errors --help-env
+```
+
+`--help` renders normal help, `--help-errors` renders documented exit codes, and `--help-env`
+renders recognized environment variables. Any combination preserves that order and does not execute
+or prompt. All three remain options for command help, so they follow the command path and required
+positionals.
 
 App-provided descriptions may contain TigerCli markup. Dynamic values are escaped before rendering. For the full escaping and trust model, see [help rendering trust model](../reference/help-rendering-trust-model.md).
 

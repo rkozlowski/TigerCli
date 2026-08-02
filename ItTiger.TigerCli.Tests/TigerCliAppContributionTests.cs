@@ -383,6 +383,7 @@ public sealed class TigerCliAppContributionTests
 
     [Theory]
     [InlineData("--help")]
+    [InlineData("--help-env")]
     [InlineData("--help-errors")]
     [InlineData("--version")]
     [InlineData("--version-full")]

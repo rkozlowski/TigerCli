@@ -11,6 +11,7 @@ public sealed class TigerCliGlobalOptionBuilder
         "--color",
         "--culture",
         "--help",
+        "--help-env",
         "--help-errors",
         "--no-color",
         "--non-interactive",

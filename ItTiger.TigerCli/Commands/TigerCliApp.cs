@@ -54,6 +54,7 @@ public sealed class TigerCliApp
     private readonly bool _spinnerTitlePrefixEnabled;
     private readonly CommandMenuMode _commandMenuMode;
     private readonly IReadOnlyList<TigerCliGlobalOptionRegistration> _globalOptions;
+    private readonly IReadOnlyList<TigerCliEnvironmentVariableRegistration> _environmentVariables;
 
     // Whether TigerCli registers process/system cancellation handlers (Ctrl-C / SIGINT / SIGTERM /
     // SIGQUIT) at run start. Default-on; disabled via TigerCliAppBuilder.DisableProcessCancellation().
@@ -125,7 +126,8 @@ public sealed class TigerCliApp
         string? commandMenuDescription = null,
         string? commandMenuDescriptionResourceKey = null,
         List<TigerCliCommandAliasRegistration>? aliases = null,
-        IReadOnlyList<TigerCliGlobalOptionRegistration>? globalOptions = null)
+        IReadOnlyList<TigerCliGlobalOptionRegistration>? globalOptions = null,
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration>? environmentVariables = null)
     {
         _processCancellationEnabled = processCancellationEnabled;
         _commandMenuMode = commandMenuMode;
@@ -152,6 +154,7 @@ public sealed class TigerCliApp
         _themeConfiguration = themeConfiguration;
         _folderBrowser = folderBrowser ?? new FileSystemFolderBrowser();
         _globalOptions = globalOptions ?? [];
+        _environmentVariables = environmentVariables ?? [];
 
         // The command menu is registered as a normal command (default or named) using the internal
         // sentinel handler. It is intercepted before execution; it never runs the sentinel handler.
@@ -441,15 +444,32 @@ public sealed class TigerCliApp
 
         if (rootInformation.ShowHelp)
         {
-            PrintHelp(_defaultCommand, culture);
+            PrintHelp(
+                _defaultCommand,
+                culture,
+                exitCodeHelpRendered: rootInformation.ShowExitCodeHelp,
+                environmentHelpRendered: rootInformation.ShowEnvironmentHelp);
             if (rootInformation.ShowExitCodeHelp)
                 PrintExitCodeHelp(_defaultCommand, leadingBlankLine: true, culture);
+            if (rootInformation.ShowEnvironmentHelp)
+                PrintEnvironmentVariableHelp(
+                    command: null, group: null, leadingBlankLine: true, culture);
             return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
         }
 
         if (rootInformation.ShowExitCodeHelp)
         {
             PrintExitCodeHelp(_defaultCommand, leadingBlankLine: false, culture);
+            if (rootInformation.ShowEnvironmentHelp)
+                PrintEnvironmentVariableHelp(
+                    command: null, group: null, leadingBlankLine: true, culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+        }
+
+        if (rootInformation.ShowEnvironmentHelp)
+        {
+            PrintEnvironmentVariableHelp(
+                command: null, group: null, leadingBlankLine: false, culture);
             return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
         }
 
@@ -459,15 +479,32 @@ public sealed class TigerCliApp
             var groupInformation = ResolveCommandInformation(groupArgs, positionalCount: 0);
             if (groupInformation.ShowHelp)
             {
-                PrintGroupHelp(group, culture);
+                PrintGroupHelp(
+                    group,
+                    culture,
+                    exitCodeHelpRendered: groupInformation.ShowExitCodeHelp,
+                    environmentHelpRendered: groupInformation.ShowEnvironmentHelp);
                 if (groupInformation.ShowExitCodeHelp)
                     PrintExitCodeHelp(null, leadingBlankLine: true, culture);
+                if (groupInformation.ShowEnvironmentHelp)
+                    PrintEnvironmentVariableHelp(
+                        command: null, group, leadingBlankLine: true, culture);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
             }
 
             if (groupInformation.ShowExitCodeHelp)
             {
                 PrintExitCodeHelp(null, leadingBlankLine: false, culture);
+                if (groupInformation.ShowEnvironmentHelp)
+                    PrintEnvironmentVariableHelp(
+                        command: null, group, leadingBlankLine: true, culture);
+                return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+            }
+
+            if (groupInformation.ShowEnvironmentHelp)
+            {
+                PrintEnvironmentVariableHelp(
+                    command: null, group, leadingBlankLine: false, culture);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
             }
 
@@ -503,15 +540,33 @@ public sealed class TigerCliApp
         var commandInformation = ResolveCommandInformation(remainingArgs, positionalCount);
         if (commandInformation.ShowHelp)
         {
-            PrintHelp(effectiveCommand, culture, matchedAlias);
+            PrintHelp(
+                effectiveCommand,
+                culture,
+                matchedAlias,
+                exitCodeHelpRendered: commandInformation.ShowExitCodeHelp,
+                environmentHelpRendered: commandInformation.ShowEnvironmentHelp);
             if (commandInformation.ShowExitCodeHelp)
                 PrintExitCodeHelp(effectiveCommand, leadingBlankLine: true, culture);
+            if (commandInformation.ShowEnvironmentHelp)
+                PrintEnvironmentVariableHelp(
+                    effectiveCommand, group: null, leadingBlankLine: true, culture);
             return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
         }
 
         if (commandInformation.ShowExitCodeHelp)
         {
             PrintExitCodeHelp(effectiveCommand, leadingBlankLine: false, culture);
+            if (commandInformation.ShowEnvironmentHelp)
+                PrintEnvironmentVariableHelp(
+                    effectiveCommand, group: null, leadingBlankLine: true, culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
+        }
+
+        if (commandInformation.ShowEnvironmentHelp)
+        {
+            PrintEnvironmentVariableHelp(
+                effectiveCommand, group: null, leadingBlankLine: false, culture);
             return _exitCodePolicy.Resolve(TigerCliExitKind.HelpShown);
         }
 
@@ -1191,6 +1246,7 @@ public sealed class TigerCliApp
         bool IsRootForm,
         bool ShowHelp,
         bool ShowExitCodeHelp,
+        bool ShowEnvironmentHelp,
         bool ShowVersion,
         bool ShowProductVersion);
 
@@ -1203,13 +1259,14 @@ public sealed class TigerCliApp
         if (hasVersion && !_metadata.VersionEnabled)
             return default;
 
-        if (args.Any(arg => arg is not ("-h" or "--help" or "--help-errors" or "--version" or "--version-full")))
+        if (args.Any(arg => arg is not ("-h" or "--help" or "--help-errors" or "--help-env" or "--version" or "--version-full")))
             return default;
 
         return new InformationRequest(
             IsRootForm: true,
             ShowHelp: args.Any(arg => arg is "-h" or "--help"),
             ShowExitCodeHelp: args.Any(arg => arg == "--help-errors"),
+            ShowEnvironmentHelp: args.Any(arg => arg == "--help-env"),
             ShowVersion: args.Any(arg => arg == "--version"),
             ShowProductVersion: args.Any(arg => arg == "--version-full"));
     }
@@ -1221,13 +1278,14 @@ public sealed class TigerCliApp
             return default;
 
         var informationArgs = args[firstOption..];
-        if (informationArgs.Any(arg => arg is not ("-h" or "--help" or "--help-errors")))
+        if (informationArgs.Any(arg => arg is not ("-h" or "--help" or "--help-errors" or "--help-env")))
             return default;
 
         return new InformationRequest(
             IsRootForm: false,
             ShowHelp: informationArgs.Any(arg => arg is "-h" or "--help"),
             ShowExitCodeHelp: informationArgs.Any(arg => arg == "--help-errors"),
+            ShowEnvironmentHelp: informationArgs.Any(arg => arg == "--help-env"),
             ShowVersion: false,
             ShowProductVersion: false);
     }
@@ -4775,7 +4833,9 @@ public sealed class TigerCliApp
     private void PrintHelp(
         TigerCliCommandRegistration? command,
         CultureInfo culture,
-        TigerCliCommandAliasRegistration? alias = null)
+        TigerCliCommandAliasRegistration? alias = null,
+        bool exitCodeHelpRendered = false,
+        bool environmentHelpRendered = false)
     {
         var appName = string.IsNullOrEmpty(_applicationName) ? "app" : _applicationName;
         var safeAppName = Esc(appName);
@@ -4888,7 +4948,8 @@ public sealed class TigerCliApp
                 TigerCliHelpRenderer.RenderNoteSection($"[Accent]{Esc(L("Help_Notes", culture))}[/]", notes);
             }
 
-            PrintExitCodeHelpHint(command, culture);
+            PrintAdditionalHelpHints(
+                command, culture, exitCodeHelpRendered, environmentHelpRendered);
             PrintApplicationMetadataFooter(culture);
         }
         else
@@ -4916,12 +4977,17 @@ public sealed class TigerCliApp
             TigerConsole.MarkupLine("");
             PrintArguments(command.SettingsType, culture, _appResources);
             PrintOptions(command.SettingsType, culture, _cultureOptionEnabled, _appResources);
-            PrintExitCodeHelpHint(command, culture);
+            PrintAdditionalHelpHints(
+                command, culture, exitCodeHelpRendered, environmentHelpRendered);
             PrintApplicationMetadataFooter(culture);
         }
     }
 
-    private void PrintGroupHelp(TigerCliCommandGroupRegistration group, CultureInfo culture)
+    private void PrintGroupHelp(
+        TigerCliCommandGroupRegistration group,
+        CultureInfo culture,
+        bool exitCodeHelpRendered = false,
+        bool environmentHelpRendered = false)
     {
         var appName = string.IsNullOrEmpty(_applicationName) ? "app" : _applicationName;
         var safeAppName = Esc(appName);
@@ -4969,6 +5035,11 @@ public sealed class TigerCliApp
             TigerConsole.MarkupLine("");
         }
 
+        PrintAdditionalHelpHints(
+            command: null,
+            culture: culture,
+            exitCodeHelpRendered: exitCodeHelpRendered,
+            environmentHelpRendered: environmentHelpRendered);
         PrintApplicationMetadataFooter(culture);
     }
 
@@ -5034,13 +5105,22 @@ public sealed class TigerCliApp
             : link.Label;
     }
 
-    private void PrintExitCodeHelpHint(TigerCliCommandRegistration? command, CultureInfo culture)
+    private void PrintAdditionalHelpHints(
+        TigerCliCommandRegistration? command,
+        CultureInfo culture,
+        bool exitCodeHelpRendered,
+        bool environmentHelpRendered)
     {
-        if (ResolveExitCodeHelpType(command) == null)
+        var showExitCodeHint = !exitCodeHelpRendered && ResolveExitCodeHelpType(command) != null;
+        var showEnvironmentHint = !environmentHelpRendered;
+        if (!showExitCodeHint && !showEnvironmentHint)
             return;
 
         TigerConsole.MarkupLine("");
-        TigerCliHelpRenderer.RenderHint($"[Muted]{Esc(L("Help_Hint_ExitCodes", culture))}[/]");
+        if (showExitCodeHint)
+            TigerCliHelpRenderer.RenderHint($"[Muted]{Esc(L("Help_Hint_ExitCodes", culture))}[/]");
+        if (showEnvironmentHint)
+            TigerCliHelpRenderer.RenderHint($"[Muted]{Esc(L("Help_Hint_EnvironmentVariables", culture))}[/]");
     }
 
     private void PrintExitCodeHelp(TigerCliCommandRegistration? command, bool leadingBlankLine, CultureInfo culture)
@@ -5091,6 +5171,57 @@ public sealed class TigerCliApp
             Esc(heading),
             fields.Select(field => (field.Value, Esc(field.Label), field.Description is null ? null : Esc(field.Description))).ToArray());
     }
+
+    private void PrintEnvironmentVariableHelp(
+        TigerCliCommandRegistration? command,
+        TigerCliCommandGroupRegistration? group,
+        bool leadingBlankLine,
+        CultureInfo culture)
+    {
+        if (leadingBlankLine)
+            TigerConsole.MarkupLine("");
+
+        var items = BuildFrameworkEnvironmentVariableHelpItems(culture);
+        items.AddRange(_environmentVariables.Select(variable => (
+            $"[Key]{Esc(variable.Name)}[/]",
+            (IReadOnlyList<string>)[variable.Description])));
+
+        var scopedVariables = group?.EnvironmentVariables
+            ?? command?.GroupEnvironmentVariables
+            ?? [];
+        items.AddRange(scopedVariables.Select(variable => (
+            $"[Key]{Esc(variable.Name)}[/]",
+            (IReadOnlyList<string>)[variable.Description])));
+
+        if (command != null)
+        {
+            items.AddRange(command.EnvironmentVariables.Select(variable => (
+                $"[Key]{Esc(variable.Name)}[/]",
+                (IReadOnlyList<string>)[variable.Description])));
+        }
+
+        TigerCliHelpRenderer.RenderDetailSection(
+            $"[Accent]{Esc(L("Help_EnvironmentVariables", culture))}[/]",
+            items);
+    }
+
+    private static List<(string SignatureMarkup, IReadOnlyList<string> DetailMarkups)>
+        BuildFrameworkEnvironmentVariableHelpItems(CultureInfo culture)
+    {
+        return
+        [
+            EnvironmentVariableHelpItem("TIGERCLI_THEME", "Help_Env_TigerCliTheme_Desc", culture),
+            EnvironmentVariableHelpItem("FORCE_COLOR", "Help_Env_ForceColor_Desc", culture),
+            EnvironmentVariableHelpItem("CLICOLOR_FORCE", "Help_Env_CliColorForce_Desc", culture),
+            EnvironmentVariableHelpItem("NO_COLOR", "Help_Env_NoColor_Desc", culture),
+            EnvironmentVariableHelpItem("CLICOLOR", "Help_Env_CliColor_Desc", culture),
+            EnvironmentVariableHelpItem("TERM", "Help_Env_Term_Desc", culture)
+        ];
+    }
+
+    private static (string SignatureMarkup, IReadOnlyList<string> DetailMarkups)
+        EnvironmentVariableHelpItem(string name, string descriptionResourceKey, CultureInfo culture) =>
+        ($"[Key]{Esc(name)}[/]", [Esc(L(descriptionResourceKey, culture))]);
 
     private Type? ResolveExitCodeHelpType(TigerCliCommandRegistration? command)
     {
@@ -5304,6 +5435,7 @@ public sealed class TigerCliApp
             optionItems.Add(("[Key]--version-full[/]", [Esc(L("Help_Builtin_VersionFull_Desc", culture))]));
         }
         optionItems.Add(("[Key]--help-errors[/]", [Esc(L("Help_Builtin_HelpErrors_Desc", culture))]));
+        optionItems.Add(("[Key]--help-env[/]", [Esc(L("Help_Builtin_HelpEnv_Desc", culture))]));
         optionItems.Add(("[Key]--non-interactive[/]", [Esc(L("Help_Builtin_NonInteractive_Desc", culture))]));
 
         var themePlaceholder = Esc(L("Help_Builtin_Theme_ValuePlaceholder", culture));
@@ -5312,6 +5444,14 @@ public sealed class TigerCliApp
         if (selectableThemes.Length > 0)
             themeDetails.Add($"[Value]{Esc(selectableThemes)}[/]");
         optionItems.Add(($"[Key]--theme[/] [Value]<{themePlaceholder}>[/]", themeDetails));
+
+        var colorPlaceholder = Esc(L("Help_Builtin_Color_ValuePlaceholder", culture));
+        optionItems.Add((
+            $"[Key]--color[/] [Value]<{colorPlaceholder}>[/]",
+            [Esc(L("Help_Builtin_Color_Desc", culture)), "[Value]auto | never | 16 | 256[/]"]));
+        optionItems.Add((
+            "[Key]--no-color[/]",
+            [Esc(L("Help_Builtin_NoColor_Desc", culture))]));
 
         if (cultureOptionEnabled)
         {

@@ -144,7 +144,10 @@ TigerCli automatically localizes framework-owned text for the active run culture
 
 - help headings such as usage, commands, arguments, options, notes, and exit codes
 - usage placeholders such as `<command>`, `[options]`, and generic option value placeholders
-- built-in framework option descriptions for `--help`, `--version` / `--version-full` when enabled, `--help-errors`, `--non-interactive`, and `--culture`
+- built-in framework option descriptions for `--help`, `--version` / `--version-full` when enabled,
+  `--help-errors`, `--help-env`, `--non-interactive`, `--theme`, `--color` / `--no-color`, and
+  `--culture`
+- framework environment-variable headings, descriptions, and composed-help hints
 - the `version` and `product version` labels in built-in version output
 - standard application link labels from `AddWebsite(...)`, `AddRepository(...)`, `AddDocumentation(...)`, and standard links populated by `UseAssemblyMetadata(...)`
 - parser, validation, prompt, and unsupported-culture errors

@@ -57,6 +57,7 @@
   <data name="Help_Options" xml:space="preserve"><value>Opcje:</value></data>
   <data name="Help_Notes" xml:space="preserve"><value>Uwagi:</value></data>
   <data name="Help_ExitCodes" xml:space="preserve"><value>Kody zakończenia:</value></data>
+  <data name="Help_EnvironmentVariables" xml:space="preserve"><value>Zmienne środowiskowe:</value></data>
   <data name="Help_DefaultMarker" xml:space="preserve"><value>(domyślne)</value></data>
   <data name="Help_DefaultCommand" xml:space="preserve"><value>Polecenie domyślne:</value></data>
   <data name="Help_Aliases" xml:space="preserve"><value>Aliasy:</value></data>
@@ -77,13 +78,24 @@
   <data name="Help_Builtin_Version_Desc" xml:space="preserve"><value>Wyświetl wersję</value></data>
   <data name="Help_Builtin_VersionFull_Desc" xml:space="preserve"><value>Wyświetl wersję produktu</value></data>
   <data name="Help_Builtin_HelpErrors_Desc" xml:space="preserve"><value>Wyświetl pomoc kodów zakończenia</value></data>
+  <data name="Help_Builtin_HelpEnv_Desc" xml:space="preserve"><value>Wyświetl rozpoznawane zmienne środowiskowe</value></data>
   <data name="Help_Builtin_NonInteractive_Desc" xml:space="preserve"><value>Wyłącz interakcję</value></data>
   <data name="Help_Builtin_Culture_Desc" xml:space="preserve"><value>Wybierz język tekstów ramowych</value></data>
   <data name="Help_Builtin_Culture_ValuePlaceholder" xml:space="preserve"><value>kultura</value></data>
   <data name="Help_Builtin_Theme_Desc" xml:space="preserve"><value>Wybierz motyw interfejsu wg nazwy</value></data>
   <data name="Help_Builtin_Theme_ValuePlaceholder" xml:space="preserve"><value>motyw</value></data>
+  <data name="Help_Builtin_Color_Desc" xml:space="preserve"><value>Wybierz tryb kolorów dla tego uruchomienia</value></data>
+  <data name="Help_Builtin_Color_ValuePlaceholder" xml:space="preserve"><value>tryb</value></data>
+  <data name="Help_Builtin_NoColor_Desc" xml:space="preserve"><value>Wyłącz kolory (odpowiednik --color never)</value></data>
   <data name="Help_Hint_ExitCodes" xml:space="preserve"><value>Aby zobaczyć listę kodów zakończenia, użyj --help-errors.</value></data>
+  <data name="Help_Hint_EnvironmentVariables" xml:space="preserve"><value>Aby zobaczyć rozpoznawane zmienne środowiskowe, użyj --help-env.</value></data>
   <data name="Help_Hint_NoExitCodeEnum" xml:space="preserve"><value>Brak skonfigurowanej listy kodów zakończenia.</value></data>
+  <data name="Help_Env_TigerCliTheme_Desc" xml:space="preserve"><value>Wybiera motyw interfejsu, gdy nie podano --theme. Puste wartości i wartości zawierające tylko białe znaki są ignorowane.</value></data>
+  <data name="Help_Env_ForceColor_Desc" xml:space="preserve"><value>W automatycznym trybie kolorów niepusta wartość inna niż 0 wymusza kolory ANSI, także dla przekierowanego wyjścia. NO_COLOR ma pierwszeństwo.</value></data>
+  <data name="Help_Env_CliColorForce_Desc" xml:space="preserve"><value>W automatycznym trybie kolorów niepusta wartość inna niż 0 wymusza kolory ANSI, także dla przekierowanego wyjścia. NO_COLOR ma pierwszeństwo.</value></data>
+  <data name="Help_Env_NoColor_Desc" xml:space="preserve"><value>W automatycznym trybie kolorów obecność dowolnej wartości wyłącza kolory ANSI i ma pierwszeństwo przed FORCE_COLOR oraz CLICOLOR_FORCE. Tryb --color inny niż auto pomija automatyczne wykrywanie.</value></data>
+  <data name="Help_Env_CliColor_Desc" xml:space="preserve"><value>W automatycznym trybie kolorów wartość 0 wyłącza kolory ANSI, chyba że FORCE_COLOR lub CLICOLOR_FORCE je wymusza. Inne wartości nie zmieniają wykrywania.</value></data>
+  <data name="Help_Env_Term_Desc" xml:space="preserve"><value>Na interaktywnych terminalach innych niż Windows w automatycznym trybie kolorów pusta wartość lub dumb wyłącza kolory ANSI; każda inna wartość oznacza obsługę 256 kolorów.</value></data>
   <data name="App_VersionLine" xml:space="preserve"><value>{0} wersja {1}</value></data>
   <data name="App_ProductVersionLine" xml:space="preserve"><value>{0} wersja produktu {1}</value></data>
   <data name="AppLink_Website" xml:space="preserve"><value>Strona WWW</value></data>

@@ -26,6 +26,7 @@ theme styles are never reachable from markup.
 | Command descriptions | `Description` passed to `AddCommand(...)` via `TigerCliCommandRegistration` |
 | Framework markers | `[Muted](default)[/]` for default command indicator (the literal `(default)` text is the resource value and is escaped) |
 | Application links | Help footer URLs from `AddLink(...)`, `AddWebsite(...)`, `AddRepository(...)`, and `AddDocumentation(...)` are wrapped in TigerCli `[Link]…[/]` markup; visible URL text is escaped before insertion. |
+| Environment-variable descriptions | Descriptions registered through `AddEnvironmentVariable(...)` on app, group, command, and contribution builders. Names are escaped; descriptions are trusted app/library metadata. Registration is help-only and does not read the environment. |
 
 The trusted surface is unchanged by the migration to semantic tokens: the same
 framework wrappers are trusted, only the token names changed (`[cyan]`→`[Accent]`,
@@ -78,7 +79,7 @@ explicit `CultureInfo`; the framework never reads `CultureInfo.CurrentUICulture`
 The resolved culture for a command run is computed before any help or error is rendered:
 `--culture` from the command's valid options area (if supported), else the app default. Exact root
 informational forms use the app default culture. Help, parser errors, framework
-validation errors, prompt-failure messages, the `--help-errors` framework
+validation errors, prompt-failure messages, the `--help-errors` and `--help-env` framework
 heading, built-in `--version` / `--version-full` lines, standard application link labels, and TUI built-in labels (`Yes`, `No`, MultiSelect hint, empty state) all
 read from the resolved culture.
 
@@ -133,3 +134,5 @@ by TigerCli.
 | `PrintExactlyOneOfNotes` | Renders the Notes section for ExactlyOneOf constraints |
 | `PrintHelpOnlyOption` | Renders minimal help when no commands/options exist |
 | `PrintExitCodeHelp` | Renders `--help-errors` output from enum metadata |
+| `PrintEnvironmentVariableHelp` | Renders framework and effective app/group/command environment-variable metadata for `--help-env` |
+| `PrintAdditionalHelpHints` | Advertises available help sections only when they are not already included in the composed request |

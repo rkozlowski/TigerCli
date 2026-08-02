@@ -47,10 +47,12 @@ file-copy --non-interactive copy-to-file source.txt target.txt
 my-app run --acme-config settings.json positional
 ```
 
-Root informational forms such as `app --help`, `app --version`, and `app --help-errors` are handled
+Root informational forms such as `app --help`, `app --version`, `app --help-errors`, and
+`app --help-env` are handled
 only as root requests when no command is being executed. They do not create an exception for
-command execution: command help is written as `app command --help`, and `app --help command` is
-invalid.
+command execution: command help sections are written as `app command positional --help`,
+`app command positional --help-errors`, or `app command positional --help-env`, and
+`app --help-env command` is invalid.
 
 ## Prompting Implications
 

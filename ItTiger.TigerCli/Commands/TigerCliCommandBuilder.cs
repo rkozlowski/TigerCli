@@ -4,7 +4,8 @@ using ItTiger.TigerCli.Primitives;
 namespace ItTiger.TigerCli.Commands;
 
 /// <summary>
-/// Configures metadata for a single command registration.
+/// Configures metadata, providers, and help-only environment-variable registrations for a single
+/// command registration.
 /// </summary>
 public sealed class TigerCliCommandBuilder
 {
@@ -16,6 +17,29 @@ public sealed class TigerCliCommandBuilder
     internal string? TitleAppend { get; private set; }
     internal string? TitleSet { get; private set; }
     internal CommandMenuMode CommandMenuMode { get; private set; } = CommandMenuMode.Inherit;
+    internal List<TigerCliEnvironmentVariableRegistration> EnvironmentVariables { get; } = new();
+
+    /// <summary>
+    /// Adds command-local help metadata for an environment variable recognized by the command.
+    /// TigerCli displays it in this command's <c>--help-env</c> output; it does not read, parse, or
+    /// apply the variable.
+    /// </summary>
+    /// <param name="name">The environment variable name.</param>
+    /// <param name="description">The help description. TigerCli markup is supported.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="name"/> or <paramref name="description"/> is null, empty, or whitespace, or
+    /// <paramref name="name"/> contains whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="name"/> duplicates another variable on this command.
+    /// </exception>
+    public TigerCliCommandBuilder AddEnvironmentVariable(string name, string description)
+    {
+        TigerCliEnvironmentVariableRegistrations.Add(
+            EnvironmentVariables, name, description, "command scope");
+        return this;
+    }
 
     /// <summary>
     /// Sets the prompt mode override for this command registration.

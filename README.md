@@ -19,7 +19,7 @@ With `--non-interactive`, TigerCli disables prompts for the selected command. A 
 TigerCli command lines use one shape: `app <command-path> <positional-arguments> [options]`.
 Framework execution options such as `--non-interactive` and app-contributed global options are
 app-wide in meaning, but they still appear after the command path and required positionals. Root
-`--help`, `--version`, and `--help-errors` are informational forms, not pre-command execution
+`--help`, `--version`, `--help-errors`, and `--help-env` are informational forms, not pre-command execution
 options.
 
 Mode changes presentation and prompting policy; it should not change the business operation. App authors should not need separate interactive and automation implementations.
@@ -68,6 +68,7 @@ Activity dialogs can show live progress while the same operation remains script-
 - Parser-driven prompts for missing governed input
 - Provider-backed select prompts with async provider loading UI
 - Typed exit codes and `--help-errors`
+- Composable `--help-env` output for framework and app/library environment-variable metadata
 - [CliList&lt;T&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliList-1.html), [CliDetails](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliDetails.html), `CliTable`, and `CliGrid` structured output
 - Activity/progress dialogs through `RunActivityAsync`
 - Command menu for semi-interactive command discovery

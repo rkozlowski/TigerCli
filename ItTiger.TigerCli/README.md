@@ -14,6 +14,10 @@ execution options and contributed global options are app-wide in meaning but sti
 command path and required positionals. Root informational forms such as `app --help` remain
 separate from command execution.
 
+Help is composable: `--help`, `--help-errors`, and `--help-env` can be requested independently or
+together. `--help-env` documents TigerCli's rendering variables plus help-only metadata registered
+by apps and reusable contributions; registration does not make TigerCli read or apply a variable.
+
 ## Installation
 
 TigerCli currently targets .NET 10.

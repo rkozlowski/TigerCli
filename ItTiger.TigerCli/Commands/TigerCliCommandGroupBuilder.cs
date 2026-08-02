@@ -6,7 +6,8 @@ namespace ItTiger.TigerCli.Commands;
 /// <summary>
 /// Configures a command group: a command-path prefix that owns a set of child
 /// commands. The group name is chosen by the consuming app, and a reusable command
-/// library can populate the same group via a static helper that takes a
+/// library can populate the same group, including inherited provider and environment-variable help
+/// metadata, via a static helper that takes a
 /// <see cref="TigerCliCommandGroupBuilder"/>.
 /// </summary>
 /// <remarks>
@@ -26,6 +27,7 @@ public sealed class TigerCliCommandGroupBuilder
     private TigerCliPromptMode? _promptMode;
     private CommandMenuMode _commandMenuMode = CommandMenuMode.Inherit;
     private readonly List<ITigerCliValueProvider> _providers = new();
+    private readonly List<TigerCliEnvironmentVariableRegistration> _environmentVariables = new();
     private readonly List<TigerCliCommandRegistration> _commands = new();
     private readonly List<TigerCliCommandGroupBuilder> _childGroups = new();
 
@@ -38,6 +40,28 @@ public sealed class TigerCliCommandGroupBuilder
     {
         _pathTokens = pathTokens;
         _name = string.Join(' ', pathTokens);
+    }
+
+    /// <summary>
+    /// Adds group-level help metadata for an environment variable recognized by this group and its
+    /// descendant commands. TigerCli displays it in applicable <c>--help-env</c> output; it does not
+    /// read, parse, or apply the variable.
+    /// </summary>
+    /// <param name="name">The environment variable name.</param>
+    /// <param name="description">The help description. TigerCli markup is supported.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="name"/> or <paramref name="description"/> is null, empty, or whitespace, or
+    /// <paramref name="name"/> contains whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="name"/> duplicates another variable on this group.
+    /// </exception>
+    public TigerCliCommandGroupBuilder AddEnvironmentVariable(string name, string description)
+    {
+        TigerCliEnvironmentVariableRegistrations.Add(
+            _environmentVariables, name, description, $"command-group '{_name}' scope");
+        return this;
     }
 
     /// <summary>
@@ -400,14 +424,16 @@ public sealed class TigerCliCommandGroupBuilder
             isGroupChild: true,
             promptMode: commandBuilder.PromptMode,
             providers: commandBuilder.Providers,
+            environmentVariables: commandBuilder.EnvironmentVariables,
             editLoader: commandBuilder.EditLoader,
             titleAppend: commandBuilder.TitleAppend,
             titleSet: commandBuilder.TitleSet,
             commandMenuMode: commandBuilder.CommandMenuMode));
     }
 
-    internal TigerCliCommandGroupRegistration BuildGroup() =>
-        new(_name, _description, _descriptionResourceKey, _promptMode, _providers);
+    internal TigerCliCommandGroupRegistration BuildGroup(
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration> environmentVariables) =>
+        new(_name, _description, _descriptionResourceKey, _promptMode, _providers, environmentVariables);
 
     /// <summary>
     /// Flattens this group and all nested subgroups into the app's path-based command and
@@ -419,26 +445,33 @@ public sealed class TigerCliCommandGroupBuilder
         List<TigerCliCommandGroupRegistration> groups,
         List<TigerCliCommandRegistration> commands,
         IReadOnlyList<ITigerCliValueProvider> inheritedProviders,
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration> inheritedEnvironmentVariables,
         TigerCliPromptMode? inheritedPromptMode,
         CommandMenuMode inheritedCommandMenuMode)
     {
         var effectiveProviders = MergeProviders(inheritedProviders, _providers);
+        var effectiveEnvironmentVariables = TigerCliEnvironmentVariableRegistrations.Merge(
+            inheritedEnvironmentVariables,
+            _environmentVariables,
+            $"command-group '{_name}' effective scope");
         var effectivePromptMode = _promptMode ?? inheritedPromptMode;
         var effectiveCommandMenuMode = CombineCommandMenuMode(inheritedCommandMenuMode, _commandMenuMode);
 
-        groups.Add(BuildGroup());
+        groups.Add(BuildGroup(effectiveEnvironmentVariables));
 
         foreach (var command in _commands)
         {
             command.GroupPromptMode = effectivePromptMode;
             command.GroupProviders = effectiveProviders;
+            command.GroupEnvironmentVariables = effectiveEnvironmentVariables;
             command.GroupCommandMenuMode = effectiveCommandMenuMode;
             commands.Add(command);
         }
 
         foreach (var childGroup in _childGroups)
             childGroup.Collect(
-                groups, commands, effectiveProviders, effectivePromptMode, effectiveCommandMenuMode);
+                groups, commands, effectiveProviders, effectiveEnvironmentVariables,
+                effectivePromptMode, effectiveCommandMenuMode);
     }
 
     private static IReadOnlyList<ITigerCliValueProvider> MergeProviders(

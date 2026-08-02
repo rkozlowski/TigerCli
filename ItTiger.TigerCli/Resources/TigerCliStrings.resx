@@ -57,6 +57,7 @@
   <data name="Help_Options" xml:space="preserve"><value>Options:</value></data>
   <data name="Help_Notes" xml:space="preserve"><value>Notes:</value></data>
   <data name="Help_ExitCodes" xml:space="preserve"><value>Exit codes:</value></data>
+  <data name="Help_EnvironmentVariables" xml:space="preserve"><value>Environment variables:</value></data>
   <data name="Help_DefaultMarker" xml:space="preserve"><value>(default)</value></data>
   <data name="Help_DefaultCommand" xml:space="preserve"><value>Default command:</value></data>
   <data name="Help_Aliases" xml:space="preserve"><value>Aliases:</value></data>
@@ -77,13 +78,24 @@
   <data name="Help_Builtin_Version_Desc" xml:space="preserve"><value>Show version</value></data>
   <data name="Help_Builtin_VersionFull_Desc" xml:space="preserve"><value>Show product version</value></data>
   <data name="Help_Builtin_HelpErrors_Desc" xml:space="preserve"><value>Show exit-code help</value></data>
+  <data name="Help_Builtin_HelpEnv_Desc" xml:space="preserve"><value>Show recognized environment variables</value></data>
   <data name="Help_Builtin_NonInteractive_Desc" xml:space="preserve"><value>Disable interactive prompts</value></data>
   <data name="Help_Builtin_Culture_Desc" xml:space="preserve"><value>Select UI culture for framework strings</value></data>
   <data name="Help_Builtin_Culture_ValuePlaceholder" xml:space="preserve"><value>culture</value></data>
   <data name="Help_Builtin_Theme_Desc" xml:space="preserve"><value>Select the UI theme by name</value></data>
   <data name="Help_Builtin_Theme_ValuePlaceholder" xml:space="preserve"><value>theme</value></data>
+  <data name="Help_Builtin_Color_Desc" xml:space="preserve"><value>Select the color mode for this run</value></data>
+  <data name="Help_Builtin_Color_ValuePlaceholder" xml:space="preserve"><value>mode</value></data>
+  <data name="Help_Builtin_NoColor_Desc" xml:space="preserve"><value>Disable color output (equivalent to --color never)</value></data>
   <data name="Help_Hint_ExitCodes" xml:space="preserve"><value>For a list of exit codes, use --help-errors.</value></data>
+  <data name="Help_Hint_EnvironmentVariables" xml:space="preserve"><value>For recognized environment variables, use --help-env.</value></data>
   <data name="Help_Hint_NoExitCodeEnum" xml:space="preserve"><value>No documented exit-code enum is configured.</value></data>
+  <data name="Help_Env_TigerCliTheme_Desc" xml:space="preserve"><value>Selects the UI theme when --theme is not supplied. Empty or whitespace-only values are ignored.</value></data>
+  <data name="Help_Env_ForceColor_Desc" xml:space="preserve"><value>In automatic color mode, a non-empty value other than 0 forces ANSI color, including for redirected output. NO_COLOR takes precedence.</value></data>
+  <data name="Help_Env_CliColorForce_Desc" xml:space="preserve"><value>In automatic color mode, a non-empty value other than 0 forces ANSI color, including for redirected output. NO_COLOR takes precedence.</value></data>
+  <data name="Help_Env_NoColor_Desc" xml:space="preserve"><value>In automatic color mode, presence with any value disables ANSI color and takes precedence over FORCE_COLOR and CLICOLOR_FORCE. A non-auto --color mode bypasses automatic detection.</value></data>
+  <data name="Help_Env_CliColor_Desc" xml:space="preserve"><value>In automatic color mode, value 0 disables ANSI color unless FORCE_COLOR or CLICOLOR_FORCE forces it. Other values do not change detection.</value></data>
+  <data name="Help_Env_Term_Desc" xml:space="preserve"><value>On interactive non-Windows terminals in automatic color mode, an empty value or dumb disables ANSI color; any other value is treated as 256-color capable.</value></data>
   <data name="App_VersionLine" xml:space="preserve"><value>{0} version {1}</value></data>
   <data name="App_ProductVersionLine" xml:space="preserve"><value>{0} product version {1}</value></data>
   <data name="AppLink_Website" xml:space="preserve"><value>Website</value></data>

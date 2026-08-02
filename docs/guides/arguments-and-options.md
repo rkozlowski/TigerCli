@@ -513,14 +513,16 @@ TigerCli owns several framework options. They should not be defined as app optio
 | `--version` | Show the short application version when the app calls `SetVersion(...)` or `UseAssemblyMetadata(...)` with version output enabled. |
 | `--version-full` | Show the full/product application version when version output is enabled. |
 | `--help-errors` | Show documented exit-code help when an exit-code enum is configured. |
+| `--help-env` | Show environment variables recognized by TigerCli and registered help-only app/library metadata. |
 | `--non-interactive` | Disable prompting for the current run. |
 | `--culture <culture>` | Select the active framework UI culture for the current run. `--culture=pl-PL` also works. |
 | `--theme <theme>` | Select the theme for the current run. |
 | `--color auto\|never\|16\|256`, `--no-color` | Select the output color mode for the current run. |
 
 The informational options are valid at the app root only when they form a root request, such as
-`app --help` or `app --version`. For a command, write `app command --help` or
-`app command --help-errors`.
+`app --help`, `app --help-env`, or `app --version`. For a command, write `app command --help`,
+`app command --help-errors`, or `app command --help-env`. These help sections compose; normal help
+does not hint at a section already included in the same request.
 
 Execution and presentation options are app-wide in meaning, but TigerCli extracts them only from
 the selected command's options area. They must follow the command path and all required positional
@@ -543,7 +545,7 @@ Exit-code help is documented in [exit codes](exit-codes.md).
 - Do not rely on localized enum labels for CLI parsing. Use enum member names on the command line.
 - Do not manually check `--non-interactive` in handlers. TigerCli owns interaction policy before handler execution.
 - Use [TigerConsole](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.TigerConsole.html) `MarkupLine(...)` or `MarkupErrorLine(...)` instead of `Console.WriteLine(...)`, so tests and terminal rendering stay on the TigerCli path.
-- Do not define framework-owned options such as `--help`, `--version`, `--version-full`, `--non-interactive`, or `--culture` on settings classes.
+- Do not define framework-owned options such as `--help`, `--help-errors`, `--help-env`, `--version`, `--version-full`, `--non-interactive`, or `--culture` on settings classes.
 - Do not use short-option bundles such as `-abc` unless you have defined `-abc` as a single alias.
 
 ## More Details

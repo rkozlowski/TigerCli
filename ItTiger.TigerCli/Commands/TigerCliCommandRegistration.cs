@@ -16,6 +16,8 @@ internal sealed class TigerCliCommandRegistration
     public TigerCliPromptMode? GroupPromptMode { get; internal set; }
     public IReadOnlyList<ITigerCliValueProvider> Providers { get; }
     public IReadOnlyList<ITigerCliValueProvider> GroupProviders { get; internal set; } = [];
+    public IReadOnlyList<TigerCliEnvironmentVariableRegistration> EnvironmentVariables { get; }
+    public IReadOnlyList<TigerCliEnvironmentVariableRegistration> GroupEnvironmentVariables { get; internal set; } = [];
     public bool IsDefault { get; internal set; }
     public string? TitleAppend { get; }
     public string? TitleSet { get; }
@@ -70,6 +72,8 @@ internal sealed class TigerCliCommandRegistration
         TigerCliPromptMode? groupPromptMode = null,
         IReadOnlyList<ITigerCliValueProvider>? providers = null,
         IReadOnlyList<ITigerCliValueProvider>? groupProviders = null,
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration>? environmentVariables = null,
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration>? groupEnvironmentVariables = null,
         Func<TigerCliSettings, Task<TigerCliEditLoadResult>>? editLoader = null,
         string? titleAppend = null,
         string? titleSet = null,
@@ -94,6 +98,8 @@ internal sealed class TigerCliCommandRegistration
         GroupPromptMode = groupPromptMode;
         Providers = providers ?? [];
         GroupProviders = groupProviders ?? [];
+        EnvironmentVariables = environmentVariables ?? [];
+        GroupEnvironmentVariables = groupEnvironmentVariables ?? [];
         EditLoader = editLoader;
         TitleAppend = string.IsNullOrWhiteSpace(titleAppend) ? null : titleAppend;
         TitleSet = string.IsNullOrWhiteSpace(titleSet) ? null : titleSet;

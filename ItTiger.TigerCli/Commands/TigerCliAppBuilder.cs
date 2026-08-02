@@ -12,7 +12,8 @@ namespace ItTiger.TigerCli.Commands;
 /// <summary>
 /// Fluent builder for a <see cref="TigerCliApp"/>, obtained from
 /// <see cref="TigerCliApp.CreateBuilder"/>. Configures app metadata, commands and command groups,
-/// interaction/prompt modes, app contributions, providers, themes, cultures, and exit-code policy; call
+/// interaction/prompt modes, app contributions, providers, environment-variable help metadata,
+/// themes, cultures, and exit-code policy; call
 /// <see cref="Build"/> to produce the immutable app. All configuration methods return this
 /// builder for chaining.
 /// </summary>
@@ -68,13 +69,15 @@ public sealed class TigerCliAppBuilder
     private string? _commandMenuDescription;
     private string? _commandMenuDescriptionResourceKey;
     private readonly List<ITigerCliAppContribution> _contributions = new();
+    private readonly List<TigerCliEnvironmentVariableRegistration> _environmentVariables = new();
 
     internal TigerCliAppBuilder() { }
 
     /// <summary>
     /// Registers reusable app-wide configuration supplied by <paramref name="contribution"/>. The
     /// contribution is configured when <see cref="Build"/> runs, so invalid, duplicate, reserved, or
-    /// conflicting contributed global option names fail during app construction.
+    /// conflicting contributed global option or environment-variable names fail during app
+    /// construction.
     /// </summary>
     /// <param name="contribution">The reusable contribution the host app chooses to enable.</param>
     /// <returns>This builder for chaining.</returns>
@@ -83,6 +86,28 @@ public sealed class TigerCliAppBuilder
     {
         ArgumentNullException.ThrowIfNull(contribution);
         _contributions.Add(contribution);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds app-wide help metadata for an environment variable recognized by the application.
+    /// TigerCli displays the name and description in root, group, and command <c>--help-env</c>
+    /// output; it does not read, parse, or apply the variable.
+    /// </summary>
+    /// <param name="name">The environment variable name.</param>
+    /// <param name="description">The help description. TigerCli markup is supported.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="name"/> or <paramref name="description"/> is null, empty, or whitespace, or
+    /// <paramref name="name"/> contains whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="name"/> duplicates another app-wide environment variable.
+    /// </exception>
+    public TigerCliAppBuilder AddEnvironmentVariable(string name, string description)
+    {
+        TigerCliEnvironmentVariableRegistrations.Add(
+            _environmentVariables, name, description, "app scope");
         return this;
     }
 
@@ -875,6 +900,7 @@ public sealed class TigerCliAppBuilder
             factory,
             promptMode: commandBuilder.PromptMode,
             providers: commandBuilder.Providers,
+            environmentVariables: commandBuilder.EnvironmentVariables,
             editLoader: commandBuilder.EditLoader,
             titleAppend: commandBuilder.TitleAppend,
             titleSet: commandBuilder.TitleSet,
@@ -899,7 +925,7 @@ public sealed class TigerCliAppBuilder
         configure(groupBuilder);
 
         groupBuilder.Collect(
-            _commandGroups, _namedCommands, [], inheritedPromptMode: null, CommandMenuMode.Inherit);
+            _commandGroups, _namedCommands, [], [], inheritedPromptMode: null, CommandMenuMode.Inherit);
         return this;
     }
 
@@ -1297,8 +1323,9 @@ public sealed class TigerCliAppBuilder
     /// Validates the configuration and produces the immutable <see cref="TigerCliApp"/>. Cross-cutting
     /// registration conflicts are detected here rather than at registration time — e.g. a default
     /// command menu combined with a default command, a command-menu name colliding with a command
-    /// path, or an alias whose path conflicts with commands/groups/aliases or whose target does not
-    /// name an existing command.
+    /// path, an alias whose path conflicts with commands/groups/aliases or whose target does not
+    /// name an existing command, or duplicate environment-variable metadata in an effective help
+    /// scope.
     /// </summary>
     /// <exception cref="InvalidOperationException">The configuration contains conflicting or unresolved registrations.</exception>
     public TigerCliApp Build()
@@ -1319,6 +1346,11 @@ public sealed class TigerCliAppBuilder
         foreach (var contribution in _contributions)
             contribution.Configure(contributionBuilder);
         var globalOptions = contributionBuilder.GlobalOptions.Build();
+        var environmentVariables = TigerCliEnvironmentVariableRegistrations.Merge(
+            _environmentVariables,
+            contributionBuilder.BuildEnvironmentVariables(),
+            "app-wide effective scope");
+        ValidateEnvironmentVariableScopes(environmentVariables);
 
         var (defaultCulture, supportedCultures) = ResolveCultures();
         var metadata = new TigerCliApplicationMetadata(
@@ -1364,7 +1396,40 @@ public sealed class TigerCliAppBuilder
             _commandMenuDescription,
             _commandMenuDescriptionResourceKey,
             _aliases,
-            globalOptions);
+            globalOptions,
+            environmentVariables);
+    }
+
+    private void ValidateEnvironmentVariableScopes(
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration> environmentVariables)
+    {
+        var frameworkVariables = TigerCliEnvironmentVariableRegistrations.FrameworkNames
+            .Select(name => new TigerCliEnvironmentVariableRegistration(name, string.Empty))
+            .ToArray();
+        var appVariables = TigerCliEnvironmentVariableRegistrations.Merge(
+            frameworkVariables,
+            environmentVariables,
+            "app-wide effective scope");
+
+        foreach (var group in _commandGroups)
+        {
+            _ = TigerCliEnvironmentVariableRegistrations.Merge(
+                appVariables,
+                group.EnvironmentVariables,
+                $"command-group '{group.Name}' effective scope");
+        }
+
+        foreach (var command in _namedCommands)
+        {
+            var inherited = TigerCliEnvironmentVariableRegistrations.Merge(
+                appVariables,
+                command.GroupEnvironmentVariables,
+                $"command '{command.Name}' effective scope");
+            _ = TigerCliEnvironmentVariableRegistrations.Merge(
+                inherited,
+                command.EnvironmentVariables,
+                $"command '{command.Name}' effective scope");
+        }
     }
 
     private static (string Version, string ProductVersion) ResolveAssemblyVersions(Assembly assembly)

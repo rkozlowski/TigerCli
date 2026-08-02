@@ -165,10 +165,15 @@ app <command-path> <positional-arguments> [options]
 - Framework-owned execution options such as `--non-interactive`, `--culture`, `--theme`, and
   `--color` are app-wide in meaning but still belong after the command path and required
   positionals. Contributed global options follow the same rule.
-- Root `--help`, `--help-errors`, and opt-in `--version` / `--version-full` are informational forms,
+- Root `--help`, `--help-errors`, `--help-env`, and opt-in `--version` / `--version-full` are informational forms,
   not permission to put execution options before a command. Use `app command --help` for command
   help; `app --help command` is invalid.
 - Do not define app options that conflict with framework-owned options.
+- `--help`, `--help-errors`, and `--help-env` are composable. Normal help hints only at sections not
+  included in the current request; command forms still follow normal option placement.
+- Register help-only environment metadata with `AddEnvironmentVariable(name, description)` on the
+  app, group, command, or contribution builder. Registration does not make TigerCli read or apply
+  the variable.
 - Labels are display-only. Keys and command-line values should remain stable and language-neutral.
 - A selector is the input that carries the object key. The command (`add`, `show`, `edit`, or
   `delete`) decides the operation; the selector identifies the keyed object.
@@ -310,7 +315,8 @@ TigerConsole.Render(details);
 
 - Generating sync command handlers or blocking I/O where async provider/activity APIs fit.
 - Using `Console.WriteLine(...)` directly in app code.
-- Manually parsing `--help`, `--version`, `--version-full`, `--non-interactive`, or `--culture`.
+- Manually parsing `--help`, `--help-errors`, `--help-env`, `--version`, `--version-full`,
+  `--non-interactive`, `--theme`, `--color` / `--no-color`, or `--culture`.
 - Hand-writing help output.
 - Setting `TigerCliPromptable.No` just to suppress prompts.
 - Manually prompting inside handlers for values that parser-driven prompting can handle.

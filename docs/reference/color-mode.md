@@ -127,6 +127,12 @@ Theme precedence:
 2. `TIGERCLI_THEME`
 3. Existing app/default theme (`TigerConsole.CurrentTheme`, initially `dark`)
 
+Run `my-tool render report --help-env` to see these variables alongside the color-capability
+variables recognized by TigerCli. The framework section documents `TIGERCLI_THEME`, `FORCE_COLOR`,
+`CLICOLOR_FORCE`, `NO_COLOR`, `CLICOLOR`, and `TERM` from the behavior above. App/library entries in
+that section are metadata only and do not change this precedence or make TigerCli read additional
+variables.
+
 Examples:
 
 ```sh

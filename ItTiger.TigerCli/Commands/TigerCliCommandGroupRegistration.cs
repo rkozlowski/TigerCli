@@ -16,13 +16,15 @@ internal sealed class TigerCliCommandGroupRegistration
     public string? DescriptionResourceKey { get; }
     public TigerCliPromptMode? PromptMode { get; }
     public IReadOnlyList<ITigerCliValueProvider> Providers { get; }
+    public IReadOnlyList<TigerCliEnvironmentVariableRegistration> EnvironmentVariables { get; }
 
     public TigerCliCommandGroupRegistration(
         string name,
         string? description,
         string? descriptionResourceKey,
         TigerCliPromptMode? promptMode,
-        IReadOnlyList<ITigerCliValueProvider>? providers)
+        IReadOnlyList<ITigerCliValueProvider>? providers,
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration>? environmentVariables)
     {
         Name = name;
         PathTokens = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -30,5 +32,6 @@ internal sealed class TigerCliCommandGroupRegistration
         DescriptionResourceKey = descriptionResourceKey;
         PromptMode = promptMode;
         Providers = providers ?? [];
+        EnvironmentVariables = environmentVariables ?? [];
     }
 }

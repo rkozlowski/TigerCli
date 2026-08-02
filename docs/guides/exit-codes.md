@@ -280,7 +280,9 @@ Exit codes:
       Unhandled exception was caught by TigerCli.
 ```
 
-`--help --help-errors` prints normal help first, then the exit-code help, and returns the configured `HelpShown` code.
+`--help --help-errors` prints normal help first, then the exit-code help, suppresses the now-redundant
+`--help-errors` hint, and returns the configured `HelpShown` code. It can also be combined with
+`--help-env`; normal help advertises only optional sections not already rendered.
 
 If no documented enum is configured, `--help-errors` prints a clear framework message instead of inventing documentation.
 
