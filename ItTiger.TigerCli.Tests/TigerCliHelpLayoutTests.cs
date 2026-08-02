@@ -11,8 +11,8 @@ namespace ItTiger.TigerCli.Tests;
 /// <summary>
 /// Locks the help document's layout contract: every section is a key line followed by its
 /// description on the next lines, indented; wrapping happens in the layout at the width the
-/// destination sink reports, never in the terminal; and a help block emits no trailing whitespace
-/// because a transparent document block has no painted trailing edge to fill.
+/// destination sink reports, never in the terminal; and every rendered row fills that width so the
+/// grid owns the complete themed document surface.
 /// </summary>
 public sealed class TigerCliHelpLayoutTests
 {
@@ -60,11 +60,12 @@ public sealed class TigerCliHelpLayoutTests
 
     private static List<string> BlockAfter(List<string> lines, string keyLine)
     {
-        var index = lines.FindIndex(line => line == keyLine);
+        var index = lines.FindIndex(line => line.TrimEnd() == keyLine);
         Assert.True(index >= 0, $"Key line '{keyLine}' not found in:\n{string.Join("\n", lines)}");
         return lines
             .Skip(index + 1)
-            .TakeWhile(line => line.StartsWith(new string(' ', DescriptionIndent), StringComparison.Ordinal))
+            .TakeWhile(line => line.TrimEnd().Length > DescriptionIndent
+                && line.StartsWith(new string(' ', DescriptionIndent), StringComparison.Ordinal))
             .ToList();
     }
 
@@ -107,7 +108,7 @@ public sealed class TigerCliHelpLayoutTests
     {
         var lines = await RenderHelpAsync(width, "--help");
 
-        Assert.Contains("  copy-to-folder", lines);
+        Assert.Contains(lines, line => line.TrimEnd() == "  copy-to-folder");
         AssertIndentedBlock(BlockAfter(lines, "  copy-to-folder"), "command description");
     }
 
@@ -118,7 +119,7 @@ public sealed class TigerCliHelpLayoutTests
     {
         var lines = await RenderHelpAsync(width, "--help-env");
 
-        Assert.Contains("  TIGERCLI_THEME", lines);
+        Assert.Contains(lines, line => line.TrimEnd() == "  TIGERCLI_THEME");
         AssertIndentedBlock(BlockAfter(lines, "  TIGERCLI_THEME"), "environment variable description");
     }
 
@@ -132,7 +133,7 @@ public sealed class TigerCliHelpLayoutTests
         // Theme registration is process-global, so other tests can add names to the list; only the
         // built-in prefix and the indentation of every line are asserted.
         var block = BlockAfter(lines, "  --theme <theme>");
-        Assert.Equal("      Select the UI theme by name", block[0]);
+        Assert.Equal("      Select the UI theme by name", block[0].TrimEnd());
         Assert.StartsWith("      dark | light | tiger-blue", block[1], StringComparison.Ordinal);
         foreach (var line in block)
         {
@@ -146,35 +147,24 @@ public sealed class TigerCliHelpLayoutTests
     [InlineData(50)]
     [InlineData(70)]
     [InlineData(120)]
-    public async Task HelpLines_NeverExceedTheRenderWidth(int width)
+    public async Task HelpRows_FillButNeverExceedTheRenderWidth(int width)
     {
         var lines = await RenderHelpAsync(width, "--help", "--help-errors", "--help-env");
 
         foreach (var line in lines)
-        {
-            if (line.Length <= width)
-                continue;
-
-            // The only permitted overflow is a single token that cannot be broken at all.
-            var overflowing = line.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Where(token => token.Length + DescriptionIndent > width)
-                .ToList();
-            Assert.True(
-                overflowing.Count > 0,
-                $"Line of {line.Length} columns exceeds the {width}-column width without an unbreakable token: '{line}'");
-        }
+            Assert.Equal(width, line.Length);
     }
 
     [Theory]
     [InlineData(40)]
     [InlineData(70)]
     [InlineData(120)]
-    public async Task HelpOutput_HasNoTrailingWhitespace(int width)
+    public async Task HelpOutput_UsesFullWidthGridRows(int width)
     {
         var lines = await RenderHelpAsync(width, "--help", "--help-errors", "--help-env");
 
         foreach (var line in lines)
-            Assert.Equal(line.TrimEnd(), line);
+            Assert.Equal(width, line.Length);
     }
 
     // Composition of the three help flags still renders all three documents in order.
@@ -183,8 +173,8 @@ public sealed class TigerCliHelpLayoutTests
     {
         var lines = await RenderHelpAsync(100, "--help", "--help-errors", "--help-env");
 
-        var usage = lines.FindIndex(line => line == "Usage:");
-        var environment = lines.FindIndex(line => line == "Environment variables:");
+        var usage = lines.FindIndex(line => line.TrimEnd() == "Usage:");
+        var environment = lines.FindIndex(line => line.TrimEnd() == "Environment variables:");
         Assert.True(usage >= 0, "Usage section missing.");
         Assert.True(environment > usage, "Environment variables section missing or out of order.");
 
@@ -192,14 +182,9 @@ public sealed class TigerCliHelpLayoutTests
         Assert.DoesNotContain(lines, line => line.Contains("use --help-env", StringComparison.Ordinal));
     }
 
-    // A help block is a transparent document: the framework's fallback ink (grey on black) must not
-    // be painted onto plain help text, and a theme colour that happens to equal one of those
-    // fallback colours must still survive as an explicit style. Both used to be handled by
-    // post-processing every rendered segment, which silently dropped real theme ink.
-    //
-    // Transparent does not mean colourless: help is a themed document, so plain body text renders as
-    // the theme's default text ink over the theme's default background (see
-    // TigerCliHelpThemeBaseTests for the base-style contract in detail).
+    // Help is an ordinary themed grid: its base style overrides the framework fallback ink with the
+    // selected theme's Text over Background, while semantic roles continue through the normal
+    // cascade (see TigerCliHelpThemeBaseTests for the full base-style contract).
     [Theory]
     [InlineData("dark")]
     [InlineData("light")]
@@ -285,7 +270,7 @@ public sealed class TigerCliHelpLayoutTests
 
         Assert.True(narrowBlock.Count > wideBlock.Count,
             "A narrower sink must produce more wrapped lines than a wider one.");
-        Assert.All(narrowBlock, line => Assert.True(line.Length <= 50));
-        Assert.All(wideBlock, line => Assert.True(line.Length <= 120));
+        Assert.All(narrowBlock, line => Assert.Equal(50, line.Length));
+        Assert.All(wideBlock, line => Assert.Equal(120, line.Length));
     }
 }

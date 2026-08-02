@@ -227,7 +227,7 @@ A theme owns both halves of its default ink: the `Text` role is the default fore
 
 This is what makes `--theme light` usable on a dark terminal: `my-tool --help --theme light` renders dark text on the light theme's surface rather than dark text on the terminal's dark background.
 
-**What is painted.** A document paints exactly what it lays out — the rendered characters and the structural spaces before and between them. It has no painted trailing edge: each line stops at its content, and the rest of the terminal row stays terminal-owned. Blank separator lines have no content and paint nothing. TigerCli deliberately does not pad help lines out to the terminal width; doing so would emit trailing whitespace and hand the line ending back to the terminal's own auto-wrap.
+**What is painted.** Generated help is laid out as ordinary `CliGrid` blocks whose final column fills the destination width. The grid paints each complete row — content, structural indentation, trailing fill, and blank separator rows — with the document base. This gives a light theme one coherent light surface across the whole help document instead of isolated light spans on the terminal's background. The same measured width bounds description wrapping before anything reaches the sink, so help does not rely on terminal auto-wrap or a trailing-whitespace cleanup pass.
 
 Only the colour channels take part: decorations stay with the semantic roles that add them (`[Heading]` is bold, `[Link]` underlined), so a document's structural whitespace never inherits a decoration.
 

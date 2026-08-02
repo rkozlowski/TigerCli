@@ -33,12 +33,6 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
 {
     static readonly CliCharStyle DefaultCharStyle = new() { Background = CliColor.Black, Foreground = CliColor.Gray };
 
-    // The colourless counterpart of DefaultCharStyle, used as the cascade base of a transparent
-    // document grid (see TransparentDocument). Both channels are null, so unstyled text keeps the
-    // terminal's own ink and a theme colour that happens to equal a framework fallback colour is
-    // still a real, distinguishable style rather than something a later pass has to guess about.
-    static readonly CliCharStyle TransparentCharStyle = new();
-
     static readonly CliCellStyle GlobalDefaultStyle = new()
     {
         HorizontalAlignment = CliTextAlignment.Left,
@@ -50,37 +44,6 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
         MinWidth = 1,
         MinHeight = 1
     };
-
-    static readonly CliCellStyle TransparentGlobalDefaultStyle = new()
-    {
-        HorizontalAlignment = CliTextAlignment.Left,
-        VerticalAlignment = CliVerticalAlignment.Top,
-        Wrapping = CliWrapping.WordWrap,
-        FormattingMode = CliFormattingMode.Raw,
-        NullDisplayValue = string.Empty,
-        CharStyle = TransparentCharStyle,
-        MinWidth = 1,
-        MinHeight = 1
-    };
-
-    /// <summary>
-    /// Renders this grid as a transparent document block rather than as a painted box. Two things
-    /// that are correct for a box are wrong for a document: the framework's global fallback ink
-    /// (grey on black), which exists to repair an unstyled box, and the alignment fill that pads the
-    /// trailing edge of each row out to the grid width. With this set, the cascade starts from a
-    /// colourless base instead of that fallback, and the last cell rendered in each left-aligned row
-    /// stops at its content, so a document block emits no trailing whitespace. Structural interior
-    /// columns (indents) still pad normally; only the trailing edge is dropped.
-    /// </summary>
-    /// <remarks>
-    /// Transparent means "no fallback repair ink and no painted trailing edge", not "no colours".
-    /// The colourless base is only the root of the cascade: a document renderer supplies the block's
-    /// real base ink through <see cref="CliLayoutComponent.DefaultCellStyle"/> — help blocks pass the
-    /// selected theme's document base (its default text colour over its default background) — and
-    /// axis, row, column, and cell styles override it as usual. A block that supplies no base keeps
-    /// the terminal's own ink for unstyled text.
-    /// </remarks>
-    internal bool TransparentDocument { get; set; }
 
     /// <summary>Horizontal scroll offset used by scrollable host cells.</summary>
     public int OffsetX { get; set; }
@@ -426,8 +389,7 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
     /// </summary>
     public CliCellStyle GetCellStyle(int column, int row)
     {
-        CliCellStyle style = (TransparentDocument ? TransparentGlobalDefaultStyle : GlobalDefaultStyle)
-            .MergeWith(DefaultCellStyle);
+        CliCellStyle style = GlobalDefaultStyle.MergeWith(DefaultCellStyle);
         CliCellStyle? columnStyle = columns[column]?.Style;
         CliCellStyle? rowStyle = rows[row]?.Style;
         CliCellStyle? cellStyle = cells[row, column]?.Style;
@@ -1119,8 +1081,7 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
                 }
 
                 var style = m.Style;
-                var charStyle = style.CharStyle
-                    ?? (TransparentDocument ? TransparentCharStyle : DefaultCharStyle);
+                var charStyle = style.CharStyle ?? DefaultCharStyle;
                 var lines = MeasuredCell.CloneLines(m.Lines); // work on a copy
 
                 m.TotalLinesCount = m.Lines.Count;
@@ -1282,35 +1243,15 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
 
                 var align = fillHorizontal ? CliTextAlignment.Left : (style.HorizontalAlignment ?? CliTextAlignment.Left);
 
-                // A transparent document block has no painted right edge: the cell that ends each
-                // row stops at its content instead of padding out to the grid width, so the block
-                // emits no trailing whitespace. Interior cells (structural indent columns) still
-                // pad, otherwise the indent they exist to produce would collapse. Non-left
-                // alignments keep their fill because there the padding carries the alignment.
-                bool dropTrailingFill = TransparentDocument
-                    && align == CliTextAlignment.Left
-                    && !fillHorizontal
-                    && col == LastRenderedColumn(measured, row);
-
                 for (int h = 0; h < targetH; h++)
                 {
                     int src = h - addRowsBefore;
                     var srcLine = (src >= 0 && src < lines.Count) ? lines[src] : fillLineContent;
                     var line = MeasuredCell.CloneLine(srcLine);
-                    if (dropTrailingFill)
-                    {
-                        // Vertical fill lines are a single fill space; in a document block an
-                        // absent line is simply empty.
-                        if (src < 0 || src >= lines.Count)
-                            line.Clear();
-                    }
-                    else
-                    {
-                        AlignHorizontally(line, alignTargetW, align, fillStr, fillCharStyle);
-                    }
+                    AlignHorizontally(line, alignTargetW, align, fillStr, fillCharStyle);
                     if (padLeft > 0)
                         line.Insert(0, new CliTextSegment(" ", fillCharStyle));
-                    if (padRight > 0 && !dropTrailingFill)
+                    if (padRight > 0)
                         line.Add(new CliTextSegment(" ", fillCharStyle));
                     CompactLine(line);
                     alignedLines.Add(line);
@@ -1358,23 +1299,6 @@ public partial class CliGrid(int columnCount, int rowCount) : CliLayoutComponent
                 }
             }
         }
-    }
-
-    // The rightmost column of a row that actually emits during the render pass. A cell hidden by a
-    // horizontal span renders nothing, so the cell that ends such a row is the spanning cell to its
-    // left. Used to locate a transparent document block's trailing edge.
-    private int LastRenderedColumn(MeasuredCell[,] measured, int row)
-    {
-        for (int c = ColumnCount - 1; c >= 0; c--)
-        {
-            if (measured[row, c] is null)
-                continue;
-            if (cells[row, c] is { IsCovered: true, ColOffset: > 0 })
-                continue;
-            return c;
-        }
-
-        return -1;
     }
 
     private static int MaxLineWidth(IReadOnlyList<List<CliTextSegment>> lines)

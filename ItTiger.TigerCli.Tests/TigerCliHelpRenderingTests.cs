@@ -11,7 +11,7 @@ namespace ItTiger.TigerCli.Tests;
 /// <summary>
 /// Structured help rendering (first slice): the title block and Usage section render through
 /// <see cref="TigerCliHelpRenderer"/> CliGrid blocks while keeping the legacy plain-text shape —
-/// same lines, same two-space indent, same inner spacing, and no trailing whitespace.
+/// same lines, same two-space indent, and same inner spacing — on full-width themed rows.
 /// </summary>
 public sealed class TigerCliHelpRenderingTests
 {
@@ -49,21 +49,21 @@ public sealed class TigerCliHelpRenderingTests
 
         Assert.Equal(0, result.ExitCode);
         var lines = SplitLines(result.Stdout);
+        var visibleLines = lines.Select(line => line.TrimEnd()).ToArray();
 
         // Title block and Usage section as consecutive lines, exactly as the legacy formatter
         // shaped them (structural two-space indent, single spaces between usage tokens).
-        var title = Array.IndexOf(lines, "tool");
+        var title = Array.IndexOf(visibleLines, "tool");
         Assert.True(title >= 0, $"Title line not found in: {result.Stdout}");
-        Assert.Equal("  Does things.", lines[title + 1]);
-        Assert.Equal("", lines[title + 2]);
-        Assert.Equal("Usage:", lines[title + 3]);
-        Assert.Equal("  tool [options]", lines[title + 4]);
-        Assert.Equal("  tool <command> [options]", lines[title + 5]);
-        Assert.Equal("", lines[title + 6]);
+        Assert.Equal("  Does things.", visibleLines[title + 1]);
+        Assert.Equal("", visibleLines[title + 2]);
+        Assert.Equal("Usage:", visibleLines[title + 3]);
+        Assert.Equal("  tool [options]", visibleLines[title + 4]);
+        Assert.Equal("  tool <command> [options]", visibleLines[title + 5]);
+        Assert.Equal("", visibleLines[title + 6]);
 
-        // The grid path pads lines to the block width; the help renderer must trim that padding.
-        foreach (var line in lines)
-            Assert.Equal(line.TrimEnd(), line);
+        Assert.All(lines[..^1], line => Assert.Equal(TerminalCapabilities.DefaultOutputWidth, line.Length));
+        Assert.Equal("", lines[^1]);
     }
 
     [Fact]
@@ -79,16 +79,17 @@ public sealed class TigerCliHelpRenderingTests
 
         Assert.Equal(0, result.ExitCode);
         var lines = SplitLines(result.Stdout);
+        var visibleLines = lines.Select(line => line.TrimEnd()).ToArray();
 
-        var title = Array.IndexOf(lines, "tool run");
+        var title = Array.IndexOf(visibleLines, "tool run");
         Assert.True(title >= 0, $"Title line not found in: {result.Stdout}");
-        Assert.Equal("  Runs the target.", lines[title + 1]);
-        Assert.Equal("", lines[title + 2]);
-        Assert.Equal("Usage:", lines[title + 3]);
-        Assert.Equal("  tool run <target> [options]", lines[title + 4]);
+        Assert.Equal("  Runs the target.", visibleLines[title + 1]);
+        Assert.Equal("", visibleLines[title + 2]);
+        Assert.Equal("Usage:", visibleLines[title + 3]);
+        Assert.Equal("  tool run <target> [options]", visibleLines[title + 4]);
 
-        foreach (var line in lines)
-            Assert.Equal(line.TrimEnd(), line);
+        Assert.All(lines[..^1], line => Assert.Equal(TerminalCapabilities.DefaultOutputWidth, line.Length));
+        Assert.Equal("", lines[^1]);
     }
 
     [Fact]
@@ -147,8 +148,9 @@ public sealed class TigerCliHelpRenderingTests
             .Select(line => string.Concat(line.Select(segment => segment.Text)))
             .ToList();
 
-        Assert.Equal("Exit codes:", lines[0]);
-        Assert.Equal("Toolkit response codes", lines[1]);
+        Assert.Equal("Exit codes:", lines[0].TrimEnd());
+        Assert.Equal("Toolkit response codes", lines[1].TrimEnd());
+        Assert.All(lines, line => Assert.Equal(60, line.Length));
         Assert.Contains(lines, line => line.Contains("0", StringComparison.Ordinal) && line.Contains("Ok", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains("1003", StringComparison.Ordinal) && line.Contains("CliInteractiveNotAllowed", StringComparison.Ordinal));
         Assert.Contains(lines, line => line.Contains("Prompt", StringComparison.Ordinal));
@@ -194,8 +196,9 @@ public sealed class TigerCliHelpRenderingTests
             .Select(line => string.Concat(line.Select(segment => segment.Text)))
             .ToList();
 
-        Assert.Equal("Options:", lines[0]);
-        Assert.Equal("  --theme <theme>", lines[1]);
+        Assert.Equal("Options:", lines[0].TrimEnd());
+        Assert.Equal("  --theme <theme>", lines[1].TrimEnd());
+        Assert.All(lines, line => Assert.Equal(40, line.Length));
         Assert.StartsWith("      Select", lines[2], StringComparison.Ordinal);
         Assert.Contains(lines, line => line.StartsWith("      dark | light | tiger-blue", StringComparison.Ordinal));
         Assert.True(lines.Count > 4, "The detail cell should wrap independently of the signature row.");
@@ -230,16 +233,17 @@ public sealed class TigerCliHelpRenderingTests
             .Select(line => string.Concat(line.Select(segment => segment.Text)))
             .ToList();
 
-        Assert.Equal("Commands:", lines[0]);
-        Assert.Equal("  list", lines[1]);
+        Assert.Equal("Commands:", lines[0].TrimEnd());
+        Assert.Equal("  list", lines[1].TrimEnd());
         Assert.StartsWith("      Lists items", lines[2], StringComparison.Ordinal);
-        Assert.Contains(lines, line => line == "  generate-code");
-        Assert.Contains(lines, line => line == "      Generates source code.");
+        Assert.Contains(lines, line => line.TrimEnd() == "  generate-code");
+        Assert.Contains(lines, line => line.TrimEnd() == "      Generates source code.");
+        Assert.All(lines, line => Assert.Equal(42, line.Length));
 
         // Every continuation line of the wrapped description keeps the description indent.
         var descriptionLines = lines
             .Skip(2)
-            .TakeWhile(line => line != "  generate-code")
+            .TakeWhile(line => line.TrimEnd() != "  generate-code")
             .ToList();
         Assert.True(descriptionLines.Count > 1, "The description should wrap onto continuation lines.");
         Assert.All(descriptionLines, line => Assert.StartsWith("      ", line, StringComparison.Ordinal));

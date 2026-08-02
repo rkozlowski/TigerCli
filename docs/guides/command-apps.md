@@ -502,9 +502,11 @@ and option signatures can be long, so nothing is laid out as a same-row key/desc
 description wraps at the width of the output destination, and every wrapped continuation line keeps
 the description indent.
 
-Help is a themed document: its text and indentation render with the selected theme's default text
-ink over the selected theme's default background, and semantic roles colour the keys on top of that
-surface. `--theme light` therefore stays readable on a dark terminal. See
+Help is a full-width `CliGrid` document: its text, indentation, blank rows, and trailing row fill
+render with the selected theme's default text ink over the selected theme's default background, and
+semantic roles colour the keys on top of that surface. The grid wraps descriptions at the measured
+destination width while preserving their structural indentation, so output does not depend on
+terminal auto-wrap. `--theme light` therefore stays readable on a dark terminal. See
 [document base: Text over Background](themes-and-styles.md#document-base-text-over-background) for
 what a document paints and what it leaves to the terminal.
 

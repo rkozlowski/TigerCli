@@ -16,10 +16,8 @@ namespace ItTiger.TigerCli.Tests;
 /// style cascade. Plain text and the structural whitespace of the indent columns render on the
 /// theme's background — a light theme is readable on a dark terminal — while semantic roles override
 /// the foreground and inherit that background unless they define one of their own.
-/// <para>What is painted is exactly what the block lays out. A document block has no painted
-/// trailing edge, so a line stops at its content and the terminal beyond it stays terminal-owned;
-/// blank separator lines have no content and paint nothing. Nothing pads a help line out to the
-/// terminal width.</para>
+/// <para>Every grid block fills the destination width, including trailing fill and blank separator
+/// rows, so the theme background forms one coherent document surface.</para>
 /// </summary>
 public sealed class TigerCliHelpThemeBaseTests
 {
@@ -109,13 +107,15 @@ public sealed class TigerCliHelpThemeBaseTests
     {
         var theme = new LightTheme();
 
-        var documentBase = TigerConsole.ResolveDocumentBaseCharStyle(theme);
+        var text = theme.Resolve(ThemeStyle.Text).CharStyle;
+        var background = theme.Resolve(ThemeStyle.Background).CharStyle;
 
-        Assert.Equal(CliColor.Black, documentBase.Foreground);
-        Assert.Equal(CliColor.White, documentBase.Background);
+        Assert.Equal(CliColor.Black, text?.Foreground);
+        Assert.Equal(CliColor.White, background?.Background);
         // Colours only: a decoration in the base would apply to every glyph in the block, including
         // the structural whitespace of the indent columns.
-        Assert.Equal(CliTextDecoration.None, documentBase.Decorations);
+        Assert.Equal(CliTextDecoration.None, text?.Decorations);
+        Assert.Equal(CliTextDecoration.None, background?.Decorations);
     }
 
     // Structural indentation is grid columns, not leading spaces in the text, so those spaces are
@@ -265,69 +265,45 @@ public sealed class TigerCliHelpThemeBaseTests
 
     // ---- Painted extent ----
 
-    // The guarantee is content plus structural whitespace, not the terminal row: a help line stops at
-    // its content, so nothing pads it out to the render width and the terminal keeps the rest of the
-    // row. (This is also what keeps the terminal's own auto-wrap out of the picture.)
+    // CliGrid owns the terminal-width document surface. Its Star column both bounds wrapping and
+    // fills the remainder, so content never spills into terminal auto-wrap and no cleanup sink is
+    // needed to reshape the rows afterward.
     [Theory]
     [InlineData("light")]
     [InlineData("dark")]
-    public async Task HelpLines_StopAtTheirContent_WithNoPaintedTrailingEdge(string themeName)
+    public async Task HelpLines_FillTheMeasuredDocumentWidth(string themeName)
     {
         var lines = await RenderHelpAsync(themeName, width: 60);
+        var (_, background) = DocumentBase(TigerConsole.GetTheme(themeName));
 
         foreach (var line in lines)
         {
             var text = LineText(line);
-            Assert.Equal(text.TrimEnd(), text);
-            Assert.True(text.Length <= 60, $"Line of {text.Length} columns exceeds the render width: '{text}'");
+            Assert.Equal(60, text.Length);
+            Assert.Equal(background, line[^1].Style.Background);
         }
     }
 
-    // A blank separator has no content, so it paints nothing at all: no styled segment, and in
-    // particular no framework fallback ink and no terminal-derived ink.
+    // Separator rows are grids too, so they carry the same document base across the whole width.
     [Theory]
     [InlineData("light")]
     [InlineData("dark")]
-    public async Task BlankSeparatorLines_PaintNothing(string themeName)
+    public async Task BlankSeparatorLines_PaintTheThemeSurface(string themeName)
     {
         var lines = await RenderHelpAsync(themeName);
+        var (foreground, background) = DocumentBase(TigerConsole.GetTheme(themeName));
 
-        var blank = lines.Where(line => LineText(line).Length == 0).ToList();
+        var blank = lines.Where(line => LineText(line).TrimEnd().Length == 0).ToList();
         Assert.NotEmpty(blank);
-        Assert.All(blank, line => Assert.All(line, segment =>
+        Assert.All(blank, line =>
         {
-            Assert.Null(segment.Style.Foreground);
-            Assert.Null(segment.Style.Background);
-        }));
-    }
-
-    // ---- TransparentDocument ----
-
-    // TransparentDocument still means "no framework fallback repair ink and no painted trailing
-    // edge". A document block that supplies no base of its own stays colourless — the grey-on-black
-    // box fallback must never reach a document.
-    [Fact]
-    public void TransparentDocumentWithoutABase_StaysColourless()
-    {
-        var grid = new CliGrid(2, 1)
-        {
-            TransparentDocument = true,
-            DefaultCellStyle = new CliCellStyle { FormattingMode = CliFormattingMode.Preformatted }
-        };
-        grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Width = 2, MinWidth = 2 }));
-        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
-        grid.Set(1, 0, "plain");
-
-        var sink = new TextSegmentLinesSink { SoftMaxWidth = 40 };
-        TigerConsole.RenderGrid(grid, sink);
-
-        var segments = sink.Lines.SelectMany(line => line).ToList();
-        Assert.All(segments, segment =>
-        {
-            Assert.Null(segment.Style.Foreground);
-            Assert.Null(segment.Style.Background);
+            Assert.Equal(100, LineText(line).Length);
+            Assert.All(line, segment =>
+            {
+                Assert.Equal(foreground, segment.Style.Foreground);
+                Assert.Equal(background, segment.Style.Background);
+            });
         });
-        Assert.Equal("  plain", string.Concat(segments.Select(segment => segment.Text)));
     }
 
     // ---- Helpers ----
@@ -355,7 +331,7 @@ public sealed class TigerCliHelpThemeBaseTests
         try
         {
             var writer = new StringWriter();
-            using var scope = TigerConsole.PushOutputSink(new AnsiSink(writer, target: CliSinkTarget.Buffer));
+            using var scope = TigerConsole.PushOutputSink(new AnsiSink(writer));
             await BuildApp().RunAsync(
                 ["--help", "--theme", themeName],
                 new TestShell(),

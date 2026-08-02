@@ -2,15 +2,15 @@ using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Primitives;
 using ItTiger.TigerCli.Rendering;
 using ItTiger.TigerCli.Terminal;
+using ItTiger.TigerCli.Tui.Abstractions;
 
 namespace ItTiger.TigerCli.Commands;
 
 /// <summary>
 /// Structured help rendering: composes help output as a document of separate frameless
-/// <see cref="CliGrid"/> blocks rendered through the normal measure/render pipeline. Blocks are
-/// transparent document grids (<c>CliGrid.TransparentDocument</c>), so the layout engine owns
-/// wrapping and indentation while the block keeps a document's shape — no framework fallback ink
-/// and no painted trailing edge.
+/// <see cref="CliGrid"/> blocks rendered through the normal measure/render pipeline. Each block
+/// fills the destination width, so the layout engine owns wrapping, indentation, and the complete
+/// themed row surface.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,15 +21,10 @@ namespace ItTiger.TigerCli.Commands;
 /// text (the measure pass trims leading/trailing whitespace from cell content).
 /// </para>
 /// <para>
-/// Help is a themed document, so every block starts from the selected theme's document base ink —
-/// the theme's default text colour over its default background (see
-/// <c>TigerConsole.ResolveDocumentBaseCharStyle</c>). Plain body text and the structural whitespace
-/// of the indent columns therefore render on the theme's background rather than inheriting the
-/// terminal's, which is what makes a light theme readable on a dark terminal. What is painted is
-/// exactly what the block lays out: the rendered characters and the structural spaces before and
-/// between them. A document block has no painted trailing edge, so each line stops at its content
-/// and the terminal beyond it stays terminal-owned; blank separator lines have no content at all
-/// and paint nothing.
+/// Help is a themed document, so every block starts from the selected theme's Text style over its
+/// Background style. Plain body text, structural indentation, trailing fill, and blank separator
+/// rows therefore render on one coherent theme surface rather than inheriting the terminal's
+/// background. This is what makes a light theme readable on a dark terminal.
 /// </para>
 /// <para>
 /// All inputs are trusted, already-composed markup strings (escaped by the caller where needed),
@@ -221,36 +216,37 @@ internal static class TigerCliHelpRenderer
     }
 
     /// <summary>
-    /// Emits a blank separator line between help blocks, unstyled: a separator has no content, so it
-    /// paints nothing and the row stays terminal-owned. Written straight to the sink rather than as
-    /// markup, because the markup path seeds its base style from the current console colours — which
-    /// would paint the separator with the terminal's ink instead of the selected theme's.
+    /// Renders a full-width themed separator row between help blocks.
     /// </summary>
     public static void RenderBlankLine()
     {
-        var sink = TigerConsole.GetOutputSink();
-        sink.NewLine();
-        sink.Flush();
+        var grid = NewBlock(1, 1);
+        grid.Set(0, 0, "");
+        Render(grid);
     }
 
-    // A help block: preformatted markup content, laid out as a transparent document rather than a
-    // painted box. Content wraps to whatever width the destination sink reports.
-    //
-    // The block's default cell style carries the selected theme's document base ink (Text over
-    // Background), which is the root of the block's style cascade: plain help text renders as the
-    // theme's text colour on the theme's background, and semantic roles ([Key], [Accent], [Link], …)
-    // override the foreground while inheriting that background unless they define one of their own.
-    // The theme is read per block, so a --theme selected during parsing is in effect by the time
-    // help renders.
-    private static CliGrid NewBlock(int columnCount, int rowCount) => new(columnCount, rowCount)
+    // Every help block is an ordinary full-width grid. Background supplies the surface and Text
+    // supplies its default ink; semantic roles then override that base through the normal cascade.
+    // The final Star column consumes the sink's reported width, making wrapping and row fill one
+    // layout decision. With an unbounded buffer sink, the grid remains content-driven.
+    private static CliGrid NewBlock(int columnCount, int rowCount)
     {
-        TransparentDocument = true,
-        DefaultCellStyle = new CliCellStyle
+        var theme = TigerConsole.CurrentTheme;
+        var text = theme.Resolve(ThemeStyle.Text).CharStyle;
+        var background = theme.Resolve(ThemeStyle.Background).CharStyle;
+        var baseStyle = new CliCellStyle(new CliCharStyle(
+            text?.Foreground,
+            background?.Background))
         {
-            FormattingMode = CliFormattingMode.Preformatted,
-            CharStyle = TigerConsole.ResolveDocumentBaseCharStyle(TigerConsole.CurrentTheme)
-        }
-    };
+            FormattingMode = CliFormattingMode.Preformatted
+        };
+
+        var grid = new CliGrid(columnCount, rowCount) { DefaultCellStyle = baseStyle };
+        grid.SetColumn(
+            columnCount - 1,
+            new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
+        return grid;
+    }
 
     private static void Render(CliGrid grid) => TigerConsole.RenderGrid(grid, TigerConsole.GetOutputSink());
 }
