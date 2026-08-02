@@ -27,10 +27,11 @@ public sealed class TigerCliGlobalOptionBuilder
     }
 
     /// <summary>
-    /// Adds an optional, CLI-only string global option. The option is valid before or after a command,
-    /// appears in root and command help, is never prompted, and invokes <paramref name="apply"/> once
-    /// per command run with <c>null</c> when absent. Return a validation error to stop the run before
-    /// command binding and execution.
+    /// Adds an optional, CLI-only string global option. The option is app-wide in meaning but follows
+    /// TigerCli's command-line grammar, appearing after the command path and positional arguments with
+    /// other options. It appears in root and command help, is never prompted, and invokes
+    /// <paramref name="apply"/> once per command run with <c>null</c> when absent. Return a validation
+    /// error to stop the run before command binding and execution.
     /// </summary>
     /// <param name="name">The canonical long name, beginning with <c>--</c>.</param>
     /// <param name="valueName">The value placeholder displayed in help, such as <c>path</c>.</param>

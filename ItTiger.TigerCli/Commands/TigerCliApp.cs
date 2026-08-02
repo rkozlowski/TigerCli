@@ -395,17 +395,7 @@ public sealed class TigerCliApp
         }
 
         var nonInteractiveRequested = args.Any(a => a is "--non-interactive");
-        var globalOptionParse = ParseGlobalOptions(StripFrameworkOptions(args));
-        if (globalOptionParse.ErrorResourceKey != null)
-        {
-            WriteFrameworkError(culture, TigerCliResources.Format(
-                globalOptionParse.ErrorResourceKey,
-                culture,
-                globalOptionParse.ErrorArgs ?? Array.Empty<object>()));
-            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
-        }
-
-        var frameworkArgs = globalOptionParse.RemainingArgs;
+        var frameworkArgs = StripFrameworkOptions(args);
 
         // 1. Resolve command from first positional token. When no leaf command
         // matches, a matched group prefix gives us the group context for help.
@@ -415,6 +405,26 @@ public sealed class TigerCliApp
         var effectiveCommand = command ?? _defaultCommand;
         if (effectiveCommand != null)
             titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
+
+        // Contributed globals are app-wide in meaning, but syntactically remain command options.
+        // Resolve the command path first, then extract them only after that command's positionals.
+        var globalOptionParse = effectiveCommand != null
+            ? ParseGlobalOptions(
+                remainingArgs,
+                effectiveCommand.IsCommandMenu
+                    ? 0
+                    : BuildArgumentMetadata(effectiveCommand.SettingsType).Count)
+            : new GlobalOptionParseResult { RemainingArgs = remainingArgs };
+        if (globalOptionParse.ErrorResourceKey != null)
+        {
+            WriteFrameworkError(culture, TigerCliResources.Format(
+                globalOptionParse.ErrorResourceKey,
+                culture,
+                globalOptionParse.ErrorArgs ?? Array.Empty<object>()));
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
+
+        remainingArgs = globalOptionParse.RemainingArgs;
 
         // 2. Pre-scan for help anywhere in args
         var showHelp = frameworkArgs.Any(a => a is "-h" or "--help");
@@ -446,6 +456,13 @@ public sealed class TigerCliApp
         // 3b. No command resolved and no default → show help
         if (effectiveCommand == null)
         {
+            if (frameworkArgs.Length > 0 && FindGlobalOption(frameworkArgs[0]) is { } globalOption)
+            {
+                WriteFrameworkError(culture, TigerCliResources.Format(
+                    "Error_UnknownOption", culture, Esc(globalOption.Name)));
+                return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+            }
+
             PrintHelp(null, culture);
             return _exitCodePolicy.Resolve(TigerCliExitKind.NoCommand);
         }
@@ -1169,7 +1186,7 @@ public sealed class TigerCliApp
         public object[]? ErrorArgs { get; init; }
     }
 
-    private GlobalOptionParseResult ParseGlobalOptions(string[] args)
+    private GlobalOptionParseResult ParseGlobalOptions(string[] args, int positionalCount)
     {
         if (_globalOptions.Count == 0)
             return new GlobalOptionParseResult { RemainingArgs = args };
@@ -1179,22 +1196,20 @@ public sealed class TigerCliApp
             StringComparer.OrdinalIgnoreCase);
         var remaining = new List<string>(args.Length);
         var values = new Dictionary<TigerCliGlobalOptionRegistration, string?>();
-        var commandSeen = false;
+        var positionalsSeen = 0;
 
         for (var i = 0; i < args.Length; i++)
         {
             var token = args[i];
             var equalsIndex = token.IndexOf('=');
             var optionName = equalsIndex > 0 ? token[..equalsIndex] : token;
-            if (!byName.TryGetValue(optionName, out var option))
+            if (positionalsSeen < positionalCount
+                || !byName.TryGetValue(optionName, out var option))
             {
                 remaining.Add(token);
-                if (!commandSeen
-                    && !token.StartsWith("-", StringComparison.Ordinal)
-                    && IsCommandRootToken(token))
-                {
-                    commandSeen = true;
-                }
+                if (!token.StartsWith("-", StringComparison.Ordinal)
+                    && positionalsSeen < positionalCount)
+                    positionalsSeen++;
                 continue;
             }
 
@@ -1217,8 +1232,7 @@ public sealed class TigerCliApp
             else
             {
                 if (i + 1 >= args.Length
-                    || args[i + 1].StartsWith("-", StringComparison.Ordinal)
-                    || (!commandSeen && IsCommandRootToken(args[i + 1])))
+                    || args[i + 1].StartsWith("-", StringComparison.Ordinal))
                 {
                     return new GlobalOptionParseResult
                     {
@@ -1242,17 +1256,12 @@ public sealed class TigerCliApp
         };
     }
 
-    private bool IsCommandRootToken(string token)
+    private TigerCliGlobalOptionRegistration? FindGlobalOption(string token)
     {
-        return _namedCommands.Any(command =>
-                command.PathTokens.Length > 0
-                && string.Equals(command.PathTokens[0], token, StringComparison.OrdinalIgnoreCase))
-            || _commandGroups.Any(group =>
-                group.PathTokens.Length > 0
-                && string.Equals(group.PathTokens[0], token, StringComparison.OrdinalIgnoreCase))
-            || _aliases.Any(alias =>
-                alias.PathTokens.Length > 0
-                && string.Equals(alias.PathTokens[0], token, StringComparison.OrdinalIgnoreCase));
+        var equalsIndex = token.IndexOf('=');
+        var optionName = equalsIndex > 0 ? token[..equalsIndex] : token;
+        return _globalOptions.FirstOrDefault(option =>
+            string.Equals(option.Name, optionName, StringComparison.OrdinalIgnoreCase));
     }
 
     private readonly record struct CultureResolution(

@@ -81,6 +81,8 @@ builder.AddCommandGroup("connections", group => group
   contributions implicitly.
 - In 0.9.1, use only `builder.GlobalOptions.AddOptionalString(...)`: one long name, no alias,
   optional string value, CLI-only, and never promptable or provider-backed.
+- Place contributed global options after the command path and positional arguments, with other
+  options. Their app-wide meaning does not change command selection or TigerCli's command-line shape.
 - Apply the parsed `string?` to library-owned options or services in the callback. Return
   `TigerCliValidationResult.Error(...)` for library-owned validation failures.
 - Do not use static value stores, inspect raw arguments in handlers, or model ordinary command

@@ -76,12 +76,21 @@ return TigerCliApp.CreateBuilder()
     .Build();
 ```
 
-The option is app-wide and can appear on either side of the command:
+The option is app-wide in meaning, but syntactically it is still an option. It follows TigerCli's
+normal command-line shape:
 
 ```text
-my-app --acme-config settings.json run
+app <command-path> <positional-arguments> [options]
+```
+
+Write contributed global options after the command path and positional arguments, with the other
+options:
+
+```text
 my-app run --acme-config settings.json
 ```
+
+Contributed global options do not participate in or change command selection.
 
 `--acme-config=settings.json` is also accepted. When a value itself begins with `-`, use the
 equals form so it cannot be mistaken for another option.
@@ -94,11 +103,12 @@ reserved, and reliably detectable command-option collisions fail.
 For a command run, TigerCli then:
 
 1. resolves framework run settings such as culture, theme, and color;
-2. extracts contributed global options before command binding;
-3. resolves the command, interaction mode, and any command-menu selection;
-4. invokes each contributed option callback once, using `null` for an absent option;
-5. binds, prompts for, and validates command settings; and
-6. executes the handler.
+2. resolves the command path;
+3. extracts contributed global options from the command's options area, after its positionals;
+4. resolves the interaction mode and any command-menu selection;
+5. invokes each contributed option callback once, using `null` for an absent option;
+6. binds, prompts for, and validates command settings; and
+7. executes the handler.
 
 Help renders contribution metadata but does not invoke apply callbacks. Contributed global options
 never enter the prompt model, so interactive and `--non-interactive` runs resolve them identically.

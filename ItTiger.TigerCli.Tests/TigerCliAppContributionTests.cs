@@ -18,6 +18,12 @@ public sealed class TigerCliAppContributionTests
         public string? Config { get; set; }
     }
 
+    private sealed class PositionalSettings : TigerCliSettings
+    {
+        [TigerCliArgument(0, Name = "target")]
+        public string Target { get; set; } = string.Empty;
+    }
+
     private sealed class NoopCommand : TigerCliAsyncCommandHandler<EmptySettings>
     {
         public override Task<int> ExecuteAsync(EmptySettings settings) => Task.FromResult(0);
@@ -26,6 +32,22 @@ public sealed class TigerCliAppContributionTests
     private sealed class ConflictingCommand : TigerCliAsyncCommandHandler<ConflictingSettings>
     {
         public override Task<int> ExecuteAsync(ConflictingSettings settings) => Task.FromResult(0);
+    }
+
+    private sealed class PositionalCommand : TigerCliAsyncCommandHandler<PositionalSettings>
+    {
+        private readonly Action<PositionalSettings> execute;
+
+        public PositionalCommand(Action<PositionalSettings> execute)
+        {
+            this.execute = execute;
+        }
+
+        public override Task<int> ExecuteAsync(PositionalSettings settings)
+        {
+            execute(settings);
+            return Task.FromResult(0);
+        }
     }
 
     private sealed class ObservingCommand : TigerCliAsyncCommandHandler<EmptySettings>
@@ -94,23 +116,22 @@ public sealed class TigerCliAppContributionTests
     }
 
     [Fact]
-    public async Task OptionBeforeCommand_AppliesSuppliedValueBeforeCommandExecution()
+    public async Task OptionBeforeCommand_IsRejectedAsUnknownOption()
     {
-        string? appliedValue = null;
-        string? observedByCommand = null;
+        var applied = false;
         var app = CreateObservingApp(
-            (_, value) =>
+            (_, _) =>
             {
-                appliedValue = value;
+                applied = true;
                 return TigerCliValidationResult.Success();
             },
-            () => observedByCommand = appliedValue);
+            () => Assert.Fail("Command must not execute."));
 
         var result = await RunCapturedAsync(app, [OptionName, "before.json", "run"]);
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Equal("before.json", appliedValue);
-        Assert.Equal("before.json", observedByCommand);
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains($"Unknown option: '{OptionName}'", result.Stderr);
+        Assert.False(applied);
     }
 
     [Fact]
@@ -163,16 +184,44 @@ public sealed class TigerCliAppContributionTests
     }
 
     [Fact]
-    public async Task MissingValueBeforeCommand_FailsClearlyInsteadOfConsumingCommandName()
+    public async Task OptionAfterCommandPositionals_AppliesSuppliedValue()
     {
-        var app = CreateObservingApp(
-            (_, _) => TigerCliValidationResult.Success(),
-            () => Assert.Fail("Command must not execute."));
+        string? appliedValue = null;
+        string? observedTarget = null;
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .AddContribution(new Contribution(builder => AddOption(
+                builder,
+                (_, value) =>
+                {
+                    appliedValue = value;
+                    return TigerCliValidationResult.Success();
+                })))
+            .AddCommand("run", () => new PositionalCommand(settings => observedTarget = settings.Target))
+            .Build();
 
-        var result = await RunCapturedAsync(app, [OptionName, "run"]);
+        var result = await RunCapturedAsync(app, ["run", "project", OptionName, "after.json"]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("after.json", appliedValue);
+        Assert.Equal("project", observedTarget);
+    }
+
+    [Fact]
+    public async Task OptionBeforeCommandPositionals_IsRejected()
+    {
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .AddContribution(new Contribution(builder => AddOption(
+                builder,
+                (_, _) => TigerCliValidationResult.Success())))
+            .AddCommand("run", () => new PositionalCommand(_ => Assert.Fail("Command must not execute.")))
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["run", OptionName, "before.json", "project"]);
 
         Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains($"Option '{OptionName}' requires a value.", result.Stderr);
+        Assert.Contains($"Unknown option: '{OptionName}'", result.Stderr);
     }
 
     [Fact]
