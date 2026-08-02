@@ -492,8 +492,15 @@ Top-level help lists immediate entries only — single-token ungrouped commands 
 
 ```text
 Commands:
-  widgets    Manage widgets.
+  widgets
+      Manage widgets.
 ```
+
+Every help section uses the same shape: a key line — a command name, an option signature, an
+environment-variable name — followed by its description on the next lines, indented. Command names
+and option signatures can be long, so nothing is laid out as a same-row key/description table. The
+description wraps at the width of the output destination, and every wrapped continuation line keeps
+the description indent.
 
 The group's own help lists the group's immediate child commands:
 
@@ -509,8 +516,10 @@ Usage:
   my-tool widgets <command> [options]
 
 Commands:
-  list    List widgets.
-  add     Add a widget.
+  list
+      List widgets.
+  add
+      Add a widget.
 ```
 
 Leaf command help works as usual:
@@ -563,8 +572,10 @@ target so ownership is never confused:
 
 ```text
 Aliases:
-  import         Import files from a registered card or source.  → card ingest
-  register-card  Register a card.                                → card register
+  import
+      Import files from a registered card or source. → card ingest
+  register-card
+      Register a card. → card register
 ```
 
 `my-tool import --help` shows the alias identity and an `Alias for: card ingest` note, but the

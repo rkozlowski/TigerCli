@@ -209,8 +209,11 @@ public sealed class TigerCliHelpRenderingTests
         Assert.Equal(valueForeground, sink.Lines.SelectMany(line => line).Single(segment => segment.Text.Contains("dark | light", StringComparison.Ordinal)).Style.Foreground);
     }
 
+    // Command names are keys, and keys can be long, so the list uses the same key-line-plus-
+    // indented-description shape as options and environment variables rather than an aligned
+    // two-column table that a long name would push off the right edge.
     [Fact]
-    public void RenderNameDescriptionSection_UsesCompactKeyRowsAndWrapsDescriptions()
+    public void RenderNameDescriptionSection_UsesKeyLinesWithIndentedWrappedDescriptions()
     {
         using var themeScope = new ThemeScope(new HelpTestTheme());
         var sink = new TextSegmentLinesSink { SoftMaxWidth = 42 };
@@ -228,10 +231,21 @@ public sealed class TigerCliHelpRenderingTests
             .ToList();
 
         Assert.Equal("Commands:", lines[0]);
-        Assert.Contains(lines, line => line.StartsWith("  list ", StringComparison.Ordinal));
-        Assert.Contains(lines, line => line.StartsWith("  generate-code ", StringComparison.Ordinal));
+        Assert.Equal("  list", lines[1]);
+        Assert.StartsWith("      Lists items", lines[2], StringComparison.Ordinal);
+        Assert.Contains(lines, line => line == "  generate-code");
+        Assert.Contains(lines, line => line == "      Generates source code.");
+
+        // Every continuation line of the wrapped description keeps the description indent.
+        var descriptionLines = lines
+            .Skip(2)
+            .TakeWhile(line => line != "  generate-code")
+            .ToList();
+        Assert.True(descriptionLines.Count > 1, "The description should wrap onto continuation lines.");
+        Assert.All(descriptionLines, line => Assert.StartsWith("      ", line, StringComparison.Ordinal));
+        Assert.All(descriptionLines, line => Assert.NotEqual(' ', line[6]));
+
         Assert.DoesNotContain("", lines.Skip(1));
-        Assert.True(lines.Count > 3, "The description column should wrap independently of command rows.");
 
         var accentForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Accent).CharStyle?.Foreground;
         var keyForeground = TigerConsole.CurrentTheme.Resolve(ThemeStyle.Key).CharStyle?.Foreground;

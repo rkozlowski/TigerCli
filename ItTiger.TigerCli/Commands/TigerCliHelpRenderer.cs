@@ -7,23 +7,33 @@ namespace ItTiger.TigerCli.Commands;
 
 /// <summary>
 /// Structured help rendering: composes help output as a document of separate frameless
-/// <see cref="CliGrid"/> blocks rendered through the normal measure/render pipeline. This slice
-/// covers the title block (app/command title plus optional description) and heading-plus-lines
-/// sections (Usage, exit codes, and compact name/description lists); later sections migrate onto
-/// the same block shapes.
+/// <see cref="CliGrid"/> blocks rendered through the normal measure/render pipeline. Blocks are
+/// transparent document grids (<c>CliGrid.TransparentDocument</c>), so the layout engine owns
+/// wrapping and indentation while the block keeps a document's shape — no framework fallback ink
+/// and no painted trailing edge.
 /// </summary>
 /// <remarks>
+/// <para>
+/// The help shape is a key line followed by its description on the next lines, indented; keys
+/// (option signatures, environment-variable names, command names) can be long, so nothing is laid
+/// out as a same-row key/description table. Continuation lines produced by wrapping inherit the
+/// description indent because the indent is a structural grid column, not leading whitespace in the
+/// text (the measure pass trims leading/trailing whitespace from cell content).
+/// </para>
+/// <para>
 /// All inputs are trusted, already-composed markup strings (escaped by the caller where needed),
 /// resolved against the active theme exactly like <see cref="TigerConsole.MarkupLine(string)"/>
-/// output. Blocks render through the ambient output sink, so color/no-color policy and test capture
-/// scopes behave the same as line-based output. Grid alignment pads short lines to the block width;
-/// the trimming sink drops that trailing whitespace so the plain-text shape matches the legacy
-/// line-oriented help.
+/// output. Blocks render through the ambient output sink, so color/no-color policy, the sink's
+/// layout width, and test capture scopes behave the same as for line-based output.
+/// </para>
 /// </remarks>
 internal static class TigerCliHelpRenderer
 {
     // Two-space indent under a heading, matching the legacy help text layout.
     private const int IndentWidth = 2;
+
+    // Description lines sit four columns further in than the key line they belong to.
+    private const int DetailIndentWidth = 4;
 
     /// <summary>
     /// Renders the title block: the app/command title line plus an optional indented description.
@@ -39,18 +49,15 @@ internal static class TigerCliHelpRenderer
 
     /// <summary>
     /// Renders an exit-code section with a full-width heading and enum title followed by compact
-    /// code, name, and description columns.
+    /// code, name, and description columns. Exit codes are a genuine table — a numeric code, a
+    /// short name, and a description — so this section keeps its aligned columns.
     /// </summary>
     public static void RenderExitCodeSection(
         string sectionHeadingMarkup,
         string titleMarkup,
         IReadOnlyList<(int Value, string NameMarkup, string? DescriptionMarkup)> exitCodes)
     {
-        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
-        var grid = new CliGrid(3, exitCodes.Count + 2)
-        {
-            DefaultCellStyle = PreformattedStyle()
-        };
+        var grid = NewBlock(3, exitCodes.Count + 2);
 
         grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle
         {
@@ -80,26 +87,24 @@ internal static class TigerCliHelpRenderer
             grid.Set(2, row, exitCode.DescriptionMarkup ?? "");
         }
 
-        TigerConsole.RenderGrid(grid, sink);
+        Render(grid);
     }
 
     /// <summary>
-    /// Renders an argument, option, or prompted-value section. Each item has a two-space
-    /// signature indent and its details continue at six spaces through structural grid columns.
+    /// Renders an argument, option, prompted-value, command, or environment-variable section: each
+    /// item is a key line at a two-space indent whose description lines continue at six spaces.
     /// </summary>
     public static void RenderDetailSection(
         string sectionHeadingMarkup,
         IReadOnlyList<(string SignatureMarkup, IReadOnlyList<string> DetailMarkups)> items)
     {
-        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
         var rowCount = 1 + items.Sum(item => 1 + item.DetailMarkups.Count);
-        var grid = new CliGrid(3, rowCount)
-        {
-            DefaultCellStyle = PreformattedStyle()
-        };
+        var grid = NewBlock(3, rowCount);
 
+        // Indentation is structural: two fixed-width columns hold it so wrapped continuation lines
+        // start under the same column as the first description line.
         grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Width = IndentWidth, MinWidth = IndentWidth }));
-        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Width = 4, MinWidth = 4 }));
+        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Width = DetailIndentWidth, MinWidth = DetailIndentWidth }));
         grid.SetColumn(2, new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
 
         grid.Set(0, 0, sectionHeadingMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left }, colSpan: 3);
@@ -117,36 +122,27 @@ internal static class TigerCliHelpRenderer
             }
         }
 
-        TigerConsole.RenderGrid(grid, sink);
+        Render(grid);
     }
 
     /// <summary>
-    /// Renders a compact command or alias list with a two-space structural indent, an auto-sized
-    /// semantic name column, and a wrapping description column.
+    /// Renders a command or alias list. Names are keys like option signatures and can be long, so
+    /// the list uses the same key-line-plus-indented-description shape as
+    /// <see cref="RenderDetailSection"/> rather than an aligned two-column table.
     /// </summary>
     public static void RenderNameDescriptionSection(
         string sectionHeadingMarkup,
         IReadOnlyList<(string NameMarkup, string? DescriptionMarkup)> items)
     {
-        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
-        var grid = new CliGrid(3, items.Count + 1)
-        {
-            DefaultCellStyle = PreformattedStyle()
-        };
+        var detailItems = items
+            .Select(item => (
+                item.NameMarkup,
+                (IReadOnlyList<string>)(string.IsNullOrEmpty(item.DescriptionMarkup)
+                    ? []
+                    : [item.DescriptionMarkup])))
+            .ToArray();
 
-        grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Width = IndentWidth, MinWidth = IndentWidth }));
-        grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Padding = CliCellPadding.Right }));
-        grid.SetColumn(2, new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
-
-        grid.Set(0, 0, sectionHeadingMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left }, colSpan: 3);
-        for (int i = 0; i < items.Count; i++)
-        {
-            var item = items[i];
-            grid.Set(1, i + 1, item.NameMarkup);
-            grid.Set(2, i + 1, item.DescriptionMarkup ?? "");
-        }
-
-        TigerConsole.RenderGrid(grid, sink);
+        RenderDetailSection(sectionHeadingMarkup, detailItems);
     }
 
     /// <summary>Renders a concise indented note section.</summary>
@@ -156,9 +152,9 @@ internal static class TigerCliHelpRenderer
     /// <summary>Renders a single muted help hint without structural indentation.</summary>
     public static void RenderHint(string hintMarkup)
     {
-        var grid = new CliGrid(1, 1) { DefaultCellStyle = PreformattedStyle() };
+        var grid = NewBlock(1, 1);
         grid.Set(0, 0, hintMarkup, new CliCellStyle { HorizontalAlignment = CliTextAlignment.Left });
-        TigerConsole.RenderGrid(grid, new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink()));
+        Render(grid);
     }
 
     /// <summary>Renders an optional copyright line and compact metadata link rows.</summary>
@@ -167,7 +163,7 @@ internal static class TigerCliHelpRenderer
         IReadOnlyList<(string LabelMarkup, string ValueMarkup)> links)
     {
         var rowCount = links.Count + (copyrightMarkup is null ? 0 : 1);
-        var grid = new CliGrid(2, rowCount) { DefaultCellStyle = PreformattedStyle() };
+        var grid = NewBlock(2, rowCount);
         grid.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle { Padding = CliCellPadding.Right }));
         grid.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle { Padding = CliCellPadding.Left }) { Sizing = CliColumnSizing.Star });
 
@@ -185,125 +181,41 @@ internal static class TigerCliHelpRenderer
             row++;
         }
 
-        TigerConsole.RenderGrid(grid, new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink()));
+        Render(grid);
     }
 
     private static void RenderBlock(string headMarkup, IReadOnlyList<string> indentedLineMarkups)
     {
-        var sink = new TrailingWhitespaceTrimmingSink(TigerConsole.GetOutputSink());
-
         // The heading/title is its own single-cell grid so its width never couples to the body
         // lines (no colSpan wrapping surprises), and the body is a two-column grid whose first
         // column is a fixed structural indent — indentation must be structural because the measure
         // pass trims leading/trailing whitespace from cell content lines.
-        var head = new CliGrid(1, 1) { DefaultCellStyle = PreformattedStyle() };
+        var head = NewBlock(1, 1);
         head.Set(0, 0, headMarkup);
-        TigerConsole.RenderGrid(head, sink);
+        Render(head);
 
         if (indentedLineMarkups.Count == 0)
             return;
 
-        var body = new CliGrid(2, indentedLineMarkups.Count) { DefaultCellStyle = PreformattedStyle() };
+        var body = NewBlock(2, indentedLineMarkups.Count);
         body.SetColumn(0, new CliGridColumnDefinition(new CliCellStyle
         {
             Width = IndentWidth,
             MinWidth = IndentWidth
         }));
+        body.SetColumn(1, new CliGridColumnDefinition(new CliCellStyle()) { Sizing = CliColumnSizing.Star });
         for (int i = 0; i < indentedLineMarkups.Count; i++)
             body.Set(1, i, indentedLineMarkups[i]);
-        TigerConsole.RenderGrid(body, sink);
+        Render(body);
     }
 
-    private static CliCellStyle PreformattedStyle() => new()
+    // A help block: preformatted markup content, laid out as a transparent document rather than a
+    // painted box. Content wraps to whatever width the destination sink reports.
+    private static CliGrid NewBlock(int columnCount, int rowCount) => new(columnCount, rowCount)
     {
-        FormattingMode = CliFormattingMode.Preformatted
+        TransparentDocument = true,
+        DefaultCellStyle = new CliCellStyle { FormattingMode = CliFormattingMode.Preformatted }
     };
 
-    /// <summary>
-    /// Sink decorator that trims trailing whitespace from each rendered line. Grid alignment pads
-    /// every line of a left-aligned cell to the resolved column width; for frameless document-style
-    /// blocks that padding is pure trailing whitespace, and dropping it keeps the plain-text shape
-    /// identical to line-oriented output. Alignment/padding fill carries no decorations or
-    /// hyperlink targets (the measure pass strips them from fill), so nothing meaningful is lost.
-    /// </summary>
-    private sealed class TrailingWhitespaceTrimmingSink(ICliRenderSink inner) : ICliRenderSink
-    {
-        private readonly List<CliTextSegment> _line = [];
-
-        public int? SoftMaxWidth => inner.SoftMaxWidth;
-        public int? SoftMaxHeight => inner.SoftMaxHeight;
-        public int? MaxWidth => inner.MaxWidth;
-        public int? MaxHeight => inner.MaxHeight;
-
-        public void Write(CliTextSegment segment) => _line.Add(segment);
-
-        public void NewLine()
-        {
-            FlushLine();
-            inner.NewLine();
-        }
-
-        public void Flush()
-        {
-            FlushLine();
-            inner.Flush();
-        }
-
-        public void Reset()
-        {
-            _line.Clear();
-            inner.Reset();
-        }
-
-        public void SetWindowTitle(string title) => inner.SetWindowTitle(title);
-
-        private void FlushLine()
-        {
-            // Drop whitespace-only segments from the tail, then trim the end of the last kept one.
-            int end = _line.Count;
-            while (end > 0 && string.IsNullOrWhiteSpace(_line[end - 1].Text))
-                end--;
-
-            for (int i = 0; i < end; i++)
-            {
-                var segment = _line[i];
-                if (i == end - 1)
-                {
-                    var trimmed = segment.Text.TrimEnd();
-                    if (trimmed.Length != segment.Text.Length)
-                        segment = new CliTextSegment(trimmed, segment.Style);
-                }
-
-                inner.Write(NeutralizeDefaultColors(segment));
-            }
-
-            _line.Clear();
-        }
-
-        // The grid cascade always injects the framework-global fallback colours (CliGrid's
-        // default char style) as the base of every cell, but line-oriented help output never
-        // carried explicit colours for plain text. Strip exactly those fallback colours so plain
-        // help text keeps inheriting the terminal defaults, while deliberate semantic span
-        // colours (and decorations/hyperlinks) pass through untouched.
-        private static CliTextSegment NeutralizeDefaultColors(CliTextSegment segment)
-        {
-            var fallback = CliGrid.GlobalDefaultCharStyle;
-            var style = segment.Style;
-            bool changed = false;
-
-            if (style.Foreground == fallback.Foreground)
-            {
-                style.Foreground = null;
-                changed = true;
-            }
-
-            if (style.Background == fallback.Background)
-            {
-                style.Background = null;
-                changed = true;
-            }
-
-            return changed ? new CliTextSegment(segment.Text, style) : segment;
-        }
-    }
+    private static void Render(CliGrid grid) => TigerConsole.RenderGrid(grid, TigerConsole.GetOutputSink());
 }

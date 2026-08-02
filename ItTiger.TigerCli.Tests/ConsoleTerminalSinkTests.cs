@@ -29,12 +29,32 @@ public sealed class ConsoleTerminalSinkTests
         }
     }
 
+    // Stream-generic sinks are wrapped so they report the terminal's layout bounds; the wrapper
+    // does not change the colour encoding these tests are about.
+    private static ICliRenderSink Encoding(ICliRenderSink sink) => TerminalBoundsSink.Unwrap(sink);
+
     [Fact]
     public void Sink_ForcedAnsi256_IsAnsiSink_NotConsoleSink()
     {
         var sink = WithColorMode(CliColorMode.Ansi256, () => new ConsoleTerminal().Sink);
 
-        Assert.IsType<AnsiSink>(sink);
+        Assert.IsType<AnsiSink>(Encoding(sink));
+    }
+
+    // Every sink the factory hands out writes to a console stream, so every one of them must report
+    // that stream's width to the measure pass. When the ANSI and plain sinks reported "unbounded",
+    // structured output measured with no ceiling and long lines were left to the terminal's own
+    // auto-wrap, which breaks mid-word and drops the layout's indentation.
+    [Theory]
+    [InlineData(CliColorMode.Auto)]
+    [InlineData(CliColorMode.Ansi256)]
+    [InlineData(CliColorMode.Standard16)]
+    [InlineData(CliColorMode.Never)]
+    public void Sink_ReportsTerminalWidth_ForEveryColorMode(CliColorMode mode)
+    {
+        var sink = WithColorMode(mode, () => new ConsoleTerminal().Sink);
+
+        Assert.Equal(TerminalCapabilities.GetSafeOutputWidth(), sink.SoftMaxWidth);
     }
 
     [Fact]
@@ -50,7 +70,7 @@ public sealed class ConsoleTerminalSinkTests
     {
         var sink = WithColorMode(CliColorMode.Never, () => new ConsoleTerminal().Sink);
 
-        Assert.IsType<TextWriterSink>(sink);
+        Assert.IsType<TextWriterSink>(Encoding(sink));
     }
 
     // The interactive render loop measures against Terminal.Sink and then renders via
@@ -80,7 +100,7 @@ public sealed class ConsoleTerminalSinkTests
             Assert.IsType<ConsoleSink>(terminal.Sink);
 
             TigerConsole.ColorMode = CliColorMode.Ansi256;
-            Assert.IsType<AnsiSink>(terminal.Sink);
+            Assert.IsType<AnsiSink>(Encoding(terminal.Sink));
         }
         finally
         {
