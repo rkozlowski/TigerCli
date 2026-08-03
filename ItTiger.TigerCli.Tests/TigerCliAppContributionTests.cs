@@ -49,6 +49,12 @@ public sealed class TigerCliAppContributionTests
         public string Target { get; set; } = string.Empty;
     }
 
+    private sealed class ProviderBoundarySettings : TigerCliSettings
+    {
+        [TigerCliOption("--choice", Provider = "choices")]
+        public string? Choice { get; set; }
+    }
+
     private sealed class NoopCommand : TigerCliAsyncCommandHandler<EmptySettings>
     {
         public override Task<int> ExecuteAsync(EmptySettings settings) => Task.FromResult(0);
@@ -71,6 +77,22 @@ public sealed class TigerCliAppContributionTests
         public override Task<int> ExecuteAsync(PositionalSettings settings)
         {
             execute(settings);
+            return Task.FromResult(0);
+        }
+    }
+
+    private sealed class ProviderBoundaryCommand : TigerCliAsyncCommandHandler<ProviderBoundarySettings>
+    {
+        private readonly Action execute;
+
+        public ProviderBoundaryCommand(Action execute)
+        {
+            this.execute = execute;
+        }
+
+        public override Task<int> ExecuteAsync(ProviderBoundarySettings settings)
+        {
+            execute();
             return Task.FromResult(0);
         }
     }
@@ -356,6 +378,78 @@ public sealed class TigerCliAppContributionTests
         Assert.Equal(0, result.ExitCode);
         Assert.Contains($"{OptionName} <path>", result.Stdout);
         Assert.Contains("Use a reusable library configuration file.", result.Stdout);
+    }
+
+    [Fact]
+    public async Task InformationalHelp_WithContributedGlobalValue_DoesNotRunExecutionCallbacks()
+    {
+        var applyCount = 0;
+        var providerCount = 0;
+        var handlerCount = 0;
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .AddContribution(new Contribution(builder => AddOption(
+                builder,
+                (_, _) =>
+                {
+                    applyCount++;
+                    return TigerCliValidationResult.Success();
+                })))
+            .ConfigureProviders(providers => providers.Add(
+                "choices",
+                _ =>
+                {
+                    providerCount++;
+                    return (IReadOnlyList<string>)["one"];
+                }))
+            .AddCommand("run", () => new ProviderBoundaryCommand(() => handlerCount++))
+            .Build();
+
+        var result = await RunCapturedAsync(
+            app,
+            ["run", OptionName, "store.json", "--help"]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains($"{OptionName} <path>", result.Stdout);
+        Assert.DoesNotContain("store.json", result.Stdout);
+        Assert.Equal(0, applyCount);
+        Assert.Equal(0, providerCount);
+        Assert.Equal(0, handlerCount);
+    }
+
+    [Fact]
+    public async Task NormalExecution_ProviderValidationSeesContributionAppliedState()
+    {
+        string? contributionValue = null;
+        string? providerObservedValue = null;
+        var handlerCount = 0;
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .AddContribution(new Contribution(builder => AddOption(
+                builder,
+                (_, value) =>
+                {
+                    contributionValue = value;
+                    return TigerCliValidationResult.Success();
+                })))
+            .ConfigureProviders(providers => providers.Add(
+                "choices",
+                _ =>
+                {
+                    providerObservedValue = contributionValue;
+                    return (IReadOnlyList<string>)["one"];
+                }))
+            .AddCommand("run", () => new ProviderBoundaryCommand(() => handlerCount++))
+            .Build();
+
+        var result = await RunCapturedAsync(
+            app,
+            ["run", OptionName, "store.json", "--choice", "one", "--non-interactive"]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("store.json", contributionValue);
+        Assert.Equal("store.json", providerObservedValue);
+        Assert.Equal(1, handlerCount);
     }
 
     [Fact]

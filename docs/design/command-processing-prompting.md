@@ -20,6 +20,10 @@ The goal is to reduce interruption when command intent is already clear but requ
 
 TigerCli intentionally favors parser-driven prompts and provider-backed choices over command-line completion as its primary guided-interaction model. Completion helps type tokens, but prompts can use command metadata, current settings, provider data, culture, and interaction mode to guide actual decisions.
 
+TigerCli does not currently implement a shell-completion protocol, completion-script generator, or
+completion-specific provider path. “Completion” above describes the general shell feature category,
+not an additional TigerCli execution mode.
+
 ## Policy Inputs
 
 Prompting depends on four separate concerns:

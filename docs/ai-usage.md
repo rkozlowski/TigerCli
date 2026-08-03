@@ -90,6 +90,10 @@ builder.AddCommandGroup("connections", group => group
   option names and `valueName` placeholders remain literal.
 - Do not use static value stores, inspect raw arguments in handlers, or model ordinary command
   inputs as global contributions.
+- TigerCli currently has no shell-completion entry point or completion-provider adapter. Normal command
+  providers run after contributed global-option callbacks and may observe contribution-owned state;
+  help invokes neither callbacks, providers, nor handlers. Keep provider I/O cancellable and
+  preferably idempotent, and do not assume this ordering for a future completion feature.
 
 See [App contributions and global options](guides/app-contributions.md) for the ownership boundary,
 lifecycle, constraints, and host composition example.

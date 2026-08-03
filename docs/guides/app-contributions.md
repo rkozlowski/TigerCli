@@ -175,6 +175,34 @@ never enter the prompt model, so interactive and `--non-interactive` runs resolv
 Supplying a contributed global option without a value is an argument error. Supplying the same
 option more than once is also an error; TigerCli does not choose a last value.
 
+## Shell Completion Boundary
+
+TigerCli does not currently implement a shell-completion entry point, completion-script generator,
+or completion-specific provider adapter. Consequently, TigerCli has no shell-completion request that
+can invoke contributed global-option callbacks, command handlers, selector providers, option
+providers, or edit providers. It also does not parse or expose contributed global-option values to
+a shell-completion process.
+
+Help is an informational path, not shell completion. A command-help request may contain a valid
+contributed global option and value; TigerCli extracts them while recognizing the request, then
+returns after rendering help without invoking the contribution callback, providers, or handler.
+The supplied value is not rendered or otherwise exposed by help.
+
+During normal command execution, the ordering remains contribution callbacks first, then settings
+binding and provider-backed prompting or validation, then the handler. Selector, option, and edit
+providers can therefore observe contribution-owned state through services or objects captured by
+their callbacks. Providers receive partially bound settings where their overload supports it, the
+resolved culture and already-available values through `TigerCliProviderContext`, and a cooperative
+cancellation token. Command resolution and framework culture, theme, and interaction-mode parsing
+have already happened; providers do not receive a special shell-completion context.
+
+Provider callbacks are application code and may perform I/O or other side effects whenever normal
+prompting or provider validation needs them, including non-interactive validation of a supplied
+provider-backed value. Keep discovery-style provider work cancellable and preferably idempotent.
+Do not assume that a future TigerCli shell-completion design would apply contributions before
+calling providers; that contract does not exist today. Any shell completion implemented directly
+by an application is outside TigerCli and should keep its discovery path read-only where practical.
+
 ## Global Option Constraints
 
 The contribution surface is intentionally narrow:
