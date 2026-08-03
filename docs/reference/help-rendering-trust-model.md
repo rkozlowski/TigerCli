@@ -28,9 +28,10 @@ theme styles are never reachable from markup.
 | Application description | `Description` passed to `AddDescription(...)` on `TigerCliAppBuilder` |
 | Attribute descriptions | `TigerCliOptionAttribute.Description`, `TigerCliArgumentAttribute.Description` |
 | Command descriptions | `Description` passed to `AddCommand(...)` via `TigerCliCommandRegistration` |
+| Contributed global-option descriptions | Fallback or resource-resolved descriptions registered through `TigerCliGlobalOptionBuilder.AddOptionalString(...)`. Option names and `valueName` placeholders are escaped; descriptions are trusted library metadata. |
 | Framework markers | `[Muted](default)[/]` for default command indicator (the literal `(default)` text is the resource value and is escaped) |
 | Application links | Help footer URLs from `AddLink(...)`, `AddWebsite(...)`, `AddRepository(...)`, and `AddDocumentation(...)` are wrapped in TigerCli `[Link]…[/]` markup; visible URL text is escaped before insertion. |
-| Environment-variable descriptions | Descriptions registered through `AddEnvironmentVariable(...)` on app, group, command, and contribution builders. Names are escaped; descriptions are trusted app/library metadata. Registration is help-only and does not read the environment. |
+| Environment-variable descriptions | Fallback or resource-resolved descriptions registered through `AddEnvironmentVariable(...)` on app, group, command, and contribution builders. Names are escaped; descriptions are trusted app/library metadata. Registration is help-only and does not read the environment. |
 
 The help renderer receives already-composed trusted markup strings and resolves them against the
 active theme during `CliGrid` measurement. The trusted surface is unchanged by the migration to

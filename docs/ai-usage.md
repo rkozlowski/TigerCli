@@ -85,6 +85,9 @@ builder.AddCommandGroup("connections", group => group
   options. Their app-wide meaning does not change command selection or TigerCli's command-line shape.
 - Apply the parsed `string?` to library-owned options or services in the callback. Return
   `TigerCliValidationResult.Error(...)` for library-owned validation failures.
+- Localize a contributed global-option description with the optional `descriptionResourceKey`.
+  TigerCli resolves it through the host's `UseAppResources(...)` manager at help-render time;
+  option names and `valueName` placeholders remain literal.
 - Do not use static value stores, inspect raw arguments in handlers, or model ordinary command
   inputs as global contributions.
 
@@ -176,8 +179,9 @@ app <command-path> <positional-arguments> [options]
 - `--help`, `--help-errors`, and `--help-env` are composable. Normal help hints only at sections not
   included in the current request; command forms still follow normal option placement.
 - Register help-only environment metadata with `AddEnvironmentVariable(name, description)` on the
-  app, group, command, or contribution builder. Registration does not make TigerCli read or apply
-  the variable.
+  app, group, command, or contribution builder. Contributions may supply an optional
+  `descriptionResourceKey`, resolved through the host's app resources at help-render time.
+  Registration does not make TigerCli read or apply the variable.
 - Labels are display-only. Keys and command-line values should remain stable and language-neutral.
 - A selector is the input that carries the object key. The command (`add`, `show`, `edit`, or
   `delete`) decides the operation; the selector identifies the keyed object.

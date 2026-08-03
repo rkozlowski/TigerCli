@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Resources;
 using ItTiger.TigerCli.Commands;
 using ItTiger.TigerCli.Testing;
 
@@ -7,6 +9,29 @@ public sealed class TigerCliEnvironmentHelpTests
 {
     private const string ExitHint = "For a list of exit codes, use --help-errors.";
     private const string EnvironmentHint = "For recognized environment variables, use --help-env.";
+
+    private sealed class TrackingResources : ResourceManager
+    {
+        private readonly Dictionary<string, Dictionary<string, string>> resources;
+
+        public TrackingResources(Dictionary<string, Dictionary<string, string>> resources)
+            : base("TrackingResources", typeof(TrackingResources).Assembly)
+        {
+            this.resources = resources;
+        }
+
+        public List<(string Name, string Culture)> Lookups { get; } = new();
+
+        public override string? GetString(string name, CultureInfo? culture)
+        {
+            culture ??= CultureInfo.InvariantCulture;
+            Lookups.Add((name, culture.Name));
+            return resources.TryGetValue(culture.Name, out var cultureResources)
+                && cultureResources.TryGetValue(name, out var value)
+                    ? value
+                    : null;
+        }
+    }
 
     private sealed class EmptySettings : TigerCliSettings
     {
@@ -256,6 +281,53 @@ public sealed class TigerCliEnvironmentHelpTests
         Assert.Contains("LIBRARY_CACHE", root.StdOut);
         Assert.Contains("Selects the reusable library cache directory.", root.StdOut);
         Assert.Contains("LIBRARY_CACHE", command.StdOut);
+    }
+
+    [Fact]
+    public async Task ContributionEnvironmentVariable_DescriptionResolvesLateForActiveCulture()
+    {
+        var resources = new TrackingResources(new()
+        {
+            ["pl-PL"] = new()
+            {
+                ["Environment_LibraryCache_Description"] =
+                    "[green]Wybiera katalog pamięci podręcznej biblioteki.[/]"
+            }
+        });
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("env-test")
+            .SetSupportedCultures("en-US", "pl-PL")
+            .UseAppResources(resources)
+            .AddContribution(new Contribution(builder =>
+                builder.AddEnvironmentVariable(
+                    "LIBRARY_CACHE",
+                    "Selects the reusable library cache directory.",
+                    descriptionResourceKey: "Environment_LibraryCache_Description")))
+            .AddCommand("run", () => new TrackingCommand(() => Assert.Fail("Command must not execute.")))
+            .Build();
+
+        Assert.Empty(resources.Lookups);
+
+        var result = await RunAsync(app, "run", "--culture", "pl-PL", "--help-env");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("LIBRARY_CACHE", result.StdOut);
+        Assert.Contains("Wybiera katalog pamięci podręcznej biblioteki.", result.StdOut);
+        Assert.DoesNotContain("[green]", result.StdOut);
+        Assert.DoesNotContain("Selects the reusable library cache directory.", result.StdOut);
+        Assert.Equal([("Environment_LibraryCache_Description", "pl-PL")], resources.Lookups);
+    }
+
+    private sealed class Contribution : ITigerCliAppContribution
+    {
+        private readonly Action<TigerCliAppContributionBuilder> configure;
+
+        public Contribution(Action<TigerCliAppContributionBuilder> configure)
+        {
+            this.configure = configure;
+        }
+
+        public void Configure(TigerCliAppContributionBuilder builder) => configure(builder);
     }
 
     [Fact]

@@ -31,8 +31,40 @@ public sealed class TigerCliAppContributionBuilder
     /// </exception>
     public TigerCliAppContributionBuilder AddEnvironmentVariable(string name, string description)
     {
+        return AddEnvironmentVariable(name, description, descriptionResourceKey: null);
+    }
+
+    /// <summary>
+    /// Adds app-wide help metadata with a localizable description for an environment variable
+    /// recognized by the contribution. TigerCli displays the name and description in
+    /// <c>--help-env</c>; it does not read, parse, or apply the variable.
+    /// </summary>
+    /// <param name="name">The literal environment variable name.</param>
+    /// <param name="description">Fallback help description used when the resource key is absent or
+    /// does not resolve. TigerCli markup is supported.</param>
+    /// <param name="descriptionResourceKey">Optional resource key resolved through the app
+    /// <see cref="System.Resources.ResourceManager"/> registered via
+    /// <c>TigerCliAppBuilder.UseAppResources(...)</c> against the active run culture. Missing or
+    /// empty resource values silently fall back to <paramref name="description"/>.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="name"/> or <paramref name="description"/> is null, empty, or whitespace, or
+    /// <paramref name="name"/> contains whitespace.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="name"/> duplicates another contributed environment variable.
+    /// </exception>
+    public TigerCliAppContributionBuilder AddEnvironmentVariable(
+        string name,
+        string description,
+        string? descriptionResourceKey = null)
+    {
         TigerCliEnvironmentVariableRegistrations.Add(
-            environmentVariables, name, description, "app-contribution scope");
+            environmentVariables,
+            name,
+            description,
+            "app-contribution scope",
+            descriptionResourceKey);
         return this;
     }
 

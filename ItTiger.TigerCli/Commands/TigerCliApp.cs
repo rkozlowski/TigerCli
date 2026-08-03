@@ -5233,22 +5233,19 @@ public sealed class TigerCliApp
             TigerCliHelpRenderer.RenderBlankLine();
 
         var items = BuildFrameworkEnvironmentVariableHelpItems(culture);
-        items.AddRange(_environmentVariables.Select(variable => (
-            $"[Key]{Esc(variable.Name)}[/]",
-            (IReadOnlyList<string>)[variable.Description])));
+        items.AddRange(_environmentVariables.Select(variable =>
+            BuildAppEnvironmentVariableHelpItem(variable, culture)));
 
         var scopedVariables = group?.EnvironmentVariables
             ?? command?.GroupEnvironmentVariables
             ?? [];
-        items.AddRange(scopedVariables.Select(variable => (
-            $"[Key]{Esc(variable.Name)}[/]",
-            (IReadOnlyList<string>)[variable.Description])));
+        items.AddRange(scopedVariables.Select(variable =>
+            BuildAppEnvironmentVariableHelpItem(variable, culture)));
 
         if (command != null)
         {
-            items.AddRange(command.EnvironmentVariables.Select(variable => (
-                $"[Key]{Esc(variable.Name)}[/]",
-                (IReadOnlyList<string>)[variable.Description])));
+            items.AddRange(command.EnvironmentVariables.Select(variable =>
+                BuildAppEnvironmentVariableHelpItem(variable, culture)));
         }
 
         TigerCliHelpRenderer.RenderDetailSection(
@@ -5268,6 +5265,19 @@ public sealed class TigerCliApp
             EnvironmentVariableHelpItem("CLICOLOR", "Help_Env_CliColor_Desc", culture),
             EnvironmentVariableHelpItem("TERM", "Help_Env_Term_Desc", culture)
         ];
+    }
+
+    private (string SignatureMarkup, IReadOnlyList<string> DetailMarkups)
+        BuildAppEnvironmentVariableHelpItem(
+            TigerCliEnvironmentVariableRegistration variable,
+            CultureInfo culture)
+    {
+        var description = TigerCliAppText.Resolve(
+            variable.Description,
+            variable.DescriptionResourceKey,
+            culture,
+            _appResources) ?? variable.Description;
+        return ($"[Key]{Esc(variable.Name)}[/]", [description]);
     }
 
     private static (string SignatureMarkup, IReadOnlyList<string> DetailMarkups)
@@ -5512,9 +5522,14 @@ public sealed class TigerCliApp
 
         foreach (var option in _globalOptions)
         {
+            var description = TigerCliAppText.Resolve(
+                option.Description,
+                option.DescriptionResourceKey,
+                culture,
+                _appResources) ?? option.Description;
             optionItems.Add((
                 $"[Key]{Esc(option.Name)}[/] [Value]<{Esc(option.ValueName)}>[/]",
-                [option.Description]));
+                [description]));
         }
     }
 

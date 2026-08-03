@@ -167,6 +167,8 @@ Resource-backed metadata includes:
 - command descriptions from `AddCommand(...)`
 - option descriptions from `TigerCliOptionAttribute.DescriptionResourceKey`
 - argument descriptions from `TigerCliArgumentAttribute.DescriptionResourceKey`
+- contributed global-option descriptions from `AddOptionalString(...)`
+- contributed environment-variable descriptions from `AddEnvironmentVariable(...)`
 
 ```csharp
 return TigerCliApp.CreateBuilder()
@@ -195,6 +197,14 @@ Resolution is intentionally forgiving:
 1. If the key resolves to a non-empty value for the active culture, TigerCli uses it.
 2. If resources are not configured, the key is missing, or the value is empty, TigerCli uses the fallback string.
 3. Raw resource keys are never shown to users.
+
+Contributions register the same fallback-text plus optional-resource-key metadata during
+`Configure(...)`. TigerCli resolves it only when root help, command help, or `--help-env` is
+rendered, after resolving the effective culture. The host remains responsible for supplying one
+app resource manager through `UseAppResources(...)`; use
+`ItTiger.Core.Resources.ChainedResourceManager` before registration when resources from multiple
+libraries must be composed. Contributed option names, environment-variable names, and explicit
+`valueName` placeholders remain literal.
 
 App-owned help metadata follows the same markup trust model as the fallback text. For details on trusted markup and escaping, see the [help rendering trust model](../reference/help-rendering-trust-model.md).
 

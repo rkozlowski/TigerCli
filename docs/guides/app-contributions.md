@@ -31,13 +31,20 @@ public void Configure(TigerCliAppContributionBuilder builder)
 {
     builder.AddEnvironmentVariable(
         "ACME_CONFIG",
-        "Selects the Acme configuration file used by the library.");
+        "Selects the Acme configuration file used by the library.",
+        descriptionResourceKey: "Acme_Environment_Config_Description");
 }
 ```
 
 This registration is documentation only. It does not call `Environment.GetEnvironmentVariable`,
 define precedence, mutate contribution state, add an option, or participate in prompting. The
 library remains responsible for reading and interpreting `ACME_CONFIG` in its own code.
+
+The description is resolved through the app resource manager registered by the host with
+`UseAppResources(...)`. TigerCli stores the fallback text and optional resource key during
+`Configure(...)`; it does not perform a resource lookup until `--help-env` is rendered for the
+effective run culture. Missing or empty resource values fall back to the supplied description.
+The environment-variable name remains literal.
 
 The host app can register its own app-wide metadata with
 `TigerCliAppBuilder.AddEnvironmentVariable(name, description)`. Command groups and commands use the
@@ -78,7 +85,8 @@ public sealed class AcmeCliContribution : ITigerCliAppContribution
 
                 Options.ConfigurationFile = value;
                 return TigerCliValidationResult.Success();
-            });
+            },
+            descriptionResourceKey: "Acme_Option_Config_Description");
     }
 }
 ```
@@ -87,6 +95,11 @@ The callback receives `null` when the option is absent. It also receives a
 `TigerCliGlobalOptionContext` containing the resolved culture and interaction mode. Return
 `TigerCliValidationResult.Error(...)` to stop the run cleanly before command settings are bound or
 the handler is created.
+
+As with other app-owned help metadata, the optional `descriptionResourceKey` is resolved through
+the host's `UseAppResources(...)` manager after TigerCli resolves the run culture. The fallback
+description is retained when the key is missing or empty. The option name and `valueName` are
+command-line metadata and remain literal.
 
 ## Opt In from a Host App
 
@@ -98,10 +111,15 @@ var acme = new AcmeCliContribution();
 
 return TigerCliApp.CreateBuilder()
     .UseAssemblyMetadata(typeof(MyApp).Assembly)
+    .UseAppResources(AppStrings.ResourceManager)
     .AddContribution(acme)
     .AddCommand("run", () => new RunCommand(acme.Options), "Runs the operation.")
     .Build();
 ```
+
+TigerCli accepts one app resource manager. When the host and reusable libraries have separate
+resource managers, compose them first with `ItTiger.Core.Resources.ChainedResourceManager`, then
+pass the composed manager to `UseAppResources(...)`.
 
 The option is app-wide in meaning, but syntactically it is still an option. It follows TigerCli's
 normal command-line shape:

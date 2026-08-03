@@ -56,6 +56,44 @@ public sealed class TigerCliGlobalOptionBuilder
         string description,
         Func<TigerCliGlobalOptionContext, string?, TigerCliValidationResult> apply)
     {
+        return AddOptionalString(name, valueName, description, apply, descriptionResourceKey: null);
+    }
+
+    /// <summary>
+    /// Adds an optional, CLI-only string global option with a localizable help description. The
+    /// option follows TigerCli's command-line grammar, appears in root and command help, is never
+    /// prompted, and invokes <paramref name="apply"/> once per command run with <c>null</c> when
+    /// absent. Return a validation error to stop the run before command binding and execution.
+    /// </summary>
+    /// <param name="name">The canonical long name, beginning with <c>--</c>.</param>
+    /// <param name="valueName">The literal value placeholder displayed in help, such as
+    /// <c>path</c>.</param>
+    /// <param name="description">Fallback help description used when the resource key is absent or
+    /// does not resolve. TigerCli markup is supported.</param>
+    /// <param name="apply">
+    /// Applies the parsed value to contribution-owned state and optionally validates it. The value is
+    /// <c>null</c> when the option was not supplied.
+    /// </param>
+    /// <param name="descriptionResourceKey">Optional resource key resolved through the app
+    /// <see cref="System.Resources.ResourceManager"/> registered via
+    /// <c>TigerCliAppBuilder.UseAppResources(...)</c> against the active run culture. Missing or
+    /// empty resource values silently fall back to <paramref name="description"/>.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="valueName"/> or <paramref name="description"/> is null, empty, or whitespace.
+    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="apply"/> is <c>null</c>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// <paramref name="name"/> is not a canonical long name, contains whitespace, is reserved by
+    /// TigerCli, or duplicates another contributed global option.
+    /// </exception>
+    public TigerCliGlobalOptionBuilder AddOptionalString(
+        string name,
+        string valueName,
+        string description,
+        Func<TigerCliGlobalOptionContext, string?, TigerCliValidationResult> apply,
+        string? descriptionResourceKey = null)
+    {
         ValidateName(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(valueName);
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
@@ -69,7 +107,8 @@ public sealed class TigerCliGlobalOptionBuilder
             name,
             valueName,
             description,
-            apply));
+            apply,
+            descriptionResourceKey));
         return this;
     }
 
@@ -99,4 +138,5 @@ internal sealed record TigerCliGlobalOptionRegistration(
     string Name,
     string ValueName,
     string Description,
-    Func<TigerCliGlobalOptionContext, string?, TigerCliValidationResult> Apply);
+    Func<TigerCliGlobalOptionContext, string?, TigerCliValidationResult> Apply,
+    string? DescriptionResourceKey);

@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Resources;
 using ItTiger.TigerCli.Commands;
 using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Tui.Testing;
@@ -7,6 +9,29 @@ namespace ItTiger.TigerCli.Tests;
 public sealed class TigerCliAppContributionTests
 {
     private const string OptionName = "--library-config";
+
+    private sealed class TrackingResources : ResourceManager
+    {
+        private readonly Dictionary<string, Dictionary<string, string>> resources;
+
+        public TrackingResources(Dictionary<string, Dictionary<string, string>> resources)
+            : base("TrackingResources", typeof(TrackingResources).Assembly)
+        {
+            this.resources = resources;
+        }
+
+        public List<(string Name, string Culture)> Lookups { get; } = new();
+
+        public override string? GetString(string name, CultureInfo? culture)
+        {
+            culture ??= CultureInfo.InvariantCulture;
+            Lookups.Add((name, culture.Name));
+            return resources.TryGetValue(culture.Name, out var cultureResources)
+                && cultureResources.TryGetValue(name, out var value)
+                    ? value
+                    : null;
+        }
+    }
 
     private sealed class EmptySettings : TigerCliSettings
     {
@@ -331,6 +356,77 @@ public sealed class TigerCliAppContributionTests
         Assert.Equal(0, result.ExitCode);
         Assert.Contains($"{OptionName} <path>", result.Stdout);
         Assert.Contains("Use a reusable library configuration file.", result.Stdout);
+    }
+
+    [Fact]
+    public async Task ContributedOptionDescription_ResolvesLateForRootAndCommandHelp()
+    {
+        var resources = new TrackingResources(new()
+        {
+            ["en-US"] = new() { ["GlobalOption_Description"] = "[green]Localized default description.[/]" },
+            ["pl-PL"] = new() { ["GlobalOption_Description"] = "Zlokalizowany opis opcji." }
+        });
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .SetSupportedCultures("en-US", "pl-PL")
+            .UseAppResources(resources)
+            .AddContribution(new Contribution(builder =>
+                builder.GlobalOptions.AddOptionalString(
+                    OptionName,
+                    "path",
+                    "Fallback global option description.",
+                    (_, _) => TigerCliValidationResult.Success(),
+                    descriptionResourceKey: "GlobalOption_Description")))
+            .AddCommand<NoopCommand>("run")
+            .Build();
+
+        Assert.Empty(resources.Lookups);
+
+        var root = await RunCapturedAsync(app, ["--help"]);
+
+        Assert.Equal(0, root.ExitCode);
+        Assert.Contains("Localized default description.", root.Stdout);
+        Assert.DoesNotContain("[green]", root.Stdout);
+        Assert.DoesNotContain("Fallback global option description.", root.Stdout);
+        Assert.Contains(("GlobalOption_Description", "en-US"), resources.Lookups);
+
+        resources.Lookups.Clear();
+        var command = await RunCapturedAsync(app, ["run", "--culture", "pl-PL", "--help"]);
+
+        Assert.Equal(0, command.ExitCode);
+        Assert.Contains("Zlokalizowany opis opcji.", command.Stdout);
+        Assert.Contains($"{OptionName} <path>", command.Stdout);
+        Assert.DoesNotContain("Fallback global option description.", command.Stdout);
+        Assert.Equal([("GlobalOption_Description", "pl-PL")], resources.Lookups);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task ContributedOptionDescription_MissingOrEmptyResourceFallsBack(string? resourceValue)
+    {
+        var cultureResources = new Dictionary<string, string>();
+        if (resourceValue != null)
+            cultureResources["GlobalOption_Description"] = resourceValue;
+        var resources = new TrackingResources(new() { ["en-US"] = cultureResources });
+        var app = TigerCliApp.CreateBuilder()
+            .SetApplicationName("test-app")
+            .UseAppResources(resources)
+            .AddContribution(new Contribution(builder =>
+                builder.GlobalOptions.AddOptionalString(
+                    OptionName,
+                    "path",
+                    "Fallback global option description.",
+                    (_, _) => TigerCliValidationResult.Success(),
+                    descriptionResourceKey: "GlobalOption_Description")))
+            .AddCommand<NoopCommand>("run")
+            .Build();
+
+        var result = await RunCapturedAsync(app, ["--help"]);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Fallback global option description.", result.Stdout);
+        Assert.DoesNotContain("GlobalOption_Description", result.Stdout);
     }
 
     [Fact]

@@ -2,7 +2,8 @@ namespace ItTiger.TigerCli.Commands;
 
 internal sealed record TigerCliEnvironmentVariableRegistration(
     string Name,
-    string Description);
+    string Description,
+    string? DescriptionResourceKey = null);
 
 internal static class TigerCliEnvironmentVariableRegistrations
 {
@@ -18,7 +19,8 @@ internal static class TigerCliEnvironmentVariableRegistrations
 
     internal static TigerCliEnvironmentVariableRegistration Create(
         string name,
-        string description)
+        string description,
+        string? descriptionResourceKey = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
@@ -28,16 +30,17 @@ internal static class TigerCliEnvironmentVariableRegistrations
                 $"Environment variable name '{name}' must not contain whitespace.",
                 nameof(name));
 
-        return new TigerCliEnvironmentVariableRegistration(name, description);
+        return new TigerCliEnvironmentVariableRegistration(name, description, descriptionResourceKey);
     }
 
     internal static void Add(
         List<TigerCliEnvironmentVariableRegistration> registrations,
         string name,
         string description,
-        string scope)
+        string scope,
+        string? descriptionResourceKey = null)
     {
-        var registration = Create(name, description);
+        var registration = Create(name, description, descriptionResourceKey);
         if (registrations.Any(existing =>
             string.Equals(existing.Name, registration.Name, StringComparison.OrdinalIgnoreCase)))
         {
