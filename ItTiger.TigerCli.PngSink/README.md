@@ -11,7 +11,7 @@ the console and HTML sinks.
 ## Installation
 
 ```bash
-dotnet add package ItTiger.TigerCli.PngSink --version 0.9.1
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.2
 ```
 
 `ItTiger.TigerCli` is installed transitively.

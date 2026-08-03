@@ -5,7 +5,7 @@ images. It is separate from `ItTiger.TigerCli`; SkiaSharp and its native assets 
 the PNG sink package.
 
 ```bash
-dotnet add package ItTiger.TigerCli.PngSink --version 0.9.1
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.2
 ```
 
 `PngSink` implements `ICliRenderSink`, so it consumes the same resolved `CliTextSegment` stream as

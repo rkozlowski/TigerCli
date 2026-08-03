@@ -8,7 +8,7 @@ namespace ItTiger.TigerCli.Commands;
 public interface ITigerCliAppContribution
 {
     /// <summary>
-    /// Adds this contribution's configuration to the host app. TigerCli 0.9.1 supports contributed
+    /// Adds this contribution's configuration to the host app. TigerCli 0.9.2 supports contributed
     /// optional string global options through <see cref="TigerCliAppContributionBuilder.GlobalOptions"/>.
     /// </summary>
     /// <param name="builder">The contribution-scoped app configuration builder.</param>

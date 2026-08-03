@@ -30,7 +30,7 @@ terminal-bounded by default, so help and other structured output wrap during lay
 TigerCli currently targets .NET 10.
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.9.1
+dotnet add package ItTiger.TigerCli --version 0.9.2
 ```
 
 ## Minimal app

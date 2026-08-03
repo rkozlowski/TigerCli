@@ -132,7 +132,7 @@ public sealed class ExtendedAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)RoiCitiesExitCode.Ok, result.ExitCode);
-        Assert.Contains("ROI Cities version 0.9.1", result.StdOut);
+        Assert.Contains("ROI Cities version 0.9.2", result.StdOut);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public sealed class ExtendedAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)RoiCitiesExitCode.Ok, result.ExitCode);
-        Assert.Contains("ROI Cities product version 0.9.1+", result.StdOut);
+        Assert.Contains("ROI Cities product version 0.9.2+", result.StdOut);
         Assert.Empty(result.StdErr);
     }
 
