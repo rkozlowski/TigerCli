@@ -112,7 +112,11 @@ public sealed class TigerCliAppStderrMarkupTests
 
         var result = await RunCapturedAsync(app, ["--name", "n", "--unknown"]);
 
-        Assert.Equal("Error: Unknown option: '--unknown'" + Environment.NewLine, result.Stderr);
+        Assert.Equal(
+            "Error: Unknown option: '--unknown'" + Environment.NewLine
+            + "For more info, run:" + Environment.NewLine
+            + "    stderr-test --help" + Environment.NewLine,
+            result.Stderr);
     }
 
     [Fact]

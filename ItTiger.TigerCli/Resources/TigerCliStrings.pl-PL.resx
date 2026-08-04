@@ -103,6 +103,7 @@
   <data name="AppLink_Documentation" xml:space="preserve"><value>Dokumentacja</value></data>
 
   <data name="Error_Prefix" xml:space="preserve"><value>Błąd:</value></data>
+  <data name="Error_HelpHint" xml:space="preserve"><value>Aby uzyskać więcej informacji, uruchom:</value></data>
   <data name="Error_UnknownOption" xml:space="preserve"><value>Nieznana opcja: '{0}'</value></data>
   <data name="Error_UnexpectedArgument" xml:space="preserve"><value>Nieoczekiwany argument: '{0}'</value></data>
   <data name="Error_UnexpectedPositional" xml:space="preserve"><value>Nieoczekiwany argument pozycyjny po opcjach: {0}</value></data>

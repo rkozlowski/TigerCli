@@ -53,6 +53,7 @@ public sealed class TigerCliProviderFailureTests
         // A deliberate provider failure must not read like "nothing to choose from".
         Assert.DoesNotContain("No prompt choices available", result.Stderr);
         Assert.DoesNotContain("is not an available choice", result.Stderr);
+        Assert.DoesNotContain("For more info, run:", result.Stderr);
     }
 
     [Fact]

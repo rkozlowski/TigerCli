@@ -345,6 +345,7 @@ public sealed class TigerCliApp
         TigerCliCommandRegistration? effectiveCommand = null;
         TigerCliCommandAliasRegistration? matchedAlias = null;
         TigerCliCommandGroupRegistration? group = null;
+        IReadOnlyList<string> helpContextPath = Array.Empty<string>();
         var remainingArgs = args;
         var positionalAreaLength = 0;
         var frameworkOptionParse = new FrameworkOptionParseResult { RemainingArgs = args };
@@ -360,6 +361,9 @@ public sealed class TigerCliApp
             group = matchedNamedCommand ? null : ResolveGroup(args);
             effectiveCommand = group == null ? command ?? _defaultCommand : null;
             remainingArgs = group != null ? args[group.PathTokens.Length..] : commandArgs;
+            helpContextPath = group?.PathTokens
+                ?? matchedAlias?.PathTokens
+                ?? (matchedNamedCommand ? command!.PathTokens : Array.Empty<string>());
 
             // The grammar is `app <command-path> <positional-arguments> [options]`. The options area
             // begins after the selected command path and that command's positional area. A group
@@ -393,19 +397,19 @@ public sealed class TigerCliApp
         if (!cultureResolution.Success)
         {
             var supportedList = string.Join(", ", SupportedCultures.Select(c => c.Name));
-            WriteFrameworkError(culture, TigerCliResources.Format(
+            WriteUsageError(culture, TigerCliResources.Format(
                 "Error_UnsupportedCulture", culture,
                 Esc(cultureResolution.RequestedRaw ?? string.Empty),
-                Esc(supportedList)));
+                Esc(supportedList)), helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
 
         if (globalOptionParse.ErrorResourceKey != null)
         {
-            WriteFrameworkError(culture, TigerCliResources.Format(
+            WriteUsageError(culture, TigerCliResources.Format(
                 globalOptionParse.ErrorResourceKey,
                 culture,
-                globalOptionParse.ErrorArgs ?? Array.Empty<object>()));
+                globalOptionParse.ErrorArgs ?? Array.Empty<object>()), helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
 
@@ -418,10 +422,10 @@ public sealed class TigerCliApp
             var errorResourceKey = themeResolution.Source == ThemeResolutionSource.Environment
                 ? "Error_UnsupportedThemeEnvironment"
                 : "Error_UnsupportedTheme";
-            WriteFrameworkError(culture, TigerCliResources.Format(
+            WriteUsageError(culture, TigerCliResources.Format(
                 errorResourceKey, culture,
                 Esc(themeResolution.RequestedRaw ?? string.Empty),
-                Esc(supportedThemes)));
+                Esc(supportedThemes)), helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
         if (themeResolution.Theme != null)
@@ -521,7 +525,7 @@ public sealed class TigerCliApp
 
             if (groupArgs.Length > 0 && groupArgs[0].StartsWith("-", StringComparison.Ordinal))
             {
-                WriteUnknownOption(culture, groupArgs[0]);
+                WriteUnknownOption(culture, groupArgs[0], helpContextPath);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
             }
         }
@@ -530,6 +534,7 @@ public sealed class TigerCliApp
         if (group != null)
         {
             PrintGroupHelp(group, culture);
+            WriteUsageHelpHint(culture, helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.NoCommand);
         }
 
@@ -538,11 +543,12 @@ public sealed class TigerCliApp
         {
             if (args.Length > 0 && args[0].StartsWith("-", StringComparison.Ordinal))
             {
-                WriteUnknownOption(culture, args[0]);
+                WriteUnknownOption(culture, args[0], helpContextPath);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
             }
 
             PrintHelp(null, culture);
+            WriteUsageHelpHint(culture, helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.NoCommand);
         }
 
@@ -585,7 +591,7 @@ public sealed class TigerCliApp
             && remainingArgs.Length > 0
             && remainingArgs[0].StartsWith("-", StringComparison.Ordinal))
         {
-            WriteUnknownOption(culture, remainingArgs[0]);
+            WriteUnknownOption(culture, remainingArgs[0], helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
 
@@ -594,9 +600,10 @@ public sealed class TigerCliApp
 
         if (!TryResolveInteractionMode(effectiveCommand, nonInteractiveRequested, out var effectiveInteractionMode))
         {
-            WriteFrameworkError(
+            WriteUsageError(
                 culture,
-                TigerCliResources.Get("Error_NonInteractiveWithFullInteractive", culture));
+                TigerCliResources.Get("Error_NonInteractiveWithFullInteractive", culture),
+                helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InteractiveNotAllowed);
         }
 
@@ -638,8 +645,10 @@ public sealed class TigerCliApp
         {
             if (effectiveInteractionMode != TigerCliInteractionMode.SemiInteractive)
             {
-                WriteFrameworkError(
-                    culture, TigerCliResources.Get("Error_CommandMenuRequiresInteractive", culture));
+                WriteUsageError(
+                    culture,
+                    TigerCliResources.Get("Error_CommandMenuRequiresInteractive", culture),
+                    helpContextPath);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.InteractiveNotAllowed);
             }
 
@@ -651,6 +660,7 @@ public sealed class TigerCliApp
             if (menuSelection.IsEmpty)
             {
                 TigerConsole.MarkupLine($"  {Esc(L("CommandMenu_Empty", culture))}");
+                WriteUsageHelpHint(culture, helpContextPath);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.NoCommand);
             }
 
@@ -661,6 +671,7 @@ public sealed class TigerCliApp
             effectiveCommand = menuSelection.Command;
             remainingArgs = [];
             positionalAreaLength = 0;
+            helpContextPath = effectiveCommand.PathTokens;
             titleSession?.SetBaseTitle(ResolveCommandTitle(appTitle, effectiveCommand));
         }
 
@@ -692,8 +703,9 @@ public sealed class TigerCliApp
 
         if (parseResult.ErrorResourceKey != null)
         {
-            WriteFrameworkError(culture, TigerCliResources.Format(
-                parseResult.ErrorResourceKey, culture, parseResult.ErrorArgs ?? Array.Empty<object>()));
+            WriteUsageError(culture, TigerCliResources.Format(
+                parseResult.ErrorResourceKey, culture, parseResult.ErrorArgs ?? Array.Empty<object>()),
+                helpContextPath);
             return _exitCodePolicy.Resolve(parseResult.ErrorExitKind);
         }
 
@@ -701,7 +713,7 @@ public sealed class TigerCliApp
         var conversionError = ValidateScalarConversions(argumentMeta, optionMeta, parseResult, culture);
         if (conversionError != null)
         {
-            WriteFrameworkError(culture, conversionError);
+            WriteUsageError(culture, conversionError, helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
 
@@ -741,7 +753,7 @@ public sealed class TigerCliApp
                 effectiveProviders,
                 culture,
                 _appResources).ConfigureAwait(false);
-            if (TryResolvePromptOutcome(selectorResult, culture, out var selectorExit))
+            if (TryResolvePromptOutcome(selectorResult, culture, helpContextPath, out var selectorExit))
                 return selectorExit;
 
             var editResult = await effectiveCommand.EditLoader!(settings).ConfigureAwait(false);
@@ -750,8 +762,8 @@ public sealed class TigerCliApp
                 var selector = string.Join(' ', parseResult.ArgumentValues.Values);
                 if (string.IsNullOrWhiteSpace(selector))
                     selector = effectiveCommand.Name ?? string.Empty;
-                WriteFrameworkError(culture, TigerCliResources.Format(
-                    "Error_EditTargetNotFound", culture, Esc(selector)));
+                WriteUsageError(culture, TigerCliResources.Format(
+                    "Error_EditTargetNotFound", culture, Esc(selector)), helpContextPath);
                 return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
             }
 
@@ -786,7 +798,7 @@ public sealed class TigerCliApp
             editMode,
             _folderBrowser).ConfigureAwait(false);
 
-        if (TryResolvePromptOutcome(promptResult, culture, out var promptExit))
+        if (TryResolvePromptOutcome(promptResult, culture, helpContextPath, out var promptExit))
             return promptExit;
 
         // 7b. Resolve [TigerCliMultiSelect] options: validate/bind command-line lists and, when
@@ -806,22 +818,26 @@ public sealed class TigerCliApp
             culture,
             _appResources,
             editMode).ConfigureAwait(false);
-        if (TryResolvePromptOutcome(multiSelectResult, culture, out var multiSelectExit))
+        if (TryResolvePromptOutcome(multiSelectResult, culture, helpContextPath, out var multiSelectExit))
             return multiSelectExit;
 
         var missingArgument = argumentMeta.FirstOrDefault(arg => !parseResult.ArgumentValues.ContainsKey(arg));
         if (missingArgument != null)
         {
-            WriteFrameworkError(culture, TigerCliResources.Format(
-                "Error_MissingArgument", culture, Esc(missingArgument.DisplayName)));
+            WriteUsageError(culture, TigerCliResources.Format(
+                "Error_MissingArgument", culture, Esc(missingArgument.DisplayName)), helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.MissingRequiredArgument);
         }
 
         // 8. Framework-level validation (required options, forbidden values)
-        var frameworkValidation = ValidateFrameworkRules(argumentMeta, optionMeta, parseResult, settings, culture);
+        var frameworkValidation = ValidateFrameworkRules(
+            argumentMeta, optionMeta, parseResult, settings, culture, out var isUsageError);
         if (!frameworkValidation.IsValid)
         {
-            WriteFrameworkError(culture, Esc(frameworkValidation.ErrorMessage!));
+            if (isUsageError)
+                WriteUsageError(culture, Esc(frameworkValidation.ErrorMessage!), helpContextPath);
+            else
+                WriteFrameworkError(culture, Esc(frameworkValidation.ErrorMessage!));
             return _exitCodePolicy.Resolve(TigerCliExitKind.ValidationError);
         }
 
@@ -834,7 +850,7 @@ public sealed class TigerCliApp
             promptTimeout,
             ct,
             culture).ConfigureAwait(false);
-        if (TryResolvePromptOutcome(fileValidation, culture, out var fileValidationExit))
+        if (TryResolvePromptOutcome(fileValidation, culture, helpContextPath, out var fileValidationExit))
             return fileValidationExit;
 
         var integerBoundsValidation = await ValidateIntegerBoundsAsync(
@@ -846,7 +862,7 @@ public sealed class TigerCliApp
             promptTimeout,
             ct,
             culture).ConfigureAwait(false);
-        if (TryResolvePromptOutcome(integerBoundsValidation, culture, out var integerBoundsExit))
+        if (TryResolvePromptOutcome(integerBoundsValidation, culture, helpContextPath, out var integerBoundsExit))
             return integerBoundsExit;
 
         // 8b. Provider validation: provider-backed fields are validated against their
@@ -866,7 +882,7 @@ public sealed class TigerCliApp
             ct,
             culture,
             editMode).ConfigureAwait(false);
-        if (TryResolvePromptOutcome(providerValidation, culture, out var providerExit))
+        if (TryResolvePromptOutcome(providerValidation, culture, helpContextPath, out var providerExit))
             return providerExit;
 
         // 9. User-defined validation
@@ -918,6 +934,26 @@ public sealed class TigerCliApp
             $"[Error]{Esc(TigerCliResources.Get("Error_Prefix", culture))}[/] {messageMarkup}");
     }
 
+    private void WriteUsageError(
+        CultureInfo culture,
+        string messageMarkup,
+        IReadOnlyList<string> helpContextPath)
+    {
+        WriteFrameworkError(culture, messageMarkup);
+        WriteUsageHelpHint(culture, helpContextPath);
+    }
+
+    private void WriteUsageHelpHint(CultureInfo culture, IReadOnlyList<string> helpContextPath)
+    {
+        var appName = string.IsNullOrWhiteSpace(_applicationName) ? "app" : _applicationName;
+        var helpCommand = string.Join(
+            ' ',
+            new[] { appName }.Concat(helpContextPath).Append("--help").Select(Esc));
+
+        TigerConsole.MarkupErrorLine($"[Muted]{Esc(TigerCliResources.Get("Error_HelpHint", culture))}[/]");
+        TigerConsole.MarkupErrorLine($"    [Key]{helpCommand}[/]");
+    }
+
     /// <summary>
     /// Writes the gentle prompt-cancellation notice: a muted, single-line message with no error prefix
     /// and no error styling. Cancellation is a normal flow, so it must not read like a validation or
@@ -934,7 +970,11 @@ public sealed class TigerCliApp
     /// mapping; a genuine failure keeps the error prefix and its own kind. Returns <c>true</c> (with the
     /// resolved exit code) when the result is terminal, <c>false</c> when the pipeline should continue.
     /// </summary>
-    private bool TryResolvePromptOutcome(PromptResolutionResult result, CultureInfo culture, out int exitCode)
+    private bool TryResolvePromptOutcome(
+        PromptResolutionResult result,
+        CultureInfo culture,
+        IReadOnlyList<string> helpContextPath,
+        out int exitCode)
     {
         if (result.IsUserCancellation)
         {
@@ -949,7 +989,10 @@ public sealed class TigerCliApp
                 ? result.ErrorResourceKey
                 : TigerCliResources.Format(
                     result.ErrorResourceKey, culture, result.ErrorArgs ?? Array.Empty<object>());
-            WriteFrameworkError(culture, message);
+            if (TigerCliExitClassification.CategoryOf(result.ExitKind) == TigerCliExitCategory.Usage)
+                WriteUsageError(culture, message, helpContextPath);
+            else
+                WriteFrameworkError(culture, message);
             exitCode = _exitCodePolicy.Resolve(result.ExitKind);
             return true;
         }
@@ -1468,12 +1511,15 @@ public sealed class TigerCliApp
         };
     }
 
-    private static void WriteUnknownOption(CultureInfo culture, string token)
+    private void WriteUnknownOption(
+        CultureInfo culture,
+        string token,
+        IReadOnlyList<string> helpContextPath)
     {
         var equalsIndex = token.IndexOf('=');
         var optionName = equalsIndex > 0 ? token[..equalsIndex] : token;
-        WriteFrameworkError(culture, TigerCliResources.Format(
-            "Error_UnknownOption", culture, Esc(optionName)));
+        WriteUsageError(culture, TigerCliResources.Format(
+            "Error_UnknownOption", culture, Esc(optionName)), helpContextPath);
     }
 
     private readonly record struct CultureResolution(
@@ -4633,8 +4679,11 @@ public sealed class TigerCliApp
         List<TigerCliOptionMetadata> options,
         TigerCliParseResult parseResult,
         TigerCliSettings settings,
-        CultureInfo culture)
+        CultureInfo culture,
+        out bool isUsageError)
     {
+        isUsageError = false;
+
         foreach (var arg in arguments)
         {
             if (!parseResult.ArgumentValues.ContainsKey(arg))
@@ -4663,6 +4712,7 @@ public sealed class TigerCliApp
             if (isRequired && !wasProvided)
             {
                 var name = opt.Aliases[^1]; // prefer long alias
+                isUsageError = true;
                 return TigerCliValidationResult.Error(
                     TigerCliResources.Format("Error_MissingOption", culture, Esc(name)));
             }

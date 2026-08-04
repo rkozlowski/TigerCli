@@ -346,6 +346,11 @@ A raw command can still run inside an app with a global enum-backed policy, but 
 
 Framework errors write to stderr through `TigerConsole.MarkupErrorLine(...)` with the localized framework error prefix.
 
+Usage and parsing errors, including missing required input, also include a localized
+`For more info, run:` hint that points to the most specific safely resolved help path: root,
+command group, or command. Provider, cancellation, command-handler, and other validation or domain
+failures not classified as usage do not include this hint.
+
 Unhandled command exceptions map through the `UnhandledException` kind (category `Unexpected`):
 
 ```csharp
