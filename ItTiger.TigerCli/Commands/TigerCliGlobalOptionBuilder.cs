@@ -1,8 +1,8 @@
 namespace ItTiger.TigerCli.Commands;
 
 /// <summary>
-/// Registers simple app-wide global options supplied by app contributions. TigerCli 0.9.2 supports
-/// one constrained shape: an optional string value with one canonical long option name.
+/// Registers simple app-wide global options supplied by app contributions. Options use one
+/// constrained shape: an optional string value with one canonical long option name.
 /// </summary>
 public sealed class TigerCliGlobalOptionBuilder
 {

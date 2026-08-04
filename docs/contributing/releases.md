@@ -5,7 +5,7 @@ packages, in that dependency order. All three use the shared version and reposit
 `Version.props`; package-specific descriptions, readmes, and embedded icons remain in their project
 files.
 
-For 0.9.2, the manual **Publish NuGet packages** GitHub Actions workflow is the primary publishing
+For 0.9.3, the manual **Publish NuGet packages** GitHub Actions workflow is the primary publishing
 path. It builds, validates, and packs once, pauses at the protected `release` environment, then
 publishes the exact validated package files to GitHub Packages first and NuGet.org second. It does
 not run on ordinary pushes.
@@ -63,22 +63,22 @@ the full gate. Do not patch a package archive by hand.
 
 ## Smoke-Test The Local Packages
 
-Before publishing, restore the freshly packed 0.9.2 packages from a temporary local feed. The
+Before publishing, restore the freshly packed 0.9.3 packages from a temporary local feed. The
 temporary NuGet configuration maps `ItTiger.*` exclusively to that feed while allowing third-party
 dependencies to come from NuGet.org. This proves that all three Tiger packages, including TigerCli's
-dependency on Core 0.9.2 and PngSink's dependency on TigerCli 0.9.2, resolve from the release
+dependency on Core 0.9.3 and PngSink's dependency on TigerCli 0.9.3, resolve from the release
 candidate rather than a remote source.
 
 Run from the repository root:
 
 ```powershell
 $repoRoot = (Get-Location).Path
-$smokeRoot = Join-Path $env:TEMP ("TigerCli-0.9.2-smoke-" + [guid]::NewGuid().ToString("N"))
+$smokeRoot = Join-Path $env:TEMP ("TigerCli-0.9.3-smoke-" + [guid]::NewGuid().ToString("N"))
 $localFeed = New-Item -ItemType Directory -Path (Join-Path $smokeRoot "packages")
 
-Copy-Item "$repoRoot/ItTiger.Core/bin/Release/ItTiger.Core.0.9.2.nupkg" $localFeed
-Copy-Item "$repoRoot/ItTiger.TigerCli/bin/Release/ItTiger.TigerCli.0.9.2.nupkg" $localFeed
-Copy-Item "$repoRoot/ItTiger.TigerCli.PngSink/bin/Release/ItTiger.TigerCli.PngSink.0.9.2.nupkg" $localFeed
+Copy-Item "$repoRoot/ItTiger.Core/bin/Release/ItTiger.Core.0.9.3.nupkg" $localFeed
+Copy-Item "$repoRoot/ItTiger.TigerCli/bin/Release/ItTiger.TigerCli.0.9.3.nupkg" $localFeed
+Copy-Item "$repoRoot/ItTiger.TigerCli.PngSink/bin/Release/ItTiger.TigerCli.PngSink.0.9.3.nupkg" $localFeed
 
 $nugetConfig = Join-Path $smokeRoot "NuGet.Config"
 @"
@@ -103,12 +103,12 @@ $nugetConfig = Join-Path $smokeRoot "NuGet.Config"
 Push-Location $smokeRoot
 
 dotnet new console -n CoreSmoke -f net10.0
-dotnet add CoreSmoke/CoreSmoke.csproj package ItTiger.Core --version 0.9.2 --no-restore
+dotnet add CoreSmoke/CoreSmoke.csproj package ItTiger.Core --version 0.9.3 --no-restore
 dotnet restore CoreSmoke/CoreSmoke.csproj --configfile $nugetConfig --force --no-http-cache
-Select-String CoreSmoke/obj/project.assets.json -Pattern '"ItTiger.Core/0.9.2"'
+Select-String CoreSmoke/obj/project.assets.json -Pattern '"ItTiger.Core/0.9.3"'
 
 dotnet new console -n TigerCliSmoke -f net10.0
-dotnet add TigerCliSmoke/TigerCliSmoke.csproj package ItTiger.TigerCli --version 0.9.2 --no-restore
+dotnet add TigerCliSmoke/TigerCliSmoke.csproj package ItTiger.TigerCli --version 0.9.3 --no-restore
 @'
 using ItTiger.TigerCli.Commands;
 using ItTiger.TigerCli.Terminal;
@@ -124,11 +124,11 @@ return await TigerCliApp.CreateBuilder()
 '@ | Set-Content TigerCliSmoke/Program.cs -Encoding utf8
 dotnet restore TigerCliSmoke/TigerCliSmoke.csproj --configfile $nugetConfig --force --no-http-cache
 Select-String TigerCliSmoke/obj/project.assets.json `
-  -Pattern '"ItTiger.TigerCli/0.9.2"', '"ItTiger.Core/0.9.2"'
+  -Pattern '"ItTiger.TigerCli/0.9.3"', '"ItTiger.Core/0.9.3"'
 dotnet run --project TigerCliSmoke/TigerCliSmoke.csproj -c Release --no-restore -- --non-interactive
 
 dotnet new console -n PngSinkSmoke -f net10.0
-dotnet add PngSinkSmoke/PngSinkSmoke.csproj package ItTiger.TigerCli.PngSink --version 0.9.2 --no-restore
+dotnet add PngSinkSmoke/PngSinkSmoke.csproj package ItTiger.TigerCli.PngSink --version 0.9.3 --no-restore
 @'
 using ItTiger.TigerCli.PngSink;
 using ItTiger.TigerCli.Rendering;
@@ -142,7 +142,7 @@ PngRenderer.RenderGridToFile(
 '@ | Set-Content PngSinkSmoke/Program.cs -Encoding utf8
 dotnet restore PngSinkSmoke/PngSinkSmoke.csproj --configfile $nugetConfig --force --no-http-cache
 Select-String PngSinkSmoke/obj/project.assets.json `
-  -Pattern '"ItTiger.TigerCli.PngSink/0.9.2"', '"ItTiger.TigerCli/0.9.2"', '"ItTiger.Core/0.9.2"'
+  -Pattern '"ItTiger.TigerCli.PngSink/0.9.3"', '"ItTiger.TigerCli/0.9.3"', '"ItTiger.Core/0.9.3"'
 dotnet run --project PngSinkSmoke/PngSinkSmoke.csproj -c Release --no-restore
 if (-not (Test-Path -LiteralPath smoke.png -PathType Leaf)) {
     throw "PngSink smoke test did not create smoke.png."
@@ -159,7 +159,7 @@ temporary directory may be removed after review.
 The workflow is `.github/workflows/publish-packages.yml`. It has only a `workflow_dispatch` trigger
 and one input:
 
-- `version`: required package version, default `0.9.2`. It must match `Version.props`.
+- `version`: required package version, default `0.9.3`. It must match `Version.props`.
 
 Both workflow jobs use GitHub-hosted Windows runners. Release validation must run on Windows because
 the test suite includes Windows path semantics, and Windows is also the canonical platform for

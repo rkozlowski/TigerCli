@@ -112,7 +112,7 @@ public sealed class FileCopyAppTests
             .RunAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal((int)FileCopyExitCode.Ok, result.ExitCode);
-        Assert.Contains("File Copy version 0.9.2", result.StdOut);
+        Assert.Contains("File Copy version 0.9.3", result.StdOut);
     }
 
     [Fact]
