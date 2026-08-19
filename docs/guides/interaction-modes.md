@@ -138,6 +138,11 @@ instead of the app's cancellation exit code.
 to `TigerCliApp.RunAsync` with TigerCli's process/system cancellation, so a handler observes both
 through one token:
 
+| Cancellation source | Owner | Handler observation | Escalation |
+|---|---|---|---|
+| Caller `RunAsync(ct)` token | The host invoking TigerCli | `settings.CancellationToken` is cancelled | No signal escalation; the caller controls its token |
+| Ctrl-C / SIGINT / SIGTERM / SIGQUIT | TigerCli, unless process cancellation is disabled or a shell is injected | The same `settings.CancellationToken` is cancelled | A second signal is default-terminated so ignored cancellation cannot trap the process |
+
 ```csharp
 public override async Task<int> ExecuteAsync(MySettings settings)
 {
@@ -160,7 +165,7 @@ while the run token is cancelled is reported with the quiet cancellation notice 
 while the run token was *not* cancelled stays an unhandled exception, so an app's own inner timeout
 is not silently reclassified.
 
-A **second** signal escalates: cancellation is requested again, but default termination is no longer
+A **second process/system signal** escalates: cancellation is requested again, but default termination is no longer
 suppressed, so a process whose work ignores cooperative cancellation stays killable from the
 terminal. Press Ctrl-C twice to force it down.
 

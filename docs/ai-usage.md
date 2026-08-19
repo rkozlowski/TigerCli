@@ -24,6 +24,22 @@ For public examples, start with [Getting Started / ROI Cities](getting-started.m
 - Use `TigerCliAppTestHost` for app-level tests.
 - Search current docs/source before writing examples for less common APIs.
 
+### Choose The Framework Feature By Intent
+
+| App requirement | TigerCli feature | Do not substitute |
+|---|---|---|
+| Identify the object or context a command operates on | `[TigerCliArgument]`, usually as a selector | An option merely because the value needs a name |
+| Configure or modify the selected operation | `[TigerCliOption]` | A positional merely because the value is required |
+| Pass an opaque token list to a child or nested tool | `[TigerCliRawArguments]` plus the `--` separator | A repeated option, extra positionals, or manual `args` scanning |
+| Run safely in scripts, CI, redirection, or agent tooling | `--non-interactive` with all required input supplied | A separate headless command implementation |
+| Let handler work observe caller and process cancellation | `settings.CancellationToken` | App-owned console signal handlers or an unrelated token source |
+
+Normal arguments, options, and selectors belong before `--` and are parsed, bound, and validated by
+TigerCli. A declared raw tail belongs after the first `--` and is bound literally; TigerCli never
+interprets those tokens as framework or app options. `--non-interactive` is a TigerCli execution
+option, so put it in the parsed head when TigerCli should run headlessly. If it appears in the raw
+tail, the child receives it instead.
+
 ```csharp
 public static class MyApp
 {
@@ -80,7 +96,7 @@ builder.AddCommandGroup("connections", group => group
   configuration option shared across its commands.
 - The host must opt in with `TigerCliAppBuilder.AddContribution(...)`; do not register library
   contributions implicitly.
-- In 0.9.3, use only `builder.GlobalOptions.AddOptionalString(...)`: one long name, no alias,
+- In 0.9.4, use only `builder.GlobalOptions.AddOptionalString(...)`: one long name, no alias,
   optional string value, CLI-only, and never promptable or provider-backed.
 - Place contributed global options after the command path and positional arguments, with other
   options. Their app-wide meaning does not change command selection or TigerCli's command-line shape.
@@ -301,6 +317,13 @@ var result = await TigerTui.RunActivityAsync(
 
 See [Folder Copy](examples/folder-copy.md) for a complete in-repo sample of this pattern.
 
+`settings.CancellationToken` has two possible sources: the caller token supplied to `RunAsync`, and
+TigerCli-owned process/system cancellation such as Ctrl-C, SIGINT, SIGTERM, or SIGQUIT. The first
+signal requests cooperative cancellation; a second process signal restores default termination so
+non-cooperative work remains killable. Caller cancellation does not represent a signal and does not
+have that second-signal escalation behavior. If the host calls `DisableProcessCancellation()` or
+injects its own shell, the settings token carries only caller cancellation.
+
 Trust TigerCli's mode-aware primitives:
 
 - Prompts, selects, and command menus are blocked or skipped in non-interactive mode.
@@ -390,6 +413,7 @@ TigerConsole.Render(details);
 - [Folder Copy sample](examples/folder-copy.md)
 - [CRUD command apps](guides/crud-commands.md)
 - [Arguments and options](guides/arguments-and-options.md)
+- [Interaction modes and cancellation](guides/interaction-modes.md)
 - [Prompting and providers](guides/prompting-and-providers.md)
 - [Structured output](guides/structured-output.md)
 - [Semi-interactive prompts](guides/semi-interactive-prompts.md)

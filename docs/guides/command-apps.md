@@ -11,6 +11,10 @@ shape is `app <positional-arguments> [options]`.
 
 The framework owns parsing, binding, help, framework errors, interaction policy, localization, and command dispatch. Your app owns command registration, settings metadata, command behavior, and application output.
 
+Commands that intentionally pass opaque tokens to another tool may opt into a final
+`-- <raw-arguments>` section with `[TigerCliRawArguments]`. That tail is distinct from normal
+positionals and options and is never parsed by TigerCli; see [raw trailing arguments](arguments-and-options.md#raw-trailing-arguments).
+
 ## Overview
 
 A TigerCli app is built from:

@@ -37,19 +37,19 @@ Mode changes presentation and prompting policy; it should not change the busines
 Install the main TigerCli package:
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.9.3
+dotnet add package ItTiger.TigerCli --version 0.9.4
 ```
 
 `ItTiger.Core` is also available separately for shared support utilities:
 
 ```bash
-dotnet add package ItTiger.Core --version 0.9.3
+dotnet add package ItTiger.Core --version 0.9.4
 ```
 
 The optional PNG rendering sink is packaged separately for documentation and visual artifacts:
 
 ```bash
-dotnet add package ItTiger.TigerCli.PngSink --version 0.9.3
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.4
 ```
 
 ## What It Looks Like
@@ -70,9 +70,9 @@ Activity dialogs can show live progress while the same operation remains script-
 
 ## What TigerCli Provides
 
-- Command paths, positional arguments, and options
+- Command paths, positional arguments, options, and command-declared raw trailing arguments after `--`
 - Generated help from command and settings metadata
-- Framework-owned `--non-interactive` and semi-interactive interaction modes
+- Framework-owned `--non-interactive` and semi-interactive interaction modes, with cooperative caller and process cancellation
 - Parser-driven prompts for missing governed input
 - Provider-backed select prompts with async provider loading UI
 - Typed exit codes and `--help-errors`
