@@ -14,6 +14,13 @@ app <command-path> <positional-arguments> [options]
 
 Command paths select behavior. Positional arguments provide required command context. Options modify the selected command.
 
+A command that must hand trailing tokens to something else (a child executable, a nested tool) may
+declare a raw argument tail, which extends the shape with an explicitly separated final section:
+
+```text
+app <command-path> <positional-arguments> [options] [-- <raw-arguments>]
+```
+
 A default/root command, a command menu, and the root informational forms are reached through an
 *empty* command path, so for them the same shape collapses to:
 
@@ -74,6 +81,29 @@ each other. `app --help --help-errors --help-env --theme light` and
 `app command --help --help-env --color never` are valid; the informational output is rendered with
 the requested presentation and no command handler runs.
 
+## Raw Trailing Arguments
+
+A raw tail is the one place where TigerCli deliberately stops parsing, so it is defined narrowly:
+
+- The tail is opt-in per command, declared with `[TigerCliRawArguments]` on the settings class. A
+  command that does not declare one rejects a supplied tail as a usage error.
+- The **first** `--` separates. Later `--` tokens are ordinary tail data.
+- The split happens before command resolution, positional measurement, framework and global option
+  extraction, informational detection, and option parsing. Every stage reads the head only, so a
+  tail token can never be reinterpreted as an option, a command path token, or a positional. This is
+  a structural guarantee, not a per-stage check.
+- The separator is not bound. Tail tokens are bound literally and in order, and are never converted,
+  prompted for, or validated against a provider.
+- Informational forms resolve from the head. `app command --help -- child` prints help; `app command
+  -- child --help` runs the command and passes `--help` on. Help must never be blocked by the syntax
+  a user is trying to learn, so a tail supplied to a root informational form is ignored rather than
+  rejected.
+- A tail needs an executing command to own it. A group prefix, the command menu, and an unresolved
+  command with no default all reject one.
+
+The tail is deliberately *not* a general "unmatched tokens" bucket: it exists only after an explicit
+separator, so nothing about the parsed part of the command line becomes permissive.
+
 ## Prompting Implications
 
 Prompt order follows command meaning, not raw option order:
@@ -89,6 +119,9 @@ This supports flows where later prompts depend on earlier context, such as choos
 TigerCli intentionally does not support freely interleaving positionals and options or extracting
 app-wide execution options before command selection. That flexibility would make generated help,
 prompt ordering, and app-level tests less predictable.
+
+A raw argument tail does not soften that boundary. It is separated explicitly, declared per command,
+and always last, so the parsed part of the command line keeps exactly the same strict shape.
 
 ## Related Docs
 

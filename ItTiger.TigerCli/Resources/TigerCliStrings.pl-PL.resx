@@ -64,6 +64,7 @@
   <data name="Help_AliasTargetMarker" xml:space="preserve"><value>→ {0}</value></data>
   <data name="Help_AliasFor" xml:space="preserve"><value>Alias polecenia: {0}</value></data>
   <data name="Help_Required" xml:space="preserve"><value>Wymagane.</value></data>
+  <data name="Help_RawArguments" xml:space="preserve"><value>Wszystko po '{0}' jest przekazywane bez zmian.</value></data>
   <data name="Help_Repeatable" xml:space="preserve"><value>Powtarzalne.</value></data>
   <data name="Help_Examples" xml:space="preserve"><value>Przykłady: {0} x=1, {0} y "wartość"</value></data>
   <data name="Help_Default" xml:space="preserve"><value>Domyślnie: {0}</value></data>
@@ -111,6 +112,8 @@
   <data name="Error_GlobalOptionRepeated" xml:space="preserve"><value>Opcję globalną '{0}' można podać tylko raz.</value></data>
   <data name="Error_OptionRequiresKVP" xml:space="preserve"><value>Opcja '{0}' wymaga pary klucz-wartość (klucz=wartość lub klucz wartość).</value></data>
   <data name="Error_MissingArgument" xml:space="preserve"><value>Brak wymaganego argumentu: &lt;{0}&gt;</value></data>
+  <data name="Error_RawArgumentsNotSupported" xml:space="preserve"><value>Argumenty po '{0}' nie są tutaj obsługiwane.</value></data>
+  <data name="Error_RawArgumentsMissing" xml:space="preserve"><value>Brak wymaganych argumentów po '--': &lt;{0}&gt;</value></data>
   <data name="Error_MissingOption" xml:space="preserve"><value>Brak wymaganej opcji: {0}</value></data>
   <data name="Error_OptionCommandLineValueNotAllowed" xml:space="preserve"><value>Opcji '{0}' nie można podać w wierszu polecenia.</value></data>
   <data name="Error_InvalidValue" xml:space="preserve"><value>Nieprawidłowa wartość opcji {0}: {1}.</value></data>

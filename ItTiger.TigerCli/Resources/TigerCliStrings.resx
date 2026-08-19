@@ -64,6 +64,7 @@
   <data name="Help_AliasTargetMarker" xml:space="preserve"><value>→ {0}</value></data>
   <data name="Help_AliasFor" xml:space="preserve"><value>Alias for: {0}</value></data>
   <data name="Help_Required" xml:space="preserve"><value>Required.</value></data>
+  <data name="Help_RawArguments" xml:space="preserve"><value>Everything after '{0}' is passed through unchanged.</value></data>
   <data name="Help_Repeatable" xml:space="preserve"><value>Repeatable.</value></data>
   <data name="Help_Examples" xml:space="preserve"><value>Examples: {0} x=1, {0} y "value"</value></data>
   <data name="Help_Default" xml:space="preserve"><value>Default: {0}</value></data>
@@ -111,6 +112,8 @@
   <data name="Error_GlobalOptionRepeated" xml:space="preserve"><value>Global option '{0}' may only be specified once.</value></data>
   <data name="Error_OptionRequiresKVP" xml:space="preserve"><value>Option '{0}' requires a key-value pair (key=value or key value).</value></data>
   <data name="Error_MissingArgument" xml:space="preserve"><value>Missing required argument: &lt;{0}&gt;</value></data>
+  <data name="Error_RawArgumentsNotSupported" xml:space="preserve"><value>Arguments after '{0}' are not supported here.</value></data>
+  <data name="Error_RawArgumentsMissing" xml:space="preserve"><value>Missing required arguments after '--': &lt;{0}&gt;</value></data>
   <data name="Error_MissingOption" xml:space="preserve"><value>Missing required option: {0}</value></data>
   <data name="Error_OptionCommandLineValueNotAllowed" xml:space="preserve"><value>Option '{0}' cannot be supplied on the command line.</value></data>
   <data name="Error_InvalidValue" xml:space="preserve"><value>Invalid value for {0}: {1}.</value></data>

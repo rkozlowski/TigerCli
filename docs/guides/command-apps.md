@@ -643,7 +643,29 @@ This supports command lines like:
 my-tool projects sp-add local Billing --schema dbo
 ```
 
-For option aliases, value syntax, required/default behavior, repeated values, key-value options, and validation timing, see [arguments and options](arguments-and-options.md).
+A command that forwards its trailing tokens to a child process declares `[TigerCliRawArguments]`. The
+first `--` on the command line splits it: TigerCli parses only the part before the separator, and
+every token after it is bound literally, in order, even when it looks like an option.
+
+```csharp
+public sealed class ExecSettings : TigerCliSettings
+{
+    [TigerCliOption("--connection-string-env", Description = "Environment variable holding the connection string.")]
+    public string ConnectionStringEnv { get; set; } = string.Empty;
+
+    [TigerCliRawArguments(Name = "tool-args", Description = "Child executable and its arguments.", Required = true)]
+    public IReadOnlyList<string> Arguments { get; init; } = [];
+}
+```
+
+```bash
+my-tool exec --connection-string-env DB_CONNECTION -- child-tool --report
+```
+
+`Arguments` receives `["child-tool", "--report"]`. Only commands that declare a raw tail accept one;
+any other command rejects `--` as a usage error.
+
+For option aliases, value syntax, required/default behavior, repeated values, key-value options, raw trailing arguments, and validation timing, see [arguments and options](arguments-and-options.md).
 
 ## Generated Help
 
@@ -654,6 +676,7 @@ For an app with command paths and arguments, help includes:
 - usage
 - registered commands
 - positional arguments
+- a declared raw argument tail, in both the usage line and the arguments section
 - command options
 - framework options
 - an exit-code hint when documented exit codes are configured

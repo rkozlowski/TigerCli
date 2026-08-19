@@ -18,6 +18,7 @@ For public examples, start with [Getting Started / ROI Cities](getting-started.m
 - Keep `Program.cs` thin and build the [TigerCliApp](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliApp.html) through a reusable app factory.
 - Derive settings classes from [TigerCliSettings](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliSettings.html).
 - Declare inputs with [TigerCliArgumentAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliArgumentAttribute.html) and [TigerCliOptionAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliOptionAttribute.html).
+- Declare pass-through tokens for a child process with [TigerCliRawArgumentsAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliRawArgumentsAttribute.html); never scan `args` for `--` yourself.
 - Use generated help, version, `--non-interactive`, and `--culture` behavior. Do not reimplement them.
 - Use enum-backed exit codes when possible.
 - Use `TigerCliAppTestHost` for app-level tests.
@@ -164,11 +165,13 @@ builder.ConfigureProviders(providers =>
 Command shape:
 
 ```text
-app <command-path> <positional-arguments> [options]
+app <command-path> <positional-arguments> [options] [-- <raw-arguments>]
 ```
 
 - Positional arguments are required and come before options.
 - Options are unordered after positionals.
+- The trailing `[-- <raw-arguments>]` section exists only for commands that declare
+  `[TigerCliRawArguments]`; see [raw trailing arguments](#raw-trailing-arguments).
 - A default/root command has an empty command path, so its shape is
   `app <positional-arguments> [options]`; with no declared positionals its options area starts at
   the first token (`app --theme light`).
@@ -211,6 +214,31 @@ project delete <connection> <project>
 
 `<connection>` and `<project>` are selectors in all four commands; together they form the object
 key. `--schema` is object data, not a selector, even when schema is required.
+
+### Raw trailing arguments
+
+For a command that runs a child executable, declare the pass-through tail instead of parsing `--`
+by hand:
+
+```csharp
+[TigerCliRawArguments(Name = "tool-args", Description = "Child executable and its arguments.", Required = true)]
+public IReadOnlyList<string> Arguments { get; init; } = [];
+```
+
+```bash
+app exec --connection-string-env DB_CONNECTION -- child-tool --report
+```
+
+- The first `--` splits the command line; TigerCli parses only the head.
+- The separator is not bound; every token after it is bound literally and in order, including
+  `-x`, `--flag`, repeated tokens, and later `--`.
+- Tail tokens are never options, never prompted, and never provider-validated.
+- Only a command declaring the attribute accepts a tail; anything else is a usage error.
+- Supported property types: `string[]`, `List<string>`, `IReadOnlyList<string>` (writable, `init`
+  is fine). One per settings class; not combinable with `[TigerCliOption]` / `[TigerCliArgument]`.
+- Informational options resolve from the head: `app exec --help -- child` prints help, and
+  `app exec -- child --help` passes `--help` to the child.
+- Do not use a repeated string option, a positional, or manual `args` scanning to emulate this.
 
 ## Edit Commands
 
@@ -353,6 +381,7 @@ TigerConsole.Render(details);
 - Hand-rendering tables, lists, or details with string padding and `MarkupLine` loops.
 - Registering multi-token names with `AddCommand(...)` instead of `AddCommandGroup(...)`.
 - Accepting localized enum/provider labels as stable command-line input.
+- Emulating a pass-through argument tail with a repeated string option, a positional, or a manual `--` scan instead of `[TigerCliRawArguments]`.
 - Treating TigerCli as a full-screen TUI framework.
 
 ## More Documentation

@@ -29,6 +29,12 @@ public sealed class TigerCliApp
 {
     private const string ThemeEnvironmentVariable = "TIGERCLI_THEME";
 
+    /// <summary>
+    /// The token that separates the command line TigerCli parses from a command's raw trailing
+    /// arguments. Only the first occurrence separates; any later one is ordinary tail data.
+    /// </summary>
+    private const string RawArgumentSeparator = "--";
+
     private readonly string _applicationName;
     private readonly TigerCliApplicationMetadata _metadata;
     private readonly string? _description;
@@ -183,9 +189,9 @@ public sealed class TigerCliApp
                 resolveHandlerResultAsExitKind: defaultResolveHandlerResultAsExitKind)
             : commandMenuDefault;
 
-        // File-save overwrite references are configuration, not run-time input. Validate every
-        // registered settings type while Build() is producing the app so misspellings and bad types
-        // fail before parsing or command execution.
+        // File-save overwrite references and raw argument declarations are configuration, not
+        // run-time input. Validate every registered settings type while Build() is producing the app
+        // so misspellings and bad types fail before parsing or command execution.
         foreach (var settingsType in _namedCommands
             .Append(_defaultCommand)
             .Where(command => command != null && !command.IsCommandMenu)
@@ -193,6 +199,7 @@ public sealed class TigerCliApp
             .Distinct())
         {
             ValidateFilePickerMetadata(settingsType);
+            _ = BuildRawArgumentsMetadata(settingsType);
         }
 
         if (defaultHandlerType != null)
@@ -340,6 +347,15 @@ public sealed class TigerCliApp
         TimeSpan? promptTimeout = default,
         CancellationToken ct = default)
     {
+        // 0a. Raw trailing arguments: the first `--` splits the command line into the head TigerCli
+        // parses and a tail that belongs verbatim to the command that declares one. Splitting here,
+        // before every other stage, is what makes the tail safe: command resolution, positional
+        // measurement, framework/global option extraction, informational detection, and option
+        // parsing all read `args`, so rebinding it to the head is a structural guarantee that no
+        // stage can mistake a tail token for an option, a command path token, or a positional.
+        var rawArgumentSplit = SplitRawArguments(args);
+        args = rawArgumentSplit.Head;
+
         var rootInformation = ResolveRootInformation(args);
 
         // 0. Apply app appearance configuration before resolving the valid execution options that
@@ -534,6 +550,15 @@ public sealed class TigerCliApp
             }
         }
 
+        // A raw tail belongs to an executing command. A group prefix selects no command, so a tail
+        // here has no owner and is a usage error rather than a silently discarded argument list.
+        // Informational forms are resolved above, so `app group --help -- x` still prints help.
+        if (group != null && rawArgumentSplit.SeparatorPresent)
+        {
+            WriteRawArgumentsNotSupported(culture, helpContextPath);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
+
         // 3a. A matched group prefix with no leaf subcommand shows the group's help.
         if (group != null)
         {
@@ -545,6 +570,12 @@ public sealed class TigerCliApp
         // 3b. No command resolved and no default → show help
         if (effectiveCommand == null)
         {
+            if (rawArgumentSplit.SeparatorPresent)
+            {
+                WriteRawArgumentsNotSupported(culture, helpContextPath);
+                return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+            }
+
             if (args.Length > 0 && args[0].StartsWith("-", StringComparison.Ordinal))
             {
                 WriteUnknownOption(culture, args[0], helpContextPath);
@@ -596,6 +627,14 @@ public sealed class TigerCliApp
             && remainingArgs[0].StartsWith("-", StringComparison.Ordinal))
         {
             WriteUnknownOption(culture, remainingArgs[0], helpContextPath);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
+
+        // The command menu takes no command-line input of its own and the command it selects runs
+        // with empty remaining args, so a tail supplied to the menu could never reach an owner.
+        if (effectiveCommand.IsCommandMenu && rawArgumentSplit.SeparatorPresent)
+        {
+            WriteRawArgumentsNotSupported(culture, helpContextPath);
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
         }
 
@@ -715,6 +754,24 @@ public sealed class TigerCliApp
         // 4. Build argument and option metadata from settings type
         var argumentMeta = BuildArgumentMetadata(effectiveCommand.SettingsType);
         var optionMeta = BuildOptionMetadata(effectiveCommand.SettingsType);
+        var rawArgumentsMeta = BuildRawArgumentsMetadata(effectiveCommand.SettingsType);
+
+        // 4b. Raw trailing arguments are opt-in per command: a tail supplied to a command that does
+        // not declare one is a usage error, not silently discarded input.
+        if (rawArgumentsMeta == null && rawArgumentSplit.SeparatorPresent)
+        {
+            WriteRawArgumentsNotSupported(culture, helpContextPath);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
+        }
+
+        // A required tail is never prompted, so a missing one fails the same way in both interaction
+        // modes. Both a missing separator and an empty tail after `--` are missing input.
+        if (rawArgumentsMeta is { Required: true } && rawArgumentSplit.Tail.Length == 0)
+        {
+            WriteUsageError(culture, TigerCliResources.Format(
+                "Error_RawArgumentsMissing", culture, Esc(rawArgumentsMeta.DisplayName)), helpContextPath);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.MissingRequiredArgument);
+        }
 
         // 5. Parse remaining args as positionals followed by options
         var parseResult = ParseArgumentsAndOptions(
@@ -744,6 +801,12 @@ public sealed class TigerCliApp
         }
 
         var settings = BindSettings(effectiveCommand.SettingsType, argumentMeta, optionMeta, parseResult);
+
+        // The tail binds verbatim, before prompting and validation, so Validate(), edit loaders, and
+        // the handler all observe it. It is always assigned (an absent tail binds an empty
+        // collection) so a declared raw-argument property is never left holding a seeded default.
+        rawArgumentsMeta?.Property.SetValue(settings, rawArgumentsMeta.CreateValue(rawArgumentSplit.Tail));
+
         settings.InteractionMode = effectiveInteractionMode;
         settings.Culture = culture;
         settings.CancellationToken = runCancellationToken;
@@ -974,6 +1037,15 @@ public sealed class TigerCliApp
     {
         WriteFrameworkError(culture, messageMarkup);
         WriteUsageHelpHint(culture, helpContextPath);
+    }
+
+    private void WriteRawArgumentsNotSupported(CultureInfo culture, IReadOnlyList<string> helpContextPath)
+    {
+        WriteUsageError(
+            culture,
+            TigerCliResources.Format(
+                "Error_RawArgumentsNotSupported", culture, Esc(RawArgumentSeparator)),
+            helpContextPath);
     }
 
     private void WriteUsageHelpHint(CultureInfo culture, IReadOnlyList<string> helpContextPath)
@@ -1329,6 +1401,28 @@ public sealed class TigerCliApp
             new SelectCell(alias.Name, formattingMode: CliFormattingMode.Raw),
             new SelectCell(resolvedDescription, formattingMode: CliFormattingMode.Preformatted),
             new SelectCell(marker, formattingMode: CliFormattingMode.Raw));
+    }
+
+    /// <summary>
+    /// Result of splitting the command line on its first <c>--</c> separator: the head TigerCli
+    /// parses, the raw tail that belongs to the resolved command, and whether a separator was
+    /// present at all (an empty tail after <c>--</c> is not the same as no <c>--</c>).
+    /// </summary>
+    private readonly record struct RawArgumentSplit(
+        string[] Head,
+        string[] Tail,
+        bool SeparatorPresent);
+
+    private static RawArgumentSplit SplitRawArguments(string[] args)
+    {
+        // Only the first separator splits: a later `--` is ordinary data the command passes on.
+        var separatorIndex = Array.IndexOf(args, RawArgumentSeparator);
+        return separatorIndex < 0
+            ? new RawArgumentSplit(args, [], SeparatorPresent: false)
+            : new RawArgumentSplit(
+                args[..separatorIndex],
+                args[(separatorIndex + 1)..],
+                SeparatorPresent: true);
     }
 
     private readonly record struct InformationRequest(
@@ -1829,6 +1923,30 @@ public sealed class TigerCliApp
             if (attr != null)
                 result.Add(new TigerCliOptionMetadata(prop, attr));
         }
+        return result;
+    }
+
+    /// <summary>
+    /// Resolves the settings type's raw trailing argument declaration, or <c>null</c> when it
+    /// declares none. Constructing the metadata validates the declaration, so a bad one fails while
+    /// the app is built rather than mid-parse.
+    /// </summary>
+    private static TigerCliRawArgumentsMetadata? BuildRawArgumentsMetadata(Type settingsType)
+    {
+        TigerCliRawArgumentsMetadata? result = null;
+        foreach (var prop in settingsType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            var attr = prop.GetCustomAttribute<TigerCliRawArgumentsAttribute>();
+            if (attr == null)
+                continue;
+
+            if (result != null)
+                throw new InvalidOperationException(
+                    $"Multiple [TigerCliRawArguments] properties on '{settingsType.Name}'. A command accepts at most one raw argument tail.");
+
+            result = new TigerCliRawArgumentsMetadata(prop, attr);
+        }
+
         return result;
     }
 
@@ -4992,7 +5110,9 @@ public sealed class TigerCliApp
             var hasCommandsOrGroups = _namedCommands.Count > 0 || _commandGroups.Count > 0;
             var usageLines = new List<string>();
             if (_defaultCommand != null)
-                usageLines.Add($"[Key]{safeAppName}[/]{FormatArgumentUsage(_defaultCommand.SettingsType)} {optionsUsage}");
+                usageLines.Add(
+                    $"[Key]{safeAppName}[/]{FormatArgumentUsage(_defaultCommand.SettingsType)} {optionsUsage}"
+                    + FormatRawArgumentsUsage(_defaultCommand.SettingsType));
             if (hasCommandsOrGroups)
                 usageLines.Add($"[Key]{safeAppName}[/] [Value]{FormatCommandUsage(culture)}[/] {optionsUsage}");
             TigerCliHelpRenderer.RenderSection($"[Accent]{Esc(L("Help_Usage", culture))}[/]", usageLines);
@@ -5101,7 +5221,8 @@ public sealed class TigerCliApp
             TigerCliHelpRenderer.RenderBlankLine();
             TigerCliHelpRenderer.RenderSection(
                 $"[Accent]{Esc(L("Help_Usage", culture))}[/]",
-                [$"[Key]{safeAppName} {safeCmdName}[/]{FormatArgumentUsage(command.SettingsType)} [Value]{FormatOptionsUsage(culture)}[/]"]);
+                [$"[Key]{safeAppName} {safeCmdName}[/]{FormatArgumentUsage(command.SettingsType)} [Value]{FormatOptionsUsage(culture)}[/]"
+                    + FormatRawArgumentsUsage(command.SettingsType)]);
             if (alias != null)
             {
                 TigerCliHelpRenderer.RenderBlankLine();
@@ -5390,6 +5511,25 @@ public sealed class TigerCliApp
         return " " + string.Join(" ", arguments.Select(arg => $"[Value]<{Esc(arg.DisplayName)}>[/]"));
     }
 
+    /// <summary>
+    /// Usage-line suffix for a command that declares a raw argument tail, rendered after the options
+    /// placeholder because the separator closes the parsed part of the command line. An optional
+    /// tail is bracketed like <c>[options]</c>; a required one is not. Empty when none is declared,
+    /// so usage lines for every other command are unchanged.
+    /// </summary>
+    private static string FormatRawArgumentsUsage(Type settingsType)
+    {
+        var rawArguments = BuildRawArgumentsMetadata(settingsType);
+        if (rawArguments == null)
+            return string.Empty;
+
+        var usage = $"{RawArgumentSeparator} <{rawArguments.DisplayName}>...";
+        if (!rawArguments.Required)
+            usage = $"[{usage}]";
+
+        return $" [Value]{Esc(usage)}[/]";
+    }
+
     private static string FormatCommandUsage(CultureInfo culture) =>
         $"<{Esc(L("Help_Placeholder_Command", culture))}>";
 
@@ -5399,7 +5539,8 @@ public sealed class TigerCliApp
     private static void PrintArguments(Type settingsType, CultureInfo culture, ResourceManager? appResources)
     {
         var arguments = BuildArgumentMetadata(settingsType);
-        if (arguments.Count == 0)
+        var rawArguments = BuildRawArgumentsMetadata(settingsType);
+        if (arguments.Count == 0 && rawArguments == null)
             return;
 
         var items = arguments.Select(arg =>
@@ -5408,11 +5549,31 @@ public sealed class TigerCliApp
             return (
                 $"<[Key]{Esc(arg.DisplayName)}[/]>",
                 (IReadOnlyList<string>)(string.IsNullOrEmpty(description) ? [] : [description]));
-        }).ToArray();
+        }).ToList();
+
+        // The raw tail is listed last: it is positional in spirit but sits after the options area,
+        // and its entry carries the pass-through note so the trust boundary is explicit in help.
+        if (rawArguments != null)
+        {
+            var details = new List<string>();
+            var description = TigerCliAppText.Resolve(
+                rawArguments.Description, rawArguments.DescriptionResourceKey, culture, appResources);
+            if (!string.IsNullOrEmpty(description))
+                details.Add(description);
+            // The whole detail line is escaped once below, so the separator goes in unescaped.
+            details.Add(Esc(TigerCliResources.Format(
+                "Help_RawArguments", culture, RawArgumentSeparator)));
+            if (rawArguments.Required)
+                details.Add(Esc(L("Help_Required", culture)));
+
+            items.Add((
+                $"[Key]{Esc(RawArgumentSeparator)}[/] <[Key]{Esc(rawArguments.DisplayName)}[/]>...",
+                details));
+        }
 
         TigerCliHelpRenderer.RenderDetailSection(
             $"[Accent]{Esc(L("Help_Arguments", culture))}[/]",
-            items);
+            items.ToArray());
         TigerCliHelpRenderer.RenderBlankLine();
     }
 

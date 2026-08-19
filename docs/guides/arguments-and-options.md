@@ -26,6 +26,9 @@ Billing          positional argument 1
 --schema dbo     option
 ```
 
+A command that must pass trailing tokens to a child process can additionally declare
+[raw trailing arguments](#raw-trailing-arguments), extending the shape with `[-- <raw-arguments>]`.
+
 For the full app shape, see [command apps](command-apps.md).
 
 ## Arguments, Options, And Selectors
@@ -507,6 +510,98 @@ For `[Flags]` enums, parser-driven prompts show selectable non-zero single-bit v
 
 Command-line parsing still uses enum member names. See [localization](localization.md) for enum text localization and [prompting and providers](prompting-and-providers.md) for prompt behavior.
 
+## Raw Trailing Arguments
+
+Some commands hand their trailing tokens to something else — a child executable, a nested tool, a
+pass-through argument list. Those tokens must reach the child exactly as typed, even when they look
+like options. A command opts into that with
+[TigerCliRawArgumentsAttribute](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliRawArgumentsAttribute.html)
+(`[TigerCliRawArguments]`):
+
+```csharp
+using ItTiger.TigerCli.Commands;
+
+public sealed class ExecSettings : TigerCliSettings
+{
+    [TigerCliOption("--connection-string-env", Description = "Environment variable holding the connection string.")]
+    public string ConnectionStringEnv { get; set; } = string.Empty;
+
+    [TigerCliRawArguments(
+        Name = "tool-args",
+        Description = "Child executable and its arguments, passed through unchanged.",
+        Required = true)]
+    public IReadOnlyList<string> Arguments { get; init; } = [];
+}
+```
+
+The command line then extends to:
+
+```text
+app <command-path> <positional-arguments> [options] [-- <raw-arguments>]
+```
+
+```bash
+my-tool exec --connection-string-env DB_CONNECTION -- child-tool --report
+my-tool exec -- child-tool --target={connection-string} --report
+```
+
+Both runs bind everything after `--` to `Arguments`, in order: `["child-tool", "--report"]` and
+`["child-tool", "--target={connection-string}", "--report"]`.
+
+Rules:
+
+- The **first** `--` splits the command line. TigerCli parses only the part before it.
+- The `--` token itself is not bound.
+- Every token after `--` is bound literally and in order, including tokens starting with `-` or
+  `--`, repeated tokens, empty strings, and any later `--`.
+- Tail tokens are never matched against app options, framework options, or contributed global
+  options; never prompted for; and never validated against a provider.
+- A tail is accepted only by a command that declares one. Any other command rejects it as a usage
+  error with the normal help hint.
+- Positionals and options before `--` bind exactly as they do without a tail.
+- Without `Required = true`, an absent or empty tail binds an empty collection.
+
+Supported property types are `string[]`, `List<string>`, and `IReadOnlyList<string>`; the property
+must be writable (`init` is fine). A settings class may declare at most one raw-argument property,
+and that property must not also carry `[TigerCliOption]` or `[TigerCliArgument]`. Violations fail
+when the app is built, not while a command line is parsed.
+
+Because the split happens before anything else is parsed, framework options keep their meaning only
+before the separator:
+
+```bash
+my-tool exec --non-interactive -- child-tool          # TigerCli runs non-interactively
+my-tool exec -- child-tool --non-interactive          # --non-interactive goes to child-tool
+```
+
+The same applies to informational options. Help is resolved from the head, so a command can pass
+`--help` on to its child:
+
+```bash
+my-tool exec --help -- child-tool     # prints TigerCli help for exec; nothing runs
+my-tool exec -- child-tool --help     # runs exec; child-tool receives --help
+```
+
+Generated help documents the tail in both the usage line and the arguments section:
+
+```text
+Usage:
+    my-tool exec [options] -- <tool-args>...
+
+Arguments:
+    -- <tool-args>...
+        Child executable and its arguments, passed through unchanged.
+        Everything after '--' is passed through unchanged.
+        Required.
+```
+
+An optional tail renders as `[-- <tool-args>...]`.
+
+Two edges worth knowing. A group prefix selects no command, so `app group -- child` is a usage
+error; declare the tail on the leaf command and write `app group run -- child`. And because the
+separator is consumed before option parsing, `--opt --` reports a missing option value rather than
+binding `--`; write `--opt=--` when an option value really must be the two-dash token.
+
 ## Framework-Owned Options
 
 TigerCli owns several framework options. They should not be defined as app options.
@@ -527,6 +622,10 @@ The informational options are valid at the app root only when they form a root r
 `app --help`, `app --help-env`, or `app --version`. For a command, write `app command --help`,
 `app command --help-errors`, or `app command --help-env`. These help sections compose; normal help
 does not hint at a section already included in the same request.
+
+Framework options are extracted only from the head of the command line. A command that declares
+[raw trailing arguments](#raw-trailing-arguments) receives every token after `--` untouched, so a
+framework option name appearing there stays in the tail.
 
 Execution and presentation options are app-wide in meaning, but TigerCli extracts them only from
 the selected command's options area. They must follow the command path and all required positional
@@ -567,6 +666,7 @@ Exit-code help is documented in [exit codes](exit-codes.md).
 - Use [TigerConsole](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.TigerConsole.html) `MarkupLine(...)` or `MarkupErrorLine(...)` instead of `Console.WriteLine(...)`, so tests and terminal rendering stay on the TigerCli path.
 - Do not define framework-owned options such as `--help`, `--help-errors`, `--help-env`, `--version`, `--version-full`, `--non-interactive`, or `--culture` on settings classes.
 - Do not use short-option bundles such as `-abc` unless you have defined `-abc` as a single alias.
+- Do not hand-roll pass-through handling with a repeated string option or a manual `--` scan. Declare [`[TigerCliRawArguments]`](#raw-trailing-arguments) so the tail is split before parsing and reaches the command intact.
 
 ## More Details
 
