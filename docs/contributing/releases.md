@@ -10,6 +10,10 @@ path. It builds, validates, and packs once, pauses at the protected `release` en
 publishes the exact validated package files to GitHub Packages first and NuGet.org second. It does
 not run on ordinary pushes.
 
+The [release preparation contract and automation target](../design/release-preparation-and-automation.md)
+defines the short prompt future agents should understand and the desired one-dispatch flow. That
+flow is not implemented yet; this page remains the current operational procedure.
+
 ## Prepare And Validate
 
 Set the release version in `Version.props`, update current-version installation examples, then run

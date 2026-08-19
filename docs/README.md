@@ -80,6 +80,7 @@ Design docs explain why TigerCli works the way it does. They summarize rationale
 - [Themes and styles](design/themes-and-styles.md)
 - [Overlays](design/overlays.md)
 - [Documentation artifacts](design/doc-artifacts.md)
+- [Release preparation contract and automation target](design/release-preparation-and-automation.md)
 - [Context and architecture](design/context.md)
 
 ## Contributing
