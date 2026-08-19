@@ -4,8 +4,10 @@ namespace ItTiger.TigerCli.Commands;
 /// Per-run owner of the process/system cancellation token. Created once at app startup (unless process
 /// cancellation handling is disabled) and disposed at the end of the run. The token it exposes is
 /// tripped cooperatively by <see cref="TigerCliProcessCancellation"/> when a Ctrl-C / SIGINT / SIGTERM /
-/// SIGQUIT signal is observed, and is linked into the modal loop so a prompt completes with
-/// <see cref="Enums.DialogResultKind.SystemCancel"/>.
+/// SIGQUIT signal is observed. It is linked into the modal loop so a prompt completes with
+/// <see cref="Enums.DialogResultKind.SystemCancel"/>, published as the ambient system-cancellation token
+/// so headless activity execution observes it, and combined with the caller's <c>RunAsync</c> token into
+/// <see cref="TigerCliSettings.CancellationToken"/> for the command handler.
 /// </summary>
 internal sealed class TigerCliLifetime : IDisposable
 {

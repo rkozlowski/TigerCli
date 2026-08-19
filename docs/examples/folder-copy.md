@@ -66,10 +66,13 @@ First, it scans the source folder inside a simple `RunActivityAsync` phase:
 ```csharp
 var scanResult = await TigerTui.RunActivityAsync(
     settings.T("Scanning source folder..."),
-    (_, ct) => FolderCopyPlanner.PlanAsync(source, ct));
+    (_, ct) => FolderCopyPlanner.PlanAsync(source, ct),
+    ct: settings.CancellationToken);
 ```
 
 That keeps a slow filesystem walk cancellable and visible instead of blocking silently before the copy begins. Under `--non-interactive`, the same simple message prints once before the scan body runs.
+
+`settings.CancellationToken` is the run's cancellation token — the token passed to `RunAsync` combined with Ctrl-C / SIGINT / SIGTERM / SIGQUIT. Passing it is what makes the headless walk cancellable, not just the semi-interactive dialog; both activity phases pass it the same way. See [interaction modes](../guides/interaction-modes.md#cancellation).
 
 The copy itself runs inside a richer activity dialog built with `ActivityDialogSpec`. The dialog reports:
 

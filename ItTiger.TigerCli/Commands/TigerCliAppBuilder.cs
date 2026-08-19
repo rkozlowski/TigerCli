@@ -1288,10 +1288,15 @@ public sealed class TigerCliAppBuilder
 
     /// <summary>
     /// Disables TigerCli-managed process/system cancellation handling. By default TigerCli registers
-    /// cooperative handlers for Ctrl-C / SIGINT, SIGTERM, and (where supported) SIGQUIT at run start, so
-    /// those signals surface as <see cref="DialogResultKind.SystemCancel"/> through the prompt/modal
-    /// pipeline and let modal <c>finally</c> blocks restore terminal state. Call this when the host owns
-    /// signal handling itself.
+    /// cooperative handlers for Ctrl-C / SIGINT, SIGTERM, and (where supported) SIGQUIT at run start, in
+    /// both interaction modes, so those signals surface as
+    /// <see cref="DialogResultKind.SystemCancel"/> through the prompt/modal pipeline, reach headless
+    /// activity execution, and are observable by the handler through
+    /// <see cref="TigerCliSettings.CancellationToken"/> — letting the run end with an app-defined exit
+    /// code instead of abrupt termination. A second signal escalates to default termination so a
+    /// non-cooperative process stays killable. Call this when the host owns signal handling itself;
+    /// <see cref="TigerCliSettings.CancellationToken"/> then carries only the caller's
+    /// <c>RunAsync</c> token.
     /// </summary>
     public TigerCliAppBuilder DisableProcessCancellation()
     {

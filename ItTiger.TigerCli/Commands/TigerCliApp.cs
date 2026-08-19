@@ -328,7 +328,11 @@ public sealed class TigerCliApp
     /// <param name="args">The raw command-line arguments.</param>
     /// <param name="promptShell">The shell that hosts prompts, or <c>null</c> for the default console shell.</param>
     /// <param name="promptTimeout">Optional timeout applied to individual prompts; <c>null</c> means no timeout.</param>
-    /// <param name="ct">Cancellation token observed by prompts and provider callbacks.</param>
+    /// <param name="ct">
+    /// Cancellation token observed by prompts and provider callbacks, and combined with TigerCli's
+    /// process/system cancellation into <see cref="TigerCliSettings.CancellationToken"/> so the command
+    /// handler can observe it too.
+    /// </param>
     /// <returns>The process exit code to return from <c>Main</c>.</returns>
     public async Task<int> RunAsync(
         string[] args,
@@ -608,11 +612,16 @@ public sealed class TigerCliApp
         }
 
         // Process/system cancellation handling (Ctrl-C / SIGINT / SIGTERM / SIGQUIT). Registered once at
-        // run start unless opted out, and only for the real-console prompt path (no injected promptShell)
-        // and an interactive mode — a host that injects its own shell owns signal handling, and a fully
-        // non-interactive run never prompts. The lifetime's token is published through SystemCancellationScope
-        // (an AsyncLocal on a neutral type, so publishing it never eagerly initializes the console-backed
-        // InlineShell singleton) and stays isolated across parallel runs. Torn down in the finally.
+        // run start unless opted out, and only for the real-console path (no injected promptShell) — a
+        // host that injects its own shell owns signal handling. Registration is deliberately NOT gated on
+        // the interaction mode: a non-interactive run never prompts, but it still executes handler work
+        // (headless activities) that must be able to observe cancellation, and without a registered
+        // handler the runtime terminates the process abruptly (STATUS_CONTROL_C_EXIT on Windows) before
+        // any app-defined exit code can be returned. Registration uses PosixSignalRegistration only, so it
+        // touches no console handles and stays safe under redirected stdin/stdout/stderr. The lifetime's
+        // token is published through SystemCancellationScope (an AsyncLocal on a neutral type, so
+        // publishing it never eagerly initializes the console-backed InlineShell singleton) and stays
+        // isolated across parallel runs. Torn down in the finally.
         TigerCliLifetime? lifetime = null;
         TigerCliProcessCancellation? processCancellation = null;
         var previousAmbientSystemCancellation = SystemCancellationScope.Current;
@@ -626,14 +635,24 @@ public sealed class TigerCliApp
 
         var processCancellationActive =
             _processCancellationEnabled
-            && promptShell == null
-            && effectiveInteractionMode != TigerCliInteractionMode.NonInteractive;
+            && promptShell == null;
         if (processCancellationActive)
         {
             lifetime = new TigerCliLifetime();
             processCancellation = TigerCliProcessCancellation.Register(lifetime);
             SystemCancellationScope.Current = lifetime.SystemCancellation;
         }
+
+        // Handler-visible run cancellation: the caller's RunAsync token combined with TigerCli's
+        // process/system cancellation when TigerCli owns it. Published on
+        // TigerCliSettings.CancellationToken so a handler threads one token into its own work and into
+        // activity calls (TigerTui.RunActivityAsync(..., ct: settings.CancellationToken)). When TigerCli
+        // does not own process cancellation the caller's token is used directly, so no source is
+        // allocated. Disposed in the finally, before the lifetime it links to.
+        CancellationTokenSource? runCancellation = lifetime == null
+            ? null
+            : CancellationTokenSource.CreateLinkedTokenSource(ct, lifetime.SystemCancellation);
+        var runCancellationToken = runCancellation?.Token ?? ct;
 
         try
         {
@@ -727,6 +746,7 @@ public sealed class TigerCliApp
         var settings = BindSettings(effectiveCommand.SettingsType, argumentMeta, optionMeta, parseResult);
         settings.InteractionMode = effectiveInteractionMode;
         settings.Culture = culture;
+        settings.CancellationToken = runCancellationToken;
         settings.AppResources = _appResources;
 
         // 6b. Edit-only: load the existing object and merge its values into the bound
@@ -910,6 +930,17 @@ public sealed class TigerCliApp
             WriteFrameworkError(culture, message);
             return _exitCodePolicy.Resolve(ex.ExitKind);
         }
+        catch (OperationCanceledException) when (runCancellationToken.IsCancellationRequested)
+        {
+            // Cooperative cancellation the handler observed but did not map itself. This is a normal
+            // flow, not a crash: report it with the same quiet notice prompt cancellation uses and
+            // resolve the Cancelled mapping, so a script sees the app's cancellation exit code instead
+            // of UnhandledException. The `when` guard is deliberate — an OperationCanceledException
+            // raised while the run token was never requested is unrelated (e.g. an app's own inner
+            // timeout) and still falls through to the generic handler below rather than being masked.
+            WriteCancellationNotice(culture);
+            return _exitCodePolicy.Resolve(TigerCliExitKind.Cancelled);
+        }
         catch (Exception ex)
         {
             WriteFrameworkError(culture, Esc(GetUserFacingExceptionMessage(ex)));
@@ -919,10 +950,12 @@ public sealed class TigerCliApp
         finally
         {
             // Restore the prior ambient (so nested/sequential runs don't observe a stale token) and
-            // unregister the OS signal handlers for this run.
+            // unregister the OS signal handlers for this run. The linked run source is disposed before
+            // the lifetime it links to, so its registration on the lifetime's source is released first.
             if (processCancellationActive)
                 SystemCancellationScope.Current = previousAmbientSystemCancellation;
             InteractionModeScope.Current = previousAmbientInteractionMode;
+            runCancellation?.Dispose();
             processCancellation?.Dispose();
             lifetime?.Dispose();
         }

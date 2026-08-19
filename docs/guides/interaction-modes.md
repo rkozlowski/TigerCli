@@ -46,7 +46,13 @@ for keyboard input. Missing required values fail instead of prompting. Supplied 
 through parsing, binding, framework and custom validation, and configured provider validation.
 
 This mode is suitable for scripts, CI, redirection, and AI agents because a command cannot
-unexpectedly pause for input.
+unexpectedly pause for input. It is also safe under redirected stdin/stdout/stderr: headless
+execution never reads the cursor position or polls the keyboard, so it cannot fail with
+"The handle is invalid." Semi-interactive prompting does need a real console — an interactive prompt
+under redirected handles is not supported.
+
+Cancellation still applies. See [Cancellation](#cancellation) for how Ctrl-C and the `RunAsync`
+token reach headless work through `TigerCliSettings.CancellationToken`.
 
 ## Command Menu
 
@@ -87,6 +93,9 @@ Do not branch to a separate implementation merely to suppress activity UI. Cance
 failure, and activity result semantics still apply in headless execution. An
 `ActivityDialogSpec.NonInteractiveMessage` can emit one static progress line before work begins.
 
+Pass `ct: settings.CancellationToken` on that single call so the headless run is cancellable by
+Ctrl-C and by the `RunAsync` token — see [Cancellation](#cancellation).
+
 ## Activities, Progress, And Spinners
 
 In semi-interactive mode an activity can render its dialog, status rows, progress bars, spinners,
@@ -119,12 +128,53 @@ validation run after prompting.
 - Cancelling a prompt after command selection maps to [TigerCliExitKind](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Commands.TigerCliExitKind.html).Cancelled.
 - Activity stop actions preserve `Cancelled`, `Aborted`, `TimedOut`, and `SystemCancelled` outcomes.
 
+TigerCli registers cooperative process/system cancellation handlers (Ctrl-C / SIGINT, SIGTERM, and
+Ctrl-Break / SIGQUIT where supported) in **both** interaction modes. A non-interactive run never
+prompts, but it still executes handler work, so the signal must reach that work rather than tearing
+the process down — otherwise a script sees an abrupt kill (`STATUS_CONTROL_C_EXIT` on Windows)
+instead of the app's cancellation exit code.
+
+`TigerCliSettings.CancellationToken` is the handler-visible run token. It combines the token passed
+to `TigerCliApp.RunAsync` with TigerCli's process/system cancellation, so a handler observes both
+through one token:
+
+```csharp
+public override async Task<int> ExecuteAsync(MySettings settings)
+{
+    var result = await TigerTui.RunActivityAsync(
+        "Importing data...",
+        (context, ct) => ImportAsync(context, ct),
+        ct: settings.CancellationToken);   // ← what makes the headless activity cancellable
+
+    return result.Outcome == ActivityOutcome.Completed ? 0 : 2;
+}
+```
+
+Pass it explicitly. Activities do not pick the run token up implicitly, and a handler that leaves
+`ct` unset gets an activity that only a signal can stop.
+
+The handler decides what cancellation means. Catch it and return your own exit code, or map
+`ActivityOutcome.Cancelled` / `SystemCancelled` yourself. A cancellation that escapes the handler
+while the run token is cancelled is reported with the quiet cancellation notice and mapped through
+`TigerCliExitKind.Cancelled` — never `UnhandledException`. An `OperationCanceledException` thrown
+while the run token was *not* cancelled stays an unhandled exception, so an app's own inner timeout
+is not silently reclassified.
+
+A **second** signal escalates: cancellation is requested again, but default termination is no longer
+suppressed, so a process whose work ignores cooperative cancellation stays killable from the
+terminal. Press Ctrl-C twice to force it down.
+
+`TigerCliAppBuilder.DisableProcessCancellation()` hands signal handling back to the host; the run
+token then carries only the `RunAsync` token. Signal registration is also skipped when a host injects
+its own shell.
+
 ## Application Configuration
 
 `TigerCliAppBuilder.SetInteractionMode(...)` sets the application policy, and
 `SetCommandInteractionMode<THandler>(...)` can override it for one command.
-`TigerCliSettings.InteractionMode` exposes the resolved mode to handlers. Applications normally do
-not need to branch on it because prompt and activity APIs already apply the policy.
+`TigerCliSettings.InteractionMode` exposes the resolved mode to handlers, and
+`TigerCliSettings.CancellationToken` exposes the run's cancellation token. Applications normally do
+not need to branch on the mode because prompt and activity APIs already apply the policy.
 
 ## Reserved Full-Interactive Value
 

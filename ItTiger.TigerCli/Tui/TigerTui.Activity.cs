@@ -295,8 +295,10 @@ public static partial class TigerTui
         if (!string.IsNullOrEmpty(spec.NonInteractiveMessage))
             TigerConsole.MarkupLine(spec.NonInteractiveMessage);
 
-        // The system token is only ever cancelable during interactive runs (non-interactive runs install
-        // no process-cancellation handler), but honoring it here keeps the headless path faithful.
+        // Process/system cancellation (Ctrl-C / SIGINT / SIGTERM / SIGQUIT). TigerCliApp registers its
+        // handlers and publishes this token in both interaction modes, so a headless activity is
+        // cancellable by a signal exactly as an interactive one is. A default token can never be
+        // cancelled, so a caller running outside a TigerCliApp run is unaffected.
         var systemToken = SystemCancellationScope.Current;
 
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, systemToken);

@@ -262,6 +262,15 @@ await RunWithActivityAsync(...);
 
 `RunWithActivityAsync` should use `TigerTui.RunActivityAsync`. Simple static-message overloads use that message as one script-friendly status line under `--non-interactive`. For richer activity dialogs, use an `ActivityDialogSpec`, and where useful call `SetNonInteractiveMessage(...)` when script output should differ from the visible activity message.
 
+Always pass the run's cancellation token to the activity:
+
+```csharp
+var result = await TigerTui.RunActivityAsync(
+    "Importing data...",
+    (context, ct) => ImportAsync(context, ct),
+    ct: settings.CancellationToken);
+```
+
 See [Folder Copy](examples/folder-copy.md) for a complete in-repo sample of this pattern.
 
 Trust TigerCli's mode-aware primitives:
@@ -337,6 +346,8 @@ TigerConsole.Render(details);
 - Adding local spinners/loading messages around providers.
 - Creating background console writer loops for progress/activity.
 - Branching on `settings.InteractionMode` to bypass `TigerTui.RunActivityAsync` with a separate direct execution path.
+- Registering `Console.CancelKeyPress` or a native console-control handler. TigerCli owns process/system cancellation in both interaction modes; use `settings.CancellationToken`.
+- Creating a `CancellationTokenSource` inside a handler when `settings.CancellationToken` is the run's token, or omitting `ct:` on `RunActivityAsync` and expecting Ctrl-C to reach the operation.
 - Using hard-coded ANSI colors or raw color tags when semantic styles fit.
 - Hand-rolling warning/error message boxes with local colors or custom dialog code instead of `TigerTui.WarningAsync(...)`/`TigerTui.ErrorAsync(...)`.
 - Hand-rendering tables, lists, or details with string padding and `MarkupLine` loops.

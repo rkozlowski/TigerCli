@@ -29,6 +29,23 @@ An activity is *work-with-UI*, not a prompt. In non-interactive [TigerCliInterac
 
 The no-shell overloads run on the `InlineShell` singleton, which reports its interaction mode from the per-run ambient scope published by `TigerCliApp` (`InteractionModeScope`). So a `RunActivityAsync` call inside a command handler observes the run's real `--non-interactive` mode without the handler threading a shell through. This mirrors the existing `SystemCancellationScope` deferral. See [interaction modes](../guides/interaction-modes.md#interaction-is-disabled-not-execution).
 
+### Cancelling a headless activity
+
+`TigerCliApp` registers its process/system cancellation handlers and publishes `SystemCancellationScope` in **both** interaction modes, so the `systemToken` a headless activity reads is live: Ctrl-C / SIGINT / SIGTERM / SIGQUIT map to `ActivityOutcome.SystemCancelled` exactly as they map to `DialogResultKind.SystemCancel` in the modal path.
+
+The **caller token is not ambient**. `RunActivityAsync`'s `ct` parameter is the only way the run's `RunAsync` token reaches the operation, so a handler must pass it explicitly:
+
+```csharp
+var result = await TigerTui.RunActivityAsync(
+    spec,
+    (context, ct) => ImportAsync(context, ct),
+    ct: settings.CancellationToken);
+```
+
+`TigerCliSettings.CancellationToken` already combines the `RunAsync` token with process/system cancellation, so one argument covers both. This is a deliberate design choice: an ambient run-token scope would add a fourth precedence rung to both the headless and modal paths, and an explicit `ct:` keeps the operation's cancellation source visible at the call site. Because the token is *linked* to the system token, both trip together on Ctrl-C — the outcome mapping checks the system token first in both paths, so the attribution stays `SystemCancelled` rather than depending on which one is observed first.
+
+Outcome attribution is unchanged and identical across modes: **system > caller token > timeout**.
+
 ## Command Pattern
 
 TigerCli activity APIs are mode-aware. Do not write separate "direct" and "activity" execution paths just to support `--non-interactive`. Use one `RunActivityAsync` path and let TigerCli render it interactively or run it headlessly.

@@ -731,6 +731,34 @@ public sealed class TypedCommand
 
 Synchronous command logic can return `Task.FromResult(...)`. Keeping all command handlers async keeps execution, prompting, and app testing on one model.
 
+### Framework-Populated Settings
+
+Beyond the members you declare, TigerCli populates a few properties on every `TigerCliSettings` instance before validation and handler execution:
+
+| Property | What it carries |
+|---|---|
+| `InteractionMode` | The resolved [TigerCliInteractionMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.TigerCliInteractionMode.html) for the run. |
+| `Culture` | The resolved run culture, used by the `T`/`F`/`E` text-lookup helpers. |
+| `CancellationToken` | The run's cancellation token: the token passed to `RunAsync` combined with process/system cancellation (Ctrl-C / SIGINT / SIGTERM / SIGQUIT). |
+
+`CancellationToken` is how cancellation reaches your work. Thread it into async calls and pass it to activities explicitly — it is what makes a `--non-interactive` run cancellable rather than abruptly killed:
+
+```csharp
+public override async Task<ToolExitCode> ExecuteAsync(TypedSettings settings)
+{
+    var result = await TigerTui.RunActivityAsync(
+        "Importing data...",
+        (context, ct) => ImportAsync(context, ct),
+        ct: settings.CancellationToken);
+
+    return result.Outcome == ActivityOutcome.Completed
+        ? ToolExitCode.Ok
+        : ToolExitCode.Cancelled;
+}
+```
+
+The token is tied to the run: do not retain it, or anything registered on it, after `ExecuteAsync` returns. See [exit codes](exit-codes.md#cancellation-during-handler-execution) for how cancellation maps to exit codes.
+
 ## Exit Codes
 
 Small tools can return raw integer exit codes. Larger tools should usually define one application-wide enum and return typed values from commands.

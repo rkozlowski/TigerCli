@@ -349,8 +349,14 @@ var result = await TigerTui.RunActivityAsync(
     {
         // one execution path
         // progress updates are safe in interactive and headless modes
-    });
+    },
+    ct: settings.CancellationToken);
 ```
+
+Pass `ct: settings.CancellationToken` on that call. It carries the run's cancellation — the token given
+to `RunAsync` combined with Ctrl-C / SIGINT / SIGTERM / SIGQUIT — and is what makes the headless body
+cancellable, not only the interactive dialog. See
+[interaction modes](interaction-modes.md#cancellation).
 
 Do not write a direct path only for non-interactive mode:
 

@@ -245,7 +245,13 @@ internal sealed class InlineShell : ICliAppShell
                     }
                     catch (OperationCanceledException) when (ct.IsCancellationRequested)
                     {
-                        return new DialogResult(DialogResultKind.TokenCancel, null);
+                        // Same precedence as the top of the loop: SystemCancel outranks TokenCancel.
+                        // A caller token linked to the system token (as TigerCliSettings.CancellationToken
+                        // is) trips both at once, and the delay observes it here rather than at the next
+                        // loop head — without this check the attribution would depend on that race.
+                        return systemToken.IsCancellationRequested
+                            ? new DialogResult(DialogResultKind.SystemCancel, null)
+                            : new DialogResult(DialogResultKind.TokenCancel, null);
                     }
                     continue;
                 }

@@ -54,9 +54,13 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
 
         // Scanning phase: walk the source tree inside its own simple activity so a slow filesystem walk
         // shows progress feedback (and stays cancellable) instead of silently blocking before the copy.
+        // settings.CancellationToken carries the run's cancellation — the RunAsync token combined with
+        // Ctrl-C / SIGINT / SIGTERM / SIGQUIT — so passing it here is what makes the headless
+        // (--non-interactive) walk cancellable too, not just the semi-interactive dialog.
         var scanResult = await TigerTui.RunActivityAsync(
             settings.T("Scanning source folder…"),
-            (_, ct) => FolderCopyPlanner.PlanAsync(source, ct));
+            (_, ct) => FolderCopyPlanner.PlanAsync(source, ct),
+            ct: settings.CancellationToken);
 
         if (scanResult.Outcome == ActivityOutcome.Failed)
         {
@@ -91,7 +95,7 @@ public sealed class FolderCopyCommand : TigerCliAsyncCommandHandler<FolderCopySe
                 progress => ReportProgress(context, progress, stopwatch.Elapsed), ct).ConfigureAwait(false);
 
             return plan.Items.Count;
-        });
+        }, ct: settings.CancellationToken);
 
         stopwatch.Stop();
         return ReportOutcome(settings, result, plan, source, copyTarget, stopwatch.Elapsed);

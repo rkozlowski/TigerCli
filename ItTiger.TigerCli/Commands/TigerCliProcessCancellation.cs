@@ -4,10 +4,12 @@ namespace ItTiger.TigerCli.Commands;
 
 /// <summary>
 /// Registers TigerCli's process/system cancellation handlers (Ctrl-C / SIGINT, SIGTERM, and SIGQUIT
-/// where supported) and routes them to a <see cref="TigerCliLifetime"/>. Handlers are cooperative: they
-/// cancel the runtime's default abrupt termination so the modal loop's <c>finally</c> can restore
-/// terminal state, then trip the lifetime's system-cancellation token so the active prompt completes
-/// with <see cref="Enums.DialogResultKind.SystemCancel"/>.
+/// where supported) and routes them to a <see cref="TigerCliLifetime"/>. The first signal of a run is
+/// cooperative: it cancels the runtime's default abrupt termination so the modal loop's <c>finally</c>
+/// can restore terminal state, then trips the lifetime's system-cancellation token so the active prompt
+/// completes with <see cref="Enums.DialogResultKind.SystemCancel"/> and headless handler work observes
+/// cancellation. A second signal escalates — cancellation is requested again, but default termination
+/// is left in place so a process that ignores cooperative cancellation stays killable.
 /// </summary>
 /// <remarks>
 /// Uses <see cref="PosixSignalRegistration"/>, which is cross-platform: on Windows SIGINT maps to
@@ -58,20 +60,30 @@ internal sealed class TigerCliProcessCancellation : IDisposable
         }
     }
 
-    // Product signal handler. Cooperative: cancel the default abrupt termination so modal/finally
-    // blocks can restore terminal state, then trip the lifetime's system-cancellation token.
+    // Product signal handler with second-signal escalation.
+    //
+    // First signal: cooperative. Suppress the runtime's default abrupt termination so modal/finally
+    // blocks can restore terminal state and handler work can observe cancellation and return an
+    // app-defined exit code, then trip the lifetime's system-cancellation token.
+    //
+    // Second and later signals: still request cancellation, but leave the default termination in place.
+    // Suppressing every signal would make a process whose work does not observe cancellation
+    // unkillable from the terminal, which is worse than the abrupt exit this handler exists to avoid.
+    // The count is per run and spans signal kinds, so Ctrl-C followed by Ctrl-Break escalates.
     internal void HandleSignal(PosixSignalContext context)
     {
-        context.Cancel = true;
-        RequestCancellation();
+        ArgumentNullException.ThrowIfNull(context);
+        context.Cancel = RequestCancellation() == 1;
     }
 
     // Testable product seam: the action a real signal handler performs, minus the OS-supplied context.
     // Invoked by HandleSignal and callable directly by tests that cannot raise a real OS signal.
-    internal void RequestCancellation()
+    // Returns the 1-based ordinal of this request within the run, which is what drives escalation.
+    internal int RequestCancellation()
     {
-        Interlocked.Increment(ref _signalsHandled);
+        var ordinal = Interlocked.Increment(ref _signalsHandled);
         _lifetime.RequestSystemCancellation();
+        return ordinal;
     }
 
     public void Dispose()

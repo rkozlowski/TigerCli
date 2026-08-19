@@ -29,6 +29,25 @@ public abstract class TigerCliSettings
     /// </summary>
     public CultureInfo Culture { get; internal set; } = CultureInfo.GetCultureInfo("en-US");
 
+    /// <summary>
+    /// The run's cancellation token, populated by the framework before validation and handler
+    /// execution. It combines the token passed to <c>TigerCliApp.RunAsync</c> with TigerCli's
+    /// process/system cancellation (Ctrl-C / SIGINT / SIGTERM / SIGQUIT) when TigerCli owns signal
+    /// handling, so a handler observes both through one token in either interaction mode.
+    /// </summary>
+    /// <remarks>
+    /// Handlers should thread this into their own asynchronous work and pass it to activity calls
+    /// explicitly — <c>TigerTui.RunActivityAsync(spec, operation, ct: settings.CancellationToken)</c> —
+    /// which is what makes a non-interactive headless activity cancellable. A handler that catches
+    /// cancellation may return its own exit code; a cancellation that escapes the handler while this
+    /// token is cancelled is reported quietly and mapped through
+    /// <see cref="TigerCliExitKind.Cancelled"/> rather than
+    /// <see cref="TigerCliExitKind.UnhandledException"/>. The token is not cancelable when the host
+    /// supplied no token and TigerCli does not own process cancellation. It is tied to the run: do not
+    /// retain it, or anything registered on it, after <c>ExecuteAsync</c> returns.
+    /// </remarks>
+    public CancellationToken CancellationToken { get; internal set; }
+
     internal ResourceManager? AppResources { get; set; }
 
     /// <summary>

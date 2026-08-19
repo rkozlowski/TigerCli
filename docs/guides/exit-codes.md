@@ -203,7 +203,7 @@ framework result -> TigerCliExitKind -> configured policy -> app enum value -> i
 
 This keeps TigerCli internals from leaking into your public contract while still giving the framework a stable way to map its own failures.
 
-## Prompt Cancellation
+## Cancellation
 
 When a user dismisses an interactive prompt — pressing `Escape`, letting a prompt time out, or triggering token/system cancellation (Ctrl-C) — *after* a command has been selected, that is a **normal flow**, not a validation or usage error. TigerCli models it explicitly:
 
@@ -226,6 +226,31 @@ By default, with only the outcome baseline configured, `Cancelled` maps to the *
 ```
 
 A missing required value in non-interactive mode, or a value that fails validation, is **not** cancellation — those still report through `MissingRequiredArgument`/`ValidationError` with a real error message.
+
+### Cancellation During Handler Execution
+
+Cancellation reaches command handlers too, in **both** interaction modes. `TigerCliSettings.CancellationToken` combines the token passed to `TigerCliApp.RunAsync` with TigerCli's process/system cancellation (Ctrl-C / SIGINT / SIGTERM / SIGQUIT). A handler that observes it decides the exit code:
+
+```csharp
+public override async Task<int> ExecuteAsync(MySettings settings)
+{
+    try
+    {
+        await DoWorkAsync(settings.CancellationToken);
+        return (int)MyExitCode.Ok;
+    }
+    catch (OperationCanceledException)
+    {
+        return (int)MyExitCode.Cancelled;   // returned verbatim; the policy does not remap it
+    }
+}
+```
+
+Handler return values are never remapped by the exit-code policy, so an app's own cancellation code always wins.
+
+If cancellation **escapes** the handler while the run token is cancelled, TigerCli reports it as cancellation rather than a crash: the same muted `Cancelled.` notice, and the `TigerCliExitKind.Cancelled` mapping — not `UnhandledException`. An `OperationCanceledException` thrown while the run token was *not* cancelled is unrelated (an app's own inner timeout, say) and still maps through `UnhandledException` with a real error message, so genuine faults are not masked.
+
+This is what makes a script-first app script-safe: without a registered signal handler the process would be terminated abruptly (`STATUS_CONTROL_C_EXIT` on Windows) and no exit code of yours would ever be returned. A **second** signal escalates to default termination, so a process that ignores cooperative cancellation stays killable.
 
 ## Command-Specific vs App-Wide Codes
 
