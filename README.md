@@ -37,19 +37,19 @@ Mode changes presentation and prompting policy; it should not change the busines
 Install the main TigerCli package:
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.9.4
+dotnet add package ItTiger.TigerCli --version 0.9.5
 ```
 
 `ItTiger.Core` is also available separately for shared support utilities:
 
 ```bash
-dotnet add package ItTiger.Core --version 0.9.4
+dotnet add package ItTiger.Core --version 0.9.5
 ```
 
 The optional PNG rendering sink is packaged separately for documentation and visual artifacts:
 
 ```bash
-dotnet add package ItTiger.TigerCli.PngSink --version 0.9.4
+dotnet add package ItTiger.TigerCli.PngSink --version 0.9.5
 ```
 
 ## What It Looks Like

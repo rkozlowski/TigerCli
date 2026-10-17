@@ -7,7 +7,9 @@ for Windows PowerShell 5.1 and PowerShell 7+: install, upgrade, repair, and unin
 per machine.
 
 App authors enable completion with `UseShellCompletion()`; see [shell completion](../guides/shell-completion.md)
-for what is completed and how to try it in a shell.
+for what is completed and how to try it in a shell. Automatic PowerShell completion installation by
+TigerSetup is planned, not implemented; its agreed requirements are in
+[planned TigerSetup integration](#planned-tigersetup-integration).
 
 ## Who Owns What
 
@@ -148,8 +150,10 @@ completion too.
 
 ### The Profile Block
 
-Activation is opt-in: an install option the user or administrator chooses. Never edit profiles
-silently. The block has fixed markers, so any tool (or a person) can find, replace, or remove it:
+Activation follows an explicit installation choice made by the user or administrator: an option of
+its own, or the `PATH` option that completion depends on (see [the PATH requirement](#the-path-requirement)).
+Never edit a profile without such a choice. The block has fixed markers, so any tool (or a person)
+can find, replace, or remove it:
 
 ```powershell
 # >>> TigerCli completion: my-tool >>>
@@ -189,6 +193,22 @@ processes started after the change.
 Changes take effect in new sessions. Open sessions keep their completer until they end; it stays
 silent once the executable is gone.
 
+### Ownership Of Installed Artifacts
+
+An installer owns exactly what it wrote: the script file in a directory it owns, and the marked
+blocks it added to the profiles it recorded. Record both at install time, including each profile
+path and the scope (user or machine) it was written for. Upgrade, repair, and uninstall act only on
+those records:
+
+- delete only the script file the installer wrote, never a file it found;
+- remove or rewrite a block only in a profile it recorded, and only the block whose markers name
+  this application;
+- leave everything else in the profile alone, including the user's own lines that load completion
+  for the same application without markers.
+
+When a recorded profile no longer contains the block, there is nothing to remove; repair re-adds it
+only while the recorded activation choice stands.
+
 ### Per-user Installs
 
 Install for the current user, write the script under the per-user install directory, and activate
@@ -221,5 +241,70 @@ These shells load completion files from conventional directories, so no profile 
 | Fish | `~/.config/fish/completions/<name>.fish` | `/usr/share/fish/vendor_completions.d/<name>.fish` |
 
 The lifecycle is the same: write the generated file on install, regenerate it on upgrade and repair,
-and delete it on uninstall. These locations are the shells' documented conventions; this repository
-does not run automated tests against them.
+and delete it on uninstall. These locations are the shells' documented conventions. The
+[real-shell checks](../contributing/unit-testing.md#real-shell-checks) verify the generated scripts
+in live Bash, Zsh, and Fish sessions that load them with `source`; loading from these directories is
+not tested here.
+
+## Planned TigerSetup Integration
+
+> **Status: planned.** TigerSetup does not implement this yet, and no TigerSetup manifest schema for
+> it is defined here. This section records the agreed requirements so that TigerSetup and TigerCli
+> apps can be built toward them. Until TigerSetup ships it, activate completion manually as described
+> in [shell completion](../guides/shell-completion.md), or with the integration above.
+
+TigerSetup is planned to install PowerShell completion for command-line applications in general,
+not only for TigerCli apps. TigerCli is a first-class provider, a preset of that generic capability,
+and uses the same installation lifecycle as every other application.
+
+| Party | Planned responsibility |
+|---|---|
+| The app author | Enables completion in the app's TigerSetup manifest. This is a developer-only capability, not a separate installer UI option. For a TigerCli app, also calls `UseShellCompletion()` in the app's code. |
+| TigerCli | Generates the PowerShell completion script: `app --completion pwsh`, under [the generation contract](#the-generation-contract). |
+| TigerSetup | Installs and activates completion, and upgrades, repairs, and uninstalls it, following this page's lifecycle and [ownership rules](#ownership-of-installed-artifacts). |
+| The user | Chooses the existing **Add to PATH** installer option, which decides whether completion is installed. |
+
+TigerSetup installs completion only when both conditions hold:
+
+| Author enabled completion in the manifest | User selected **Add to PATH** | Result |
+|---|---|---|
+| Yes | Yes | Completion is installed and activated automatically. |
+| Yes | No | Completion is not installed. |
+| No | Yes or no | Completion is not installed. |
+
+This follows [the PATH requirement](#the-path-requirement): completion is registered by command
+name, so it is useful only for an executable on `PATH`.
+
+Requirements:
+
+- **Completion source.** A generic application supplies its own completion script, or a command that
+  generates one. The TigerCli preset is the command `<app> --completion pwsh`.
+- **TigerCli prerequisite.** A TigerCli app must call `UseShellCompletion()`. TigerSetup validates
+  that `--completion pwsh` is available: an app built with completion prints the script to stdout
+  and exits with its success code, while one built without it rejects `--completion` as an unknown
+  option and exits with its invalid-arguments code.
+- **Coverage.** Windows PowerShell 5.1 and PowerShell 7+, user and machine scope, and install,
+  upgrade, repair, and uninstall.
+- **Ownership-safe cleanup.** TigerSetup removes only the script files and profile blocks it
+  recorded installing.
+- **No manual step.** A user who installs through TigerSetup with **Add to PATH** selected does not
+  have to activate completion.
+- **Ownership split.** TigerCli generates completion; the installer owns its installation and
+  activation. The app still never edits the shell environment itself.
+- **Other installation methods.** The manual activation procedure in
+  [shell completion](../guides/shell-completion.md) remains supported for every app installed
+  another way.
+
+Design points the TigerSetup implementation has to settle against the verified behavior on this
+page:
+
+- **Machine scope.** How a per-machine install meets the no-manual-step requirement for its users,
+  given the gaps of all-users profiles and the rule against editing other users' profiles; see
+  [per-machine installs](#per-machine-installs).
+- **Execution policy.** Windows PowerShell 5.1 on a Windows client defaults to `Restricted`, which
+  runs no profile, and an installer must not change execution policy. Under that policy, profile
+  activation cannot take effect.
+- **Disclosure.** How the installer tells the user that **Add to PATH** also activates PowerShell
+  completion.
+- **Manifest shape.** How a manifest enables completion and names its source is TigerSetup's to
+  define.

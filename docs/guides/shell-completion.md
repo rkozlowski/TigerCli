@@ -51,7 +51,10 @@ A saved script must be regenerated when the app is upgraded.
 Installers and anyone who needs per-machine activation, a saved script, or a clean uninstall
 should follow [shell completion installation](../reference/shell-completion-installation.md). It
 defines the generation contract and the verified Windows PowerShell lifecycle for install, upgrade,
-repair, and uninstall.
+repair, and uninstall. It also records the requirements for planned TigerSetup support, which is
+meant to install PowerShell completion automatically when the app author enables it and the user
+chooses **Add to PATH**. That support is not available yet; until it is, and for every other
+installation method, use the activation lines above.
 
 ## What Is Completed
 

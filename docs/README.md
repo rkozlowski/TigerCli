@@ -24,8 +24,9 @@ Preserve readable prose; Markdown documentation must not become API-link soup.
 7. [Interaction modes](guides/interaction-modes.md)
 8. [Prompting and providers](guides/prompting-and-providers.md)
 9. [Exit codes](guides/exit-codes.md)
-10. [Localization](guides/localization.md)
-11. [App testing](guides/app-testing.md)
+10. [Shell completion](guides/shell-completion.md)
+11. [Localization](guides/localization.md)
+12. [App testing](guides/app-testing.md)
 
 ## Examples
 
@@ -64,7 +65,7 @@ Reference docs describe public contracts, framework rules, and stable behavior t
 - [PngSink](reference/png-sink.md) - optional SkiaSharp-based PNG rendering package for visual documentation artifacts
 - [Help rendering trust model](reference/help-rendering-trust-model.md)
 - [Console output encoding](reference/console-output-encoding.md) - UTF-8 redirected output, Unicode interactive output, no Windows console code-page changes, and how PowerShell callers read it
-- [Shell completion installation](reference/shell-completion-installation.md) - the installer-neutral generation contract and the verified Windows PowerShell 5.1/7 install, upgrade, repair, and uninstall lifecycle, per user and per machine
+- [Shell completion installation](reference/shell-completion-installation.md) - the installer-neutral generation contract, the verified Windows PowerShell 5.1/7 install, upgrade, repair, and uninstall lifecycle per user and per machine, artifact ownership, and the requirements for planned TigerSetup support
 - [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) reference: [ANSI 0–255 swatches](reference/cli-color.html) - generated visual reference for the full palette
 - [Rendered examples](examples/README.md) - generated HTML artifacts of real TigerCli rendering (markup, table presets, CliList, CliDetails)
 

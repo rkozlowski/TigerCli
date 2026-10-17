@@ -3,7 +3,7 @@
 Shared support utilities for IT Tiger .NET libraries, currently including resource-management support used by TigerCli-related packages.
 
 ```bash
-dotnet add package ItTiger.Core --version 0.9.4
+dotnet add package ItTiger.Core --version 0.9.5
 ```
 
 - [Project page](https://www.ittiger.net/projects/tigercli/)

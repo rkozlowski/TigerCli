@@ -14,7 +14,7 @@ The intended future prompt is:
 Prepare TigerCli <version> release. Do not commit.
 ```
 
-For example, preparing the next release should require only `Prepare TigerCli 0.9.5 release. Do not
+For example, preparing the next release should require only `Prepare TigerCli 0.9.6 release. Do not
 commit.` rather than a release-specific checklist in the prompt.
 
 An agent receiving that prompt must treat it as authorization to prepare and validate the working

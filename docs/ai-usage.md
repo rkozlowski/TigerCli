@@ -97,7 +97,7 @@ builder.AddCommandGroup("connections", group => group
   configuration option shared across its commands.
 - The host must opt in with `TigerCliAppBuilder.AddContribution(...)`; do not register library
   contributions implicitly.
-- In 0.9.4, use only `builder.GlobalOptions.AddOptionalString(...)`: one long name, no alias,
+- In 0.9.5, use only `builder.GlobalOptions.AddOptionalString(...)`: one long name, no alias,
   optional string value, CLI-only, and never promptable or provider-backed.
 - Place contributed global options after the command path and positional arguments, with other
   options. Their app-wide meaning does not change command selection or TigerCli's command-line shape.
@@ -136,6 +136,9 @@ lifecycle, constraints, and host composition example.
 - Do not make the app edit shell profiles, write completion files, or register itself for
   completion. Activation belongs to the user or the installer; see
   [shell completion installation](reference/shell-completion-installation.md).
+- Automatic installation through TigerSetup is planned, not implemented. When it ships, an app needs
+  `UseShellCompletion()` in code and completion enabled in its TigerSetup manifest; do not invent a
+  manifest format, install scripts, or app-side activation in the meantime.
 
 ## CRUD Shape
 
