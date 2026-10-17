@@ -63,8 +63,9 @@ release-gate results, package inspection and smoke-test results, and any risk or
 
 ## Current Human Handoff
 
-After preparation and review, the current process still requires the human to commit and push, start
-the publish workflow, approve its protected publishing stage, wait for publication, create the Git
+After preparation and review, the current process still requires the human to commit the prepared
+changes to `dev`, promote `dev` to `main` with a merge that preserves `dev`'s commits, start
+the publish workflow from `main`, approve its protected publishing stage, wait for publication, create the Git
 tag, and create the GitHub release. The existing workflow and release guide remain authoritative
 until the target below is deliberately implemented and reviewed.
 
@@ -72,7 +73,8 @@ until the target below is deliberately implemented and reviewed.
 
 The desired human interaction after a prepared release is only:
 
-1. Review, commit, and push the prepared changes to `main`.
+1. Review and commit the prepared changes on `dev`, then promote `dev` to `main` with a merge that
+   preserves `dev`'s commits.
 2. Manually start one GitHub Actions workflow and supply the release version.
 
 Starting that workflow is the publication approval. There must be no second manual approval or

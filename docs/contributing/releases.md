@@ -217,7 +217,8 @@ publishing. See GitHub's
 ## Run And Publish
 
 From the repository's **Actions** tab, select **Publish NuGet packages**, choose **Run workflow**,
-confirm the branch containing the reviewed release metadata, and enter the version. The workflow:
+select `main`, and enter the version. Reviewed release metadata reaches `main` by promotion from
+`dev`; never publish from `dev`. The workflow:
 
 1. verifies the input against `Version.props`;
 2. builds and tests Release;
