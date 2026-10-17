@@ -132,6 +132,26 @@ Prefer automated tests for:
 - validation and `CanConfirm` behavior.
 - status/hint row behavior.
 
+## Shell Completion Tests
+
+Completion has two layers of tests:
+
+- **Engine and protocol tests** (`ItTiger.TigerCli.Tests/TigerCliShellCompletionTests.cs`) send
+  `--tigercli-complete` requests through `TigerCliAppTestHost` and assert candidates, fallbacks,
+  and the generated scripts' shape. They run everywhere.
+- **Real-host PowerShell tests** (`CommandParserTest.Tests/PowerShellCompletionTests.cs`) evaluate
+  the generated script for the built `parser-test` executable inside Windows PowerShell 5.1, and
+  inside PowerShell 7 when `pwsh` is on `PATH`. `PowerShellCompletionProbe.ps1` presses Tab
+  through `TabExpansion2` under an OEM console code page and writes what it observed to a JSON
+  result file. The tests assert the completer's session contract: decoded descriptions,
+  `$LASTEXITCODE`, `$Error`, the console code page, Constrained Language Mode, and an uninstalled
+  executable. Each host gets its own hidden console. On other platforms these tests have no data and
+  are skipped.
+
+When checking non-ASCII completion text by hand, compare code points rather than reading console
+output: two mismatched decodings can cancel out on the way to your terminal and make broken text
+look correct. `chcp` reports the console's input code page, not its output code page.
+
 ## What To Keep Manual Or Smoke-Tested
 
 Some behavior still needs human review or manual harnesses:

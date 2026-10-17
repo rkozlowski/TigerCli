@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Matches SetApplicationName so shell completion registers for the executable users type. -->
+    <AssemblyName>parser-test</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

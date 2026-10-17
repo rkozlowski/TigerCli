@@ -133,6 +133,9 @@ lifecycle, constraints, and host composition example.
 - Do not define `--completion` or `--tigercli-complete` as app options when completion is enabled;
   `Build()` rejects them.
 - Do not hand-write completion scripts or add a `completion` command.
+- Do not make the app edit shell profiles, write completion files, or register itself for
+  completion. Activation belongs to the user or the installer; see
+  [shell completion installation](reference/shell-completion-installation.md).
 
 ## CRUD Shape
 
@@ -435,6 +438,7 @@ TigerConsole.Render(details);
 - [CRUD command apps](guides/crud-commands.md)
 - [Arguments and options](guides/arguments-and-options.md)
 - [Shell completion](guides/shell-completion.md)
+- [Shell completion installation](reference/shell-completion-installation.md)
 - [Interaction modes and cancellation](guides/interaction-modes.md)
 - [Prompting and providers](guides/prompting-and-providers.md)
 - [Structured output](guides/structured-output.md)

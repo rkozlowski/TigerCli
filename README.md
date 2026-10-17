@@ -80,7 +80,7 @@ Activity dialogs can show live progress while the same operation remains script-
 - [CliList&lt;T&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliList-1.html), [CliDetails](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliDetails.html), `CliTable`, and `CliGrid` structured output
 - Activity/progress dialogs through `RunActivityAsync`
 - Command menu for semi-interactive command discovery
-- Opt-in static shell completion for Bash, Zsh, Fish, and PowerShell
+- Opt-in static [shell completion](docs/guides/shell-completion.md) for Bash, Zsh, Fish, and PowerShell, with an [installer contract](docs/reference/shell-completion-installation.md)
 - Localization support for framework and app CLI text
 - App-level testing harness for arguments, prompts, output, errors, and exit codes
 
@@ -98,7 +98,7 @@ It may not be the best fit if you want:
 
 - A neutral or highly customizable CLI parser
 - A large catalog of rich-console widgets
-- Shell-completion-first workflows
+- Shell-completion-first workflows (TigerCli's completion is opt-in and static; guided input comes from prompts and providers)
 - Full-screen terminal applications
 - A general-purpose substitute for rich-console widget libraries
 
@@ -122,6 +122,7 @@ Common entry points:
 - [Getting started](docs/getting-started.md)
 - [Folder Copy sample](docs/examples/folder-copy.md)
 - [Command apps](docs/guides/command-apps.md)
+- [Shell completion](docs/guides/shell-completion.md)
 - [CRUD command apps](docs/guides/crud-commands.md)
 - [Prompting and providers](docs/guides/prompting-and-providers.md)
 - [Semi-interactive prompts](docs/guides/semi-interactive-prompts.md)
@@ -136,9 +137,9 @@ The [getting started](docs/getting-started.md) guide is built around two small e
 
 [`FolderCopy/`](FolderCopy/) is the real-operation sample. It uses a single default command, required folder-select options, folder picker prompts, a scanning phase, a rich `RunActivityAsync` copy dialog with progress rows, cancellation-aware work, strict `--non-interactive` behavior, and TigerCli-free planner logic tested with temporary folders. See the concise [Folder Copy sample documentation](docs/examples/folder-copy.md).
 
-[`CommandParserTest/`](CommandParserTest/) is the broad dogfooding sample: command groups, positional arguments and options, parser-driven prompts, provider-backed choices (including a `[Flags]` multi-select), dependent providers, typed exit codes with `--help-errors`, and en-US/pl-PL localization. The name reflects its dogfooding origin; it is a runnable sample app, not a test suite.
+[`CommandParserTest/`](CommandParserTest/) is the broad dogfooding sample: command groups, positional arguments and options, parser-driven prompts, provider-backed choices (including a `[Flags]` multi-select), dependent providers, typed exit codes with `--help-errors`, en-US/pl-PL localization, and shell completion. The name reflects its dogfooding origin; it is a runnable sample app, not a test suite.
 
-[`CommandParserTest.Tests/`](CommandParserTest.Tests/) is its matching app-boundary test project: it runs the real app through `TigerCliAppTestHost` and asserts arguments, output, errors, localization, and exit codes — the approach described in [app testing](docs/guides/app-testing.md).
+[`CommandParserTest.Tests/`](CommandParserTest.Tests/) is its matching app-boundary test project: it runs the real app through `TigerCliAppTestHost` and asserts arguments, output, errors, localization, and exit codes — the approach described in [app testing](docs/guides/app-testing.md). On Windows it also drives the generated PowerShell completer for the built `parser-test` executable in real Windows PowerShell 5.1 and PowerShell 7 hosts.
 
 ```bash
 dotnet run --project RoiCities.Extended -- --help

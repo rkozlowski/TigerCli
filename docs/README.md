@@ -42,7 +42,7 @@ Guides are the practical docs for building applications with TigerCli.
 - [Command apps](guides/command-apps.md) - build TigerCli command apps with settings, command paths, options, help, exit codes, localization, and tests
 - [App contributions and global options](guides/app-contributions.md) - let reusable libraries contribute constrained CLI-only app-wide options that hosts explicitly enable
 - [Arguments and options](guides/arguments-and-options.md) - choose between positionals, options, selectors, and command-declared raw trailing arguments after `--`
-- [Shell completion](guides/shell-completion.md) - opt-in static tab completion for Bash, Zsh, Fish, and PowerShell, its activation, grammar rules, and limitations
+- [Shell completion](guides/shell-completion.md) - opt-in static tab completion for Bash, Zsh, Fish, and PowerShell, its activation, grammar rules, and limitations; installers continue with [shell completion installation](reference/shell-completion-installation.md)
 - [Interaction modes](guides/interaction-modes.md) - understand semi-interactive versus headless execution, activities, and handler-visible cancellation
 - [Prompting and providers](guides/prompting-and-providers.md) - collect missing values safely with parser-driven prompts and provider-backed choices
 - [Semi-interactive prompts](guides/semi-interactive-prompts.md) - call direct [TigerTui](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Tui.TigerTui.html) select, input, confirm, and multi-select prompts safely
@@ -63,6 +63,7 @@ Reference docs describe public contracts, framework rules, and stable behavior t
 - [HtmlSink](reference/html-sink.md) - render TigerCli output to deterministic HTML for snapshot tests and documentation examples
 - [PngSink](reference/png-sink.md) - optional SkiaSharp-based PNG rendering package for visual documentation artifacts
 - [Help rendering trust model](reference/help-rendering-trust-model.md)
+- [Shell completion installation](reference/shell-completion-installation.md) - the installer-neutral generation contract and the verified Windows PowerShell 5.1/7 install, upgrade, repair, and uninstall lifecycle, per user and per machine
 - [CliColor](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CliColor.html) reference: [ANSI 0–255 swatches](reference/cli-color.html) - generated visual reference for the full palette
 - [Rendered examples](examples/README.md) - generated HTML artifacts of real TigerCli rendering (markup, table presets, CliList, CliDetails)
 

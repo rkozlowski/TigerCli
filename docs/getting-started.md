@@ -226,7 +226,9 @@ source <(roi-cities --completion bash)
 `roi-cities s<TAB>` then completes `show`, and `roi-cities show Galway --<TAB>` lists the
 framework options. Completion is static: it does not call the `cities` provider, so the city name
 itself is not completed — the provider-backed prompt covers that. See
-[shell completion](guides/shell-completion.md) for Zsh, Fish, and PowerShell.
+[shell completion](guides/shell-completion.md) for Zsh, Fish, and PowerShell, and
+[shell completion installation](reference/shell-completion-installation.md) when an installer
+should activate it.
 
 ### Typed exit codes
 

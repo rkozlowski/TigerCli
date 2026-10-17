@@ -996,7 +996,9 @@ source <(my-tool --completion bash)
 Commands, groups, aliases, options, enum values, and framework option values are completed from the
 same metadata as help, following the same grammar, and nothing after `--` is completed. Completion
 never runs handlers, factories, contribution callbacks, prompts, or providers. See
-[shell completion](shell-completion.md) for activation per shell, the exact rules, and limitations.
+[shell completion](shell-completion.md) for activation per shell, the exact rules, and limitations,
+and [shell completion installation](../reference/shell-completion-installation.md) for the contract
+installers rely on.
 
 ## Edit Commands
 

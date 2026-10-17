@@ -26,17 +26,32 @@ Supported shells: `bash`, `zsh`, `fish`, and `pwsh` (`powershell` is accepted as
 
 ## Activate It In A Shell
 
-Activation is a user action: the app never edits shell profiles itself.
+Activation is a user or installer action: the app never edits shell profiles, writes completion
+files, or changes the shell environment itself.
 
 | Shell | Current session | Persistent |
 |---|---|---|
 | Bash 4+ | `source <(my-tool --completion bash)` | Add that line to `~/.bashrc`, or save the output as `~/.local/share/bash-completion/completions/my-tool`. |
 | Zsh | `source <(my-tool --completion zsh)` (after `compinit`) | Add that line to `~/.zshrc` after `compinit`, or save the output as `_my-tool` in a directory on `$fpath`. |
 | Fish | `my-tool --completion fish \| source` | Save the output as `~/.config/fish/completions/my-tool.fish`. |
-| PowerShell 7+ / Windows PowerShell 5.1 | `my-tool --completion pwsh \| Out-String \| Invoke-Expression` | Add that line to `$PROFILE`. |
+| PowerShell 7+ / Windows PowerShell 5.1 | `my-tool --completion pwsh \| Out-String \| Invoke-Expression` | Add the guarded line below to `$PROFILE.CurrentUserAllHosts`, once in each edition you use. |
 
-The installed script is a thin adapter that asks the app for candidates on every Tab press, so it
-keeps working when the app's commands change. Regenerate it only after upgrading TigerCli itself.
+```powershell
+if (Get-Command my-tool -ErrorAction Ignore) { my-tool --completion pwsh | Out-String | Invoke-Expression }
+```
+
+The guard keeps the profile quiet if `my-tool` is later uninstalled. Windows PowerShell 5.1 and
+PowerShell 7 read different profile files, and Windows PowerShell's default `Restricted` execution
+policy on Windows client editions runs no profile at all.
+
+The script is a thin adapter that asks the app for candidates on every Tab press, so it keeps
+working when the app's commands change. A line that generates it at shell start is always current.
+A saved script must be regenerated when the app is upgraded.
+
+Installers and anyone who needs per-machine activation, a saved script, or a clean uninstall
+should follow [shell completion installation](../reference/shell-completion-installation.md). It
+defines the generation contract and the verified Windows PowerShell lifecycle for install, upgrade,
+repair, and uninstall.
 
 ## What Is Completed
 
@@ -103,8 +118,10 @@ Tab -> shell script -> my-tool --tigercli-complete <shell> _word1 ... _wordN -> 
 - The script passes every word after the program name up to and including the word under the
   cursor. Each word is prefixed with `_`, so an empty current word, a literal `--`, and option-like
   words survive every shell's argument passing.
-- The app answers with one candidate per line in that shell's format and a final `:none`,
+- The app answers in UTF-8 with one candidate per line in that shell's format and a final `:none`,
   `:files`, or `:directories` fallback line.
+- The PowerShell script decodes that answer as UTF-8 whatever the console code page is. It restores
+  `$LASTEXITCODE` and the console encoding after each Tab press and records nothing in `$Error`.
 - `--tigercli-complete` is a hidden, framework-owned entry point. It is not listed in help and
   exists only while completion is enabled.
 
@@ -126,12 +143,17 @@ throws when a command option or a contributed global option uses either name. Ap
 - Path fallback for the inline `--option=<path>` form works in Bash only; in Zsh, Fish, and
   PowerShell use the separate form `--option <path>`.
 - In PowerShell, a position with no candidates falls back to PowerShell's own path completion even
-  when TigerCli requested no fallback.
+  when TigerCli requested no fallback, and a directory fallback offers files too.
+- Windows PowerShell 5.1 does not call native completers for a word that is only `-` or `--`; type
+  one more character (`--h<Tab>`). PowerShell 7 completes both.
+- Under PowerShell's Constrained Language Mode (AppLocker or WDAC policy), candidates have no
+  descriptions.
 - Candidates are not quoted for the shell. Command names, option names, enum members, theme names,
   and culture names contain no spaces, so this matters only for app-defined enum or theme names
   with unusual characters.
 - Completion uses the application name, not the path the binary was started from. Running through
-  `dotnet run` or an unregistered alias gets no completion.
+  `dotnet run` or an unregistered alias gets no completion. The executable must be on `PATH` under
+  that name; a Windows `App Paths` registration is not enough for PowerShell.
 
 ## Testing
 

@@ -18,6 +18,7 @@ public static class CommandParserTestApp
             .SetDefaultCulture("en-US")
             .SetSupportedCultures("en-US", "pl-PL")
             .UseAppResources(CommandParserTestStrings.ResourceManager)
+            .UseShellCompletion()
             .AddDescription(
                 "[green]TigerCli command parser manual test app.[/]",
                 resourceKey: "App_Description")
