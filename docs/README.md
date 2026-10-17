@@ -84,14 +84,13 @@ Design docs explain why TigerCli works the way it does. They summarize rationale
 - [Themes and styles](design/themes-and-styles.md)
 - [Overlays](design/overlays.md)
 - [Documentation artifacts](design/doc-artifacts.md)
-- [Release preparation contract and automation target](design/release-preparation-and-automation.md)
 - [Context and architecture](design/context.md)
 
 ## Contributing
 
 Contributing docs describe repository workflow, testing strategy, and expectations for humans and agents working on TigerCli itself.
 
-- [Preparing and publishing a release](contributing/releases.md)
+- [Releasing TigerCli](contributing/releases.md) - the release lifecycle on the permanent `dev` branch workflow, the release tooling, and recovery
 - [Unit testing](contributing/unit-testing.md)
 - [AI agents](contributing/ai-agents.md)
 - [Creating issues](contributing/creating-issues.md)

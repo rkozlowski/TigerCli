@@ -111,3 +111,29 @@ recreating its own writers when `Console.OutputEncoding` is assigned, with its g
 `ConsoleOutputEncodingTests.cs`.
 
 **Generalization candidate:** none
+
+## A local-feed smoke test can silently test an older candidate
+
+**Area:** release smoke tests (`Invoke-TigerCliPackageSmoke` in `eng/release/TigerCliRelease.psm1`)
+
+**Status:** Active
+
+**Symptom:** after one candidate of `ItTiger.Core 0.9.5` was restored, a
+`dotnet restore --force --no-http-cache` from a feed holding only a second candidate of the
+same version still resolved the first one (proven by the `sha512` in `project.assets.json`). The
+earlier documented smoke procedure also left local candidates in the user's global NuGet cache,
+where a later restore of the real published version would find them first.
+
+**Cause:** `dotnet restore --force --no-http-cache` re-resolves the graph but reuses a package of
+the same id and version that is already extracted in the global packages folder; the local feed
+is never read for it.
+
+**Do not:** smoke-test a release candidate with the user's global packages folder, or trust an
+asset-file check that only finds `"ItTiger.X/<version>"`.
+
+**Use instead:** a private `NUGET_PACKAGES` folder per run, and compare the `sha512` that
+`project.assets.json` records for each `ItTiger.*` package with the candidate file's own hash.
+
+**Prevented by:** `Invoke-TigerCliPackageSmoke`, which does both and fails on a mismatch.
+
+**Generalization candidate:** TigerAiCore (any NuGet release model's local-feed smoke test)

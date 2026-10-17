@@ -589,6 +589,7 @@ TigerCli is a C#/.NET 10 solution centered on `ItTiger.TigerCli/`, the main libr
 - `dotnet test ItTiger.TigerCli.Tests/ItTiger.TigerCli.Tests.csproj` runs the xUnit v3 suite.
 - `dotnet test ItTiger.TigerCli.Tests/ --filter "FullyQualifiedName~MethodName"` runs targeted tests.
 - `dotnet run --project RoiCities.Basic -- --help` and `dotnet run --project FolderCopy -- --help` run the public sample apps.
+- `pwsh -File eng/release/Test-Release.ps1` runs the release tooling tests; run it whenever `eng/release/` or `.github/workflows/publish-packages.yml` changes. Releases follow `docs/contributing/releases.md`.
 
 ## Validation Process Safety
 

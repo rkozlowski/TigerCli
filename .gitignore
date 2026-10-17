@@ -20,6 +20,8 @@ mono_crash.*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+# The release tooling is source, not build output (eng/release/Test-Release.ps1 checks it).
+!eng/release/
 [Rr]eleases/
 x64/
 x86/
