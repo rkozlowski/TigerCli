@@ -154,9 +154,23 @@ it once per host and language mode, with its own hidden console and its standard
 that console, so the app it starts writes to a genuine console. Besides the completion scenarios
 above, `ConsoleOutputEncodingTests.cs` asserts the
 [console output encoding](../reference/console-output-encoding.md) contract for normal execution:
-non-ASCII output, errors, and themed help read back from the screen buffer; redirected output and
-errors as PowerShell decodes them; and an unchanged console code page after each run. On other
-platforms these tests have no data and are skipped.
+- non-ASCII output, errors, and themed help read back from the screen buffer;
+- redirected output and errors as UTF-8, in files and in PowerShell after it selects UTF-8;
+- both mixed cases, one stream redirected and the other on the console;
+- an unchanged console code page after each run.
+
+On other platforms these tests have no data and are skipped.
+
+Two more test files cover the parts that need neither PowerShell nor a console:
+
+- `CommandParserTest.Tests/RedirectedOutputEncodingTests.cs` starts `parser-test` with redirected
+  streams on any platform and requires exact UTF-8 bytes, including characters no legacy Windows
+  code page has.
+- `ItTiger.TigerCli.Tests/ConsoleOutputEncodingTests.cs` checks in-process that writers installed with
+  `Console.SetOut`/`SetError` are never replaced.
+
+Together they guard the compatibility mechanism described in that reference: a .NET change to the
+runtime behavior it relies on fails one of them.
 
 To put an app on a genuine console from a harness, let it inherit console handles. A `cmd`
 redirection to `CONOUT$` opens a write-only handle, which .NET reports as redirected.
@@ -176,8 +190,9 @@ when a change touches shell completion, the generated scripts, or console output
   `linux-real-shell-check.sh` in WSL. That script drives Bash, Zsh, and Fish in tmux with real Tab
   presses, runs the app at a terminal, and checks the bytes it writes when redirected under UTF-8 and
   POSIX locales. `-FetchMissing` unpacks zsh, fish, and ICU from the distribution's packages into a
-  private prefix when they are not installed, without root. The shell script also runs on any Linux
-  machine with tmux, given a linux-x64 `parser-test` directory.
+  private prefix when they are not installed, without root. It also runs the Windows build of
+  `parser-test` through WSL interoperability and checks that Linux tools receive UTF-8. The shell
+  script also runs on any Linux machine with tmux, given a linux-x64 `parser-test` directory.
 
 Both print PASS/FAIL lines and exit non-zero on any failure. The checks cover Unicode completion
 candidates (`--city` values), a non-ASCII prefix, localized descriptions, and non-ASCII terminal

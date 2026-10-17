@@ -68,7 +68,7 @@ public sealed partial class TigerCliApp
         }
 
         var commandName = string.IsNullOrWhiteSpace(_applicationName) ? "app" : _applicationName;
-        WriteCompletionOutput(TigerCliCompletionScripts.Generate(shell, commandName));
+        WriteCompletionOutput(shell, TigerCliCompletionScripts.Generate(shell, commandName));
         return _exitCodePolicy.Resolve(TigerCliExitKind.Success);
     }
 
@@ -82,19 +82,22 @@ public sealed partial class TigerCliApp
             ? Complete([], string.Empty)
             : Complete(words[..^1], words[^1]);
 
-        WriteCompletionOutput(TigerCliCompletionProtocol.FormatResponse(shell, result));
+        WriteCompletionOutput(shell, TigerCliCompletionProtocol.FormatResponse(shell, result));
         return _exitCodePolicy.Resolve(TigerCliExitKind.Success);
     }
 
     /// <summary>
-    /// Writes a completion script or response to stdout in TigerCli's standard output encoding. A
-    /// request normally arrives on a redirected stdout, so on Windows that is the console's output
-    /// code page: the encoding the invoking shell chose and decodes with. Nothing else about the
-    /// console is set up or changed.
+    /// Writes a completion script or response to stdout in the encoding that shell's protocol uses,
+    /// and sets up nothing else. Bash, Zsh, and Fish read UTF-8, TigerCli's standard redirected-output
+    /// encoding. PowerShell decodes a program's output with its <c>[Console]::OutputEncoding</c>, which
+    /// follows the console code page, so a PowerShell answer is written in that code page: the
+    /// generated script selects UTF-8 for each request, and where it cannot (Constrained Language
+    /// Mode) the answer still decodes for every character the code page has.
     /// </summary>
-    private static void WriteCompletionOutput(string text)
+    private static void WriteCompletionOutput(TigerCliCompletionShell shell, string text)
     {
-        ConsoleOutputEncoding.EnsureApplied();
+        if (shell != TigerCliCompletionShell.Pwsh)
+            ConsoleOutputEncoding.EnsureApplied();
         Console.Out.Write(text);
         Console.Out.Flush();
     }

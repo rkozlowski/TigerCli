@@ -81,3 +81,33 @@ prefix, and assert strict code-page preservation in a non-interactive host
 **Prevented by:** the fixes in `windows-real-tab-check.ps1` and `linux-real-shell-check.sh`.
 
 **Generalization candidate:** TigerWinLab and TigerLinuxLab (interactive console and terminal evidence)
+
+## UTF-8 on a redirected Windows stream needs TigerCli-owned writers
+
+**Area:** console output encoding (`ItTiger.TigerCli/Terminal/ConsoleOutputEncoding.cs`, `PlatformStandardWriters.cs`)
+
+**Status:** Active
+
+**Symptom:** with the console code page left alone, redirected output followed that code page and
+lost every character it lacks: files, UTF-8 capture, and WSL pipes received `?` or best-fit
+substitutes.
+
+**Cause:** .NET encodes its own standard writers with `Console.OutputEncoding`, and on Windows any
+value but UTF-16 is applied through `SetConsoleOutputCP`, which changes the shared console. The only
+way to UTF-8 without that is a writer TigerCli installs, and .NET offers no documented way to know
+whether `Console.Out` is still its own writer. No TigerCli lifecycle point (`CreateBuilder`, `Build`,
+`RunAsync`) comes before every capture: this repository's own tests install `Console.SetOut` both
+before and after building the app.
+
+**Do not:** install standard writers at a lifecycle point without checking ownership (it overrides
+captures), assign `Console.OutputEncoding = UTF8` (it changes the console), or follow the console code
+page (it loses Unicode).
+
+**Use instead:** the ownership probe in `PlatformStandardWriters`, which relies on the runtime
+recreating its own writers when `Console.OutputEncoding` is assigned, with its guards and fallback.
+
+**Prevented by:** `ItTiger.TigerCli.Tests/ConsoleOutputEncodingTests.cs`,
+`CommandParserTest.Tests/RedirectedOutputEncodingTests.cs`, and the real-host
+`ConsoleOutputEncodingTests.cs`.
+
+**Generalization candidate:** none

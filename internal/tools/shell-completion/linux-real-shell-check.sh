@@ -7,7 +7,11 @@
 # CommandParserTest (`parser-test`), whose `--city` values (Kraków, Łódź, Gdańsk) are Unicode
 # completion candidates and whose pl-PL descriptions are non-ASCII.
 #
-# Usage: linux-real-shell-check.sh <app-dir> <output-dir>
+# Usage: linux-real-shell-check.sh [--fetch-missing] [--windows-app <dir>] <app-dir> <output-dir>
+#
+# --windows-app names a directory with the Windows build of parser-test (parser-test.exe). Under WSL
+# the script then also runs it through Windows interoperability and checks that Linux tools receive
+# UTF-8, including characters no legacy Windows code page has.
 #
 # Shells come from PATH. Where something is not installed and installing needs root,
 # --fetch-missing unpacks Ubuntu's own packages into a private prefix (no root, nothing
@@ -18,8 +22,14 @@
 # any check failed and 2 when the environment cannot run the checks.
 set -uo pipefail
 
-fetch=0
-if [[ "${1:-}" == "--fetch-missing" ]]; then fetch=1; shift; fi
+fetch=0; windows_app=""
+while [[ "${1:-}" == --* ]]; do
+    case "$1" in
+        --fetch-missing) fetch=1; shift ;;
+        --windows-app) windows_app=$(cd "$2" && pwd); shift 2 ;;
+        *) echo "unknown option $1" >&2; exit 2 ;;
+    esac
+done
 app_dir=$(cd "$1" && pwd); out=$(mkdir -p "$2" && cd "$2" && pwd)
 results="$out/results.tsv"; : > "$results"
 socket="tigercli-check-$$"
@@ -164,4 +174,14 @@ for locale in C.UTF-8 C; do
         || record FAIL redirected "completion-$locale" "$(printf '%s' "$cities" | od -An -tx1 | tr -d '\n')"
 done
 
+# ── Windows interoperability: a Windows TigerCli executable read by Linux tools ──
+if [[ -n "$windows_app" ]]; then
+    beyond=$'\xe2\x82\xac \xe2\x95\xad\xe2\x94\x80\xe2\x95\xae \xe2\x9c\x93 \xe6\x9d\xb1\xe4\xba\xac \xf0\x9f\x98\x80'   # € ╭─╮ ✓ 東京 😀
+    echoed=$("$windows_app/parser-test.exe" echo -m "$beyond" 2>/dev/null | tr -d '\r')
+    [[ "$echoed" == "$beyond" ]] && record PASS interop beyond-legacy-code-pages "UTF-8 bytes" \
+        || record FAIL interop beyond-legacy-code-pages "$(printf '%s' "$echoed" | od -An -tx1 | tr -d '\n')"
+    greeting=$("$windows_app/parser-test.exe" --culture pl-PL 2>/dev/null | tr -d '\r')
+    [[ "$greeting" == "$expected_greeting" ]] && record PASS interop localized-greeting "UTF-8 bytes" \
+        || record FAIL interop localized-greeting "$(printf '%s' "$greeting" | od -An -tx1 | tr -d '\n')"
+fi
 ! grep -q '^FAIL' "$results"

@@ -5,7 +5,7 @@
 # code page afterwards, so the tests can show that TigerCli renders non-ASCII text correctly without
 # changing state the console shares with the shell:
 #   Interactive - the app writes straight to the console; the text is read back from the screen.
-#   Redirected  - PowerShell captures the app's stdout and decodes it the way it decodes any program.
+#   Redirected  - output to files, to PowerShell, and with one stream on the console: always UTF-8.
 #   Tabs        - Tab presses through TabExpansion2 against the generated PowerShell completer.
 param(
     [Parameter(Mandatory = $true)][string]$BinDir,
@@ -61,7 +61,7 @@ public static string ReadScreen() {
 '@
 
 # Non-ASCII literals are built from code points: Windows PowerShell 5.1 reads a BOM-less script as ANSI.
-$lodz = -join [char[]](0x141, 0xF3, 0x64, 0x17A)   # Łódź
+$lodz = -join [char[]](0x141, 0xF3, 0x64, 0x17A)   # the Polish city name Lodz with its diacritics
 
 function Set-ProbeCodePage([int]$CodePage) { [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding($CodePage) }
 
@@ -109,22 +109,57 @@ $interactive = @{
     UnicodeArgument = Invoke-OnConsole "--city $lodz"
 }
 
-# Redirected: code page 852 has the Polish letters, so text written in the console's code page decodes
-# exactly. PowerShell decodes a program's output with [Console]::OutputEncoding, which matches it.
-Set-ProbeCodePage 852
-$captured = @(parser-test --culture pl-PL)
-$output = @{ ExitCode = $LASTEXITCODE; Text = ($captured -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
-$capturedCity = @(parser-test --city $lodz)
-$unicodeArgument = @{ ExitCode = $LASTEXITCODE; Text = ($capturedCity -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
-# Windows PowerShell turns redirected stderr lines into error records, which 'Stop' would make fatal.
-$ErrorActionPreference = 'Continue'
-$capturedError = @(parser-test --culture pl-PL --bogus 2>&1 | ForEach-Object { "$_" })
-$errorOutput = @{ ExitCode = $LASTEXITCODE; Text = ($capturedError -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
-$ErrorActionPreference = 'Stop'
-$redirected = @{ Output = $output; Error = $errorOutput; UnicodeArgument = $unicodeArgument }
-
+# Redirected: UTF-8 whatever the console code page. Code page 437 has no L-stroke or z-acute, so only UTF-8
+# output carries them. cmd redirects to files, so the probe reads the exact bytes the app wrote.
+Set-ProbeCodePage 437
+$utf8 = New-Object System.Text.UTF8Encoding $false
+function Invoke-Cmd([string]$Arguments, [string]$Redirections) {
+    $start = New-Object System.Diagnostics.ProcessStartInfo 'cmd.exe'
+    $start.Arguments = "/d /c parser-test $Arguments $Redirections"
+    $start.UseShellExecute = $false
+    $process = [System.Diagnostics.Process]::Start($start)
+    $process.WaitForExit()
+    $process.ExitCode
+}
+function Invoke-ToFiles([string]$Arguments) {
+    $out = [IO.Path]::GetTempFileName(); $err = [IO.Path]::GetTempFileName()
+    $exitCode = Invoke-Cmd $Arguments ">`"$out`" 2>`"$err`""
+    $result = @{ ExitCode = $exitCode; Stdout = $utf8.GetString([IO.File]::ReadAllBytes($out)); Stderr = $utf8.GetString([IO.File]::ReadAllBytes($err)); ConsoleCodePage = Get-ConsoleCodePage }
+    Remove-Item -LiteralPath $out, $err
+    $result
+}
+# Mixed: one stream to a file, the other on the console.
+function Invoke-Mixed([string]$Arguments, [string]$RedirectedStream) {
+    [TigerCliProbe.Console]::ClearScreen()
+    $file = [IO.Path]::GetTempFileName()
+    $exitCode = Invoke-Cmd $Arguments "$RedirectedStream`"$file`""
+    $result = @{ ExitCode = $exitCode; Screen = [TigerCliProbe.Console]::ReadScreen(); File = $utf8.GetString([IO.File]::ReadAllBytes($file)); ConsoleCodePage = Get-ConsoleCodePage }
+    Remove-Item -LiteralPath $file
+    $result
+}
+# PowerShell decodes a program's output with [Console]::OutputEncoding, which follows the console code
+# page; a caller that wants UTF-8 output intact selects UTF-8 first.
+function Invoke-PowerShellUtf8([string[]]$Arguments) {
+    $saved = [Console]::OutputEncoding
+    [Console]::OutputEncoding = $utf8
+    # Windows PowerShell turns redirected stderr lines into error records, which 'Stop' would make fatal.
+    $ErrorActionPreference = 'Continue'
+    $lines = @(parser-test @Arguments 2>&1 | ForEach-Object { "$_" })
+    $exitCode = $LASTEXITCODE
+    [Console]::OutputEncoding = $saved
+    @{ ExitCode = $exitCode; Text = ($lines -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
+}
+$redirected = @{
+    FileOutput = Invoke-ToFiles "--city $lodz"
+    FileError = Invoke-ToFiles '--culture pl-PL --bogus'
+    PowerShellOutput = Invoke-PowerShellUtf8 @('--city', $lodz)
+    PowerShellError = Invoke-PowerShellUtf8 @('--culture', 'pl-PL', '--bogus')
+    ErrorOnConsoleOutputToFile = Invoke-Mixed '--culture pl-PL --bogus' '>'
+    OutputOnConsoleErrorToFile = Invoke-Mixed "--city $lodz" '2>'
+}
 # A raw completion request as a completer sends it, without the generated script's encoding switch:
-# the app must answer in the console code page and leave it alone.
+# a PowerShell answer is written in the console code page (852 has the Polish letters), unchanged.
+Set-ProbeCodePage 852
 $requestLines = @(parser-test --tigercli-complete pwsh _--culture _pl-PL _--h)
 $completionRequest = @{ ExitCode = $LASTEXITCODE; Lines = $requestLines; ConsoleCodePage = Get-ConsoleCodePage }
 

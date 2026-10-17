@@ -6,6 +6,8 @@ Runs the real-shell completion and console-output check for Bash, Zsh, and Fish 
 Publishes CommandParserTest (parser-test) as a self-contained linux-x64 app under -OutputRoot, then
 runs linux-real-shell-check.sh in the given WSL distribution. That script drives each shell in tmux
 with real Tab presses and writes results.tsv plus every captured screen to <OutputRoot>\results.
+It also runs the Windows build of parser-test through WSL interoperability and checks that Linux
+tools receive UTF-8.
 Nothing is written into the repository's build folders.
 
 Exit codes: 0 every check passed, 1 a check failed, 2 the environment could not run the checks.
@@ -28,6 +30,10 @@ $resultDir = Join-Path $OutputRoot 'results'
 & dotnet publish (Join-Path $repoRoot 'CommandParserTest\CommandParserTest.csproj') `
     -c Release -r linux-x64 --self-contained -o $appDir --artifacts-path (Join-Path $OutputRoot 'artifacts') -nologo -v q
 if ($LASTEXITCODE -ne 0) { Write-Error 'Publishing parser-test for linux-x64 failed.'; exit 2 }
+$windowsAppDir = Join-Path $OutputRoot 'parser-test-windows'
+& dotnet publish (Join-Path $repoRoot 'CommandParserTest\CommandParserTest.csproj') `
+    -c Release -o $windowsAppDir --artifacts-path (Join-Path $OutputRoot 'artifacts-windows') -nologo -v q
+if ($LASTEXITCODE -ne 0) { Write-Error 'Publishing parser-test for Windows failed.'; exit 2 }
 
 function ConvertTo-WslPath([string]$Path) {
     (& wsl.exe -d $Distribution -- wslpath -a ($Path -replace '\\', '/')).Trim()
@@ -35,6 +41,7 @@ function ConvertTo-WslPath([string]$Path) {
 
 $arguments = @()
 if ($FetchMissing) { $arguments += '--fetch-missing' }
+$arguments += '--windows-app', (ConvertTo-WslPath $windowsAppDir)
 $arguments += (ConvertTo-WslPath $appDir), (ConvertTo-WslPath $resultDir)
 & wsl.exe -d $Distribution -- bash (ConvertTo-WslPath (Join-Path $PSScriptRoot 'linux-real-shell-check.sh')) @arguments
 $exitCode = $LASTEXITCODE

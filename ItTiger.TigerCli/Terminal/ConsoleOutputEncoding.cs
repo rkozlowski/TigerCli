@@ -1,76 +1,96 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 
 namespace ItTiger.TigerCli.Terminal;
 
 /// <summary>
-/// Chooses how text written to the process's standard output and error streams is encoded, without
-/// changing state the process shares with others. On Windows, assigning any encoding other than
-/// UTF-16 to <see cref="Console.OutputEncoding"/> calls <c>SetConsoleOutputCP</c>, which changes the
-/// console's code page for every process attached to it and outlives this one. So TigerCli never does
-/// that unless the app explicitly asked for it through <see cref="TigerConsole.OutputEncoding"/>:
+/// TigerCli's standard-output encoding contract, applied once per process before the first console
+/// write, never during type initialization:
 /// <list type="bullet">
-/// <item>Windows, both streams on the interactive console: UTF-16, which .NET writes with
-/// <c>WriteConsoleW</c>. Every character renders whatever the console code page is, and the code page
-/// is left alone.</item>
-/// <item>Windows, any stream redirected: the console's output code page, untouched. It is the
-/// encoding the invoking shell or parent process decodes redirected output with; a consumer that
-/// wants UTF-8 selects code page 65001 before starting the app. UTF-16 is not an option here: one
-/// encoding serves both streams, and a redirected stream would receive UTF-16 bytes.</item>
-/// <item>Other platforms: UTF-8. Assigning it only selects .NET's writer encoding; it changes nothing
-/// in the terminal.</item>
+/// <item>Redirected output (files, pipes, captured processes) is UTF-8 on every platform.</item>
+/// <item>Interactive Windows console output is UTF-16, which .NET writes with <c>WriteConsoleW</c>, so
+/// every character renders whatever the console code page is.</item>
+/// <item>The console code page, which every process attached to the console shares, is never
+/// changed. On Windows, .NET calls <c>SetConsoleOutputCP</c> for any <see cref="Console.OutputEncoding"/>
+/// except UTF-16, so TigerCli assigns only UTF-16 and reaches UTF-8 on redirected streams by giving
+/// them UTF-8 writers instead.</item>
+/// <item>A writer an app or test host installed with <see cref="Console.SetOut"/> or
+/// <see cref="Console.SetError"/> is never replaced. Telling those apart from .NET's own writers needs
+/// the compatibility mechanism in <see cref="PlatformStandardWriters"/>.</item>
 /// </list>
-/// The policy is applied explicitly by the paths that write to the console, never by type
-/// initialization, so code that only reads TigerCli metadata (such as a shell completion request)
-/// gets no console setup at all.
+/// An app that sets <see cref="TigerConsole.OutputEncoding"/> takes the choice over, as before.
 /// </summary>
 internal static class ConsoleOutputEncoding
 {
     private static int _applied;
 
-    /// <summary>The encoding decisions the policy can make.</summary>
-    internal enum Choice
-    {
-        /// <summary>Leave <see cref="Console.OutputEncoding"/> as the platform chose it.</summary>
-        KeepPlatformDefault,
-
-        /// <summary>UTF-16, written to the interactive Windows console with <c>WriteConsoleW</c>.</summary>
-        ConsoleUnicode,
-
-        /// <summary>UTF-8, on platforms where assigning it changes no shared terminal state.</summary>
-        Utf8
-    }
+    // The UTF-8 writers TigerCli installed (as Console.Out/Error return them), so an encoding the app
+    // chooses later can replace them while they are still the current writers.
+    private static TextWriter? _installedOut;
+    private static TextWriter? _installedError;
 
     /// <summary>
-    /// Applies the policy once per process, before the first console write. Does nothing when the app
-    /// chose an encoding through <see cref="TigerConsole.OutputEncoding"/>.
+    /// Applies the contract once per process. Does nothing when the app chose an encoding through
+    /// <see cref="TigerConsole.OutputEncoding"/>.
     /// </summary>
     public static void EnsureApplied()
     {
         if (Volatile.Read(ref _applied) != 0 || Interlocked.Exchange(ref _applied, 1) != 0)
             return;
 
-        if (TigerConsole.OutputEncoding != null)
+        if (TigerConsole.IsOutputEncodingAppChosen)
             return;
 
-        switch (Select(OperatingSystem.IsWindows(), Console.IsOutputRedirected, Console.IsErrorRedirected))
+        if (!OperatingSystem.IsWindows())
         {
-            case Choice.ConsoleUnicode:
-                Console.OutputEncoding = Encoding.Unicode;
-                break;
-            case Choice.Utf8:
-                Console.OutputEncoding = Encoding.UTF8;
-                break;
+            // Outside Windows assigning an encoding selects .NET's writer encoding and nothing else.
+            Console.OutputEncoding = Encoding.UTF8;
+            return;
+        }
+
+        ApplyOnWindows(Console.IsOutputRedirected, Console.IsErrorRedirected);
+    }
+
+    /// <summary>
+    /// The Windows contract for the current process. Interactive streams keep the runtime's writer, now
+    /// UTF-16. Redirected streams whose writer is the runtime's get a UTF-8 writer; installed writers
+    /// stay as they are.
+    /// </summary>
+    internal static void ApplyOnWindows(bool isOutputRedirected, bool isErrorRedirected)
+    {
+        var ownership = PlatformStandardWriters.SwitchToUnicode();
+        if (isOutputRedirected && ownership.OutIsRuntimeWriter)
+        {
+            Console.SetOut(PlatformStandardWriters.CreateWriter(Console.OpenStandardOutput(), Encoding.UTF8));
+            _installedOut = Console.Out;
+        }
+
+        if (isErrorRedirected && ownership.ErrorIsRuntimeWriter)
+        {
+            Console.SetError(PlatformStandardWriters.CreateWriter(Console.OpenStandardError(), Encoding.UTF8));
+            _installedError = Console.Error;
         }
     }
 
-    /// <summary>The pure decision behind <see cref="EnsureApplied"/>.</summary>
-    internal static Choice Select(bool isWindows, bool isOutputRedirected, bool isErrorRedirected)
+    /// <summary>
+    /// Applies an encoding the app chose: assigned to <see cref="Console.OutputEncoding"/>, as it always
+    /// was, and to any redirected-stream writer TigerCli installed that is still current.
+    /// </summary>
+    internal static void ApplyAppChoice(Encoding encoding)
     {
-        if (!isWindows)
-            return Choice.Utf8;
+        Console.OutputEncoding = encoding;
+        if (_installedOut != null && ReferenceEquals(Console.Out, _installedOut))
+        {
+            Console.SetOut(PlatformStandardWriters.CreateWriter(Console.OpenStandardOutput(), encoding));
+            _installedOut = Console.Out;
+        }
 
-        return isOutputRedirected || isErrorRedirected ? Choice.KeepPlatformDefault : Choice.ConsoleUnicode;
+        if (_installedError != null && ReferenceEquals(Console.Error, _installedError))
+        {
+            Console.SetError(PlatformStandardWriters.CreateWriter(Console.OpenStandardError(), encoding));
+            _installedError = Console.Error;
+        }
     }
 }

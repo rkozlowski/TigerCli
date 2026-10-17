@@ -91,7 +91,7 @@ unless a row says otherwise.
 | Shell startup cost | Dot-sourcing a saved script: about 7 ms. `app --completion pwsh \| Out-String \| Invoke-Expression`: about 110 ms, one app start per new session. One Tab press: about 125 ms. (A small framework-dependent app, Debug build.) |
 | Command lookup | Completion needs the command to resolve by name. An `App Paths` registration does not make an executable resolvable in either edition; a `PATH` entry does. Path-qualified invocations (`.\my-tool.exe`, a full path, `& 'C:\...\my-tool.exe'`) also complete. |
 | Bare `-` or `--` | Windows PowerShell 5.1 never calls a native completer for a word that is only `-` or `--`; type at least one more character. PowerShell 7 calls it. |
-| Console encoding | PowerShell decodes a native command's output with its cached `[Console]::OutputEncoding`, which is the OEM code page in a default console. A TigerCli app writes redirected output in the console's output code page and never changes it; see [console output encoding](console-output-encoding.md). |
+| Console encoding | PowerShell decodes a native command's output with its cached `[Console]::OutputEncoding`, which is the OEM code page in a default console. A TigerCli app writes its normal redirected output as UTF-8 and never changes the code page. It answers PowerShell completion requests in the console code page, which the generated script switches to UTF-8 for each request; see [console output encoding](console-output-encoding.md). |
 
 ### Activation Options
 

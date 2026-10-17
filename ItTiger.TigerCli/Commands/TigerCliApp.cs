@@ -395,9 +395,9 @@ public sealed partial class TigerCliApp
         if (TryRunShellCompletion(args, out var completionExitCode))
             return completionExitCode;
 
-        // 00a. Console output encoding: chosen once, before the first byte any stage or handler writes,
-        // so TigerCli rendering and handler Console writes share one encoding. It never changes the
-        // console code page shared with other processes; see ConsoleOutputEncoding.
+        // 00a. Console output encoding: set up once, before the first byte any stage or handler writes,
+        // so TigerCli rendering and handler Console writes share one contract (UTF-8 when redirected,
+        // Unicode on the console, the shared console code page untouched); see ConsoleOutputEncoding.
         ConsoleOutputEncoding.EnsureApplied();
 
         // 0a. Raw trailing arguments: the first `--` splits the command line into the head TigerCli

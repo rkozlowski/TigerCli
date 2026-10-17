@@ -19,27 +19,29 @@ public static partial class TigerConsole
     /// <summary>Optional logger used for render diagnostics.</summary>
     public static ILogger? Logger { get; set; }
 
-    private static Encoding? _outputEncoding;
+    private static Encoding _outputEncoding = Encoding.UTF8;
+    private static bool _outputEncodingAppChosen;
 
     /// <summary>
-    /// An encoding the app chooses for standard output and error, or <c>null</c> (the default) to let
-    /// TigerCli choose one that changes no state shared with other processes. Setting a non-null
-    /// value assigns it to <see cref="Console.OutputEncoding"/> immediately.
+    /// The encoding of TigerCli's redirected standard output and error. Defaults to UTF-8.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// With <c>null</c>, TigerCli writes UTF-16 to an interactive Windows console, so every character
-    /// renders whatever the console code page is. When a stream is redirected it keeps the console's
-    /// output code page, which is the encoding the invoking shell decodes redirected output with. On
-    /// other platforms it uses UTF-8. The choice is made when TigerCli first writes to the console.
+    /// By default TigerCli writes UTF-8 to redirected output (files, pipes, captured processes) on every
+    /// platform, and UTF-16 to an interactive Windows console, so every character renders whatever the
+    /// console code page is. It never changes the console code page, and never replaces a writer
+    /// installed with <see cref="Console.SetOut"/> or <see cref="Console.SetError"/>. The encoding is
+    /// set up when an app run starts or TigerCli first writes to the console.
     /// </para>
     /// <para>
-    /// On Windows, assigning any encoding other than UTF-16 changes the console code page, which every
-    /// process attached to the console shares and which stays changed after this process exits.
-    /// Setting the property back to <c>null</c> does not undo an assignment already made.
+    /// Setting this property replaces that default with the app's own choice: the value is assigned to
+    /// <see cref="Console.OutputEncoding"/> immediately and used for redirected output. On Windows,
+    /// assigning any encoding other than UTF-16 changes the console code page, which every process
+    /// attached to the console shares and which stays changed after this process exits. Set it at the
+    /// start of <c>Main</c>, before TigerCli writes.
     /// </para>
     /// </remarks>
-    public static Encoding? OutputEncoding
+    public static Encoding OutputEncoding
     {
         get
         {
@@ -47,11 +49,15 @@ public static partial class TigerConsole
         }
         set
         {
+            ArgumentNullException.ThrowIfNull(value);
             _outputEncoding = value;
-            if (value != null)
-                Console.OutputEncoding = value;
+            _outputEncodingAppChosen = true;
+            ConsoleOutputEncoding.ApplyAppChoice(value);
         }
     }
+
+    /// <summary>Whether the app set <see cref="OutputEncoding"/>, replacing TigerCli's default.</summary>
+    internal static bool IsOutputEncodingAppChosen => _outputEncodingAppChosen;
 
     private static bool _treatDbNullAsNull = true;
 
