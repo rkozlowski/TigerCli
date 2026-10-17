@@ -22,10 +22,12 @@ namespace ItTiger.TigerCli.Commands;
 /// <see cref="TigerCliAppBuilder.Build"/>. Owns the full run pipeline — culture resolution, theme
 /// application, command resolution, contributed global options, parsing, prompting, validation,
 /// and handler execution — and
-/// maps the outcome to a process exit code through the configured exit-code policy.
+/// maps the outcome to a process exit code through the configured exit-code policy. When enabled
+/// with <see cref="TigerCliAppBuilder.UseShellCompletion"/>, it also answers shell completion
+/// requests from command metadata without running that pipeline.
 /// Create one with <see cref="CreateBuilder"/>; instances cannot be constructed directly.
 /// </summary>
-public sealed class TigerCliApp
+public sealed partial class TigerCliApp
 {
     private const string ThemeEnvironmentVariable = "TIGERCLI_THEME";
 
@@ -133,9 +135,11 @@ public sealed class TigerCliApp
         string? commandMenuDescriptionResourceKey = null,
         List<TigerCliCommandAliasRegistration>? aliases = null,
         IReadOnlyList<TigerCliGlobalOptionRegistration>? globalOptions = null,
-        IReadOnlyList<TigerCliEnvironmentVariableRegistration>? environmentVariables = null)
+        IReadOnlyList<TigerCliEnvironmentVariableRegistration>? environmentVariables = null,
+        bool shellCompletionEnabled = false)
     {
         _processCancellationEnabled = processCancellationEnabled;
+        _shellCompletionEnabled = shellCompletionEnabled;
         _commandMenuMode = commandMenuMode;
         _terminalTitleManagementEnabled = terminalTitleManagementEnabled;
         _spinnerTitlePrefixEnabled = spinnerTitlePrefixEnabled;
@@ -219,6 +223,44 @@ public sealed class TigerCliApp
         _aliases = aliases ?? new List<TigerCliCommandAliasRegistration>();
         ValidateAndLinkAliases();
         ValidateGlobalOptionCommandCollisions();
+        ValidateShellCompletionOptionCollisions();
+    }
+
+    /// <summary>
+    /// With shell completion enabled, <c>--completion</c> and the hidden completion request token are
+    /// framework-owned, so no command option or contributed global option may use either name.
+    /// </summary>
+    private void ValidateShellCompletionOptionCollisions()
+    {
+        if (!_shellCompletionEnabled)
+            return;
+
+        var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            TigerCliCompletionProtocol.ScriptOption,
+            TigerCliCompletionProtocol.RequestToken
+        };
+
+        foreach (var globalOption in _globalOptions.Where(option => reserved.Contains(option.Name)))
+        {
+            throw new InvalidOperationException(
+                $"Contributed global option '{globalOption.Name}' is reserved by TigerCli shell completion.");
+        }
+
+        foreach (var command in _namedCommands.Append(_defaultCommand))
+        {
+            if (command == null || command.IsCommandMenu)
+                continue;
+
+            var alias = BuildOptionMetadata(command.SettingsType)
+                .SelectMany(option => option.Aliases)
+                .FirstOrDefault(reserved.Contains);
+            if (alias != null)
+            {
+                throw new InvalidOperationException(
+                    $"Option '{alias}' on settings type '{command.SettingsType.Name}' is reserved by TigerCli shell completion.");
+            }
+        }
     }
 
     private void ValidateGlobalOptionCommandCollisions()
@@ -347,6 +389,12 @@ public sealed class TigerCliApp
         TimeSpan? promptTimeout = default,
         CancellationToken ct = default)
     {
+        // 00. Shell completion (opt-in): a completion request or a `--completion <shell>` script
+        // request is answered before any other stage, so it has no terminal side effects and never
+        // reaches command resolution, contributions, prompts, providers, or handlers.
+        if (TryRunShellCompletion(args, out var completionExitCode))
+            return completionExitCode;
+
         // 0a. Raw trailing arguments: the first `--` splits the command line into the head TigerCli
         // parses and a tail that belongs verbatim to the command that declares one. Splitting here,
         // before every other stage, is what makes the tail safe: command resolution, positional
@@ -5738,6 +5786,16 @@ public sealed class TigerCliApp
         {
             optionItems.Add(("[Key]--version[/]", [Esc(L("Help_Builtin_Version_Desc", culture))]));
             optionItems.Add(("[Key]--version-full[/]", [Esc(L("Help_Builtin_VersionFull_Desc", culture))]));
+        }
+        if (_shellCompletionEnabled)
+        {
+            var shellPlaceholder = Esc(L("Help_Builtin_Completion_ValuePlaceholder", culture));
+            optionItems.Add((
+                $"[Key]{TigerCliCompletionProtocol.ScriptOption}[/] [Value]<{shellPlaceholder}>[/]",
+                [
+                    Esc(L("Help_Builtin_Completion_Desc", culture)),
+                    $"[Value]{Esc(string.Join(" | ", TigerCliCompletionProtocol.ShellNames))}[/]"
+                ]));
         }
         optionItems.Add(("[Key]--help-errors[/]", [Esc(L("Help_Builtin_HelpErrors_Desc", culture))]));
         optionItems.Add(("[Key]--help-env[/]", [Esc(L("Help_Builtin_HelpEnv_Desc", culture))]));

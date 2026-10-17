@@ -27,6 +27,7 @@ public static class RoiCitiesApp
                 .ExitKind(TigerCliExitKind.InteractiveNotAllowed, RoiCitiesExitCode.InteractiveNotAllowed)
                 .ExitKind(TigerCliExitKind.Cancelled, RoiCitiesExitCode.Cancelled)
             .UseCommandMenu(CommandMenuMode.Enabled)
+            .UseShellCompletion()
             .AddCommand("list", () => new ListCommand(store), "Lists the cities.")
             .AddCommand("show", () => new ShowCommand(store), "Shows details for one city.")
             .ConfigureProviders(providers => providers.Add<string>("cities", _ =>

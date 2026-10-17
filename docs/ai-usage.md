@@ -33,6 +33,7 @@ For public examples, start with [Getting Started / ROI Cities](getting-started.m
 | Pass an opaque token list to a child or nested tool | `[TigerCliRawArguments]` plus the `--` separator | A repeated option, extra positionals, or manual `args` scanning |
 | Run safely in scripts, CI, redirection, or agent tooling | `--non-interactive` with all required input supplied | A separate headless command implementation |
 | Let handler work observe caller and process cancellation | `settings.CancellationToken` | App-owned console signal handlers or an unrelated token source |
+| Offer Bash/Zsh/Fish/PowerShell tab completion | `UseShellCompletion()` plus `app --completion <shell>` | Hand-written completion scripts, a `completion` command, or a static command list |
 
 Normal arguments, options, and selectors belong before `--` and are parsed, bound, and validated by
 TigerCli. A declared raw tail belongs after the first `--` and is bound literally; TigerCli never
@@ -107,13 +108,31 @@ builder.AddCommandGroup("connections", group => group
   option names and `valueName` placeholders remain literal.
 - Do not use static value stores, inspect raw arguments in handlers, or model ordinary command
   inputs as global contributions.
-- TigerCli currently has no shell-completion entry point or completion-provider adapter. Normal command
-  providers run after contributed global-option callbacks and may observe contribution-owned state;
-  help invokes neither callbacks, providers, nor handlers. Keep provider I/O cancellable and
-  preferably idempotent, and do not assume this ordering for a future completion feature.
+- Normal command providers run after contributed global-option callbacks and may observe
+  contribution-owned state; help invokes neither callbacks, providers, nor handlers. Shell completion
+  is static: it offers a contributed global option by name but never runs its callback or any
+  provider. Keep provider I/O cancellable and preferably idempotent.
 
 See [App contributions and global options](guides/app-contributions.md) for the ownership boundary,
 lifecycle, constraints, and host composition example.
+
+## Shell Completion
+
+- Enable it with `TigerCliAppBuilder.UseShellCompletion()`; users activate it with
+  `app --completion bash|zsh|fish|pwsh` (see [shell completion](guides/shell-completion.md) for the
+  per-shell activation lines). The registered command name is the application name, so set it
+  through `UseAssemblyMetadata(...)`.
+- Completion is static and metadata-backed. Commands, groups, aliases, options, enum and `bool?`
+  values, and framework theme/colour/culture lists come for free from normal registration and
+  attributes; there is nothing extra to declare.
+- It follows the strict grammar: positionals before options, execution and global options only in
+  the options area, `--version`/`--completion` root-only, and nothing completed after the first `--`.
+- It never constructs handlers, calls factories, applies contributions, prompts, or calls providers.
+  Provider-backed values get no candidates; there is no dynamic completion API yet, so do not
+  emulate one with extra enums, hidden commands, or handler-side argument inspection.
+- Do not define `--completion` or `--tigercli-complete` as app options when completion is enabled;
+  `Build()` rejects them.
+- Do not hand-write completion scripts or add a `completion` command.
 
 ## CRUD Shape
 
@@ -194,7 +213,8 @@ app <command-path> <positional-arguments> [options] [-- <raw-arguments>]
 - Framework-owned execution options such as `--non-interactive`, `--culture`, `--theme`, and
   `--color` are app-wide in meaning but still belong after the command path and required
   positionals. Contributed global options follow the same rule.
-- Root `--help`, `--help-errors`, `--help-env`, and opt-in `--version` / `--version-full` are informational forms,
+- Root `--help`, `--help-errors`, `--help-env`, opt-in `--version` / `--version-full`, and opt-in
+  `--completion <shell>` (which must stand alone) are informational forms,
   not permission to put execution options before a command. Use `app command --help` for command
   help; `app --help command` is invalid. They share the options area with execution options, so
   `app --help --help-env --theme light` is valid.
@@ -405,6 +425,7 @@ TigerConsole.Render(details);
 - Registering multi-token names with `AddCommand(...)` instead of `AddCommandGroup(...)`.
 - Accepting localized enum/provider labels as stable command-line input.
 - Emulating a pass-through argument tail with a repeated string option, a positional, or a manual `--` scan instead of `[TigerCliRawArguments]`.
+- Hand-writing shell completion scripts instead of calling `UseShellCompletion()`.
 - Treating TigerCli as a full-screen TUI framework.
 
 ## More Documentation
@@ -413,6 +434,7 @@ TigerConsole.Render(details);
 - [Folder Copy sample](examples/folder-copy.md)
 - [CRUD command apps](guides/crud-commands.md)
 - [Arguments and options](guides/arguments-and-options.md)
+- [Shell completion](guides/shell-completion.md)
 - [Interaction modes and cancellation](guides/interaction-modes.md)
 - [Prompting and providers](guides/prompting-and-providers.md)
 - [Structured output](guides/structured-output.md)

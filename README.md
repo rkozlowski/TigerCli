@@ -80,6 +80,7 @@ Activity dialogs can show live progress while the same operation remains script-
 - [CliList&lt;T&gt;](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliList-1.html), [CliDetails](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Rendering.CliDetails.html), `CliTable`, and `CliGrid` structured output
 - Activity/progress dialogs through `RunActivityAsync`
 - Command menu for semi-interactive command discovery
+- Opt-in static shell completion for Bash, Zsh, Fish, and PowerShell
 - Localization support for framework and app CLI text
 - App-level testing harness for arguments, prompts, output, errors, and exit codes
 

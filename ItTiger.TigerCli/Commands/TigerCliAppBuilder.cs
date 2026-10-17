@@ -68,6 +68,7 @@ public sealed class TigerCliAppBuilder
     private bool _commandMenuIsDefault;
     private string? _commandMenuDescription;
     private string? _commandMenuDescriptionResourceKey;
+    private bool _shellCompletionEnabled;
     private readonly List<ITigerCliAppContribution> _contributions = new();
     private readonly List<TigerCliEnvironmentVariableRegistration> _environmentVariables = new();
 
@@ -1011,6 +1012,29 @@ public sealed class TigerCliAppBuilder
     }
 
     /// <summary>
+    /// Enables shell tab completion for Bash, Zsh, Fish, and PowerShell. The app gains the
+    /// framework-owned root option <c>--completion &lt;shell&gt;</c>, which prints an activation script
+    /// for that shell, and answers the completion requests that script sends. Completion is static
+    /// and metadata-backed: command paths, groups, aliases, command options, framework options,
+    /// contributed global option names, enum and <c>bool?</c> values, and the framework's theme,
+    /// colour-mode, and culture lists. It follows the normal command grammar, including the
+    /// <c>--</c> raw-argument boundary, and never constructs handlers, calls command factories,
+    /// applies contributed global options, prompts, or calls providers. The completion command name
+    /// is the application name, so set it through <see cref="UseAssemblyMetadata(bool)"/> or
+    /// <see cref="SetApplicationName"/>.
+    /// </summary>
+    /// <returns>This builder for chaining.</returns>
+    /// <remarks>
+    /// <see cref="Build"/> throws when a command option or contributed global option uses a reserved
+    /// name: <c>--completion</c> or the hidden completion request token <c>--tigercli-complete</c>.
+    /// </remarks>
+    public TigerCliAppBuilder UseShellCompletion()
+    {
+        _shellCompletionEnabled = true;
+        return this;
+    }
+
+    /// <summary>
     /// Configures the app-level default interaction mode, which decides whether TigerCli may
     /// prompt or show TUI controls. The default is <c>SemiInteractive</c>.
     /// </summary>
@@ -1402,7 +1426,8 @@ public sealed class TigerCliAppBuilder
             _commandMenuDescriptionResourceKey,
             _aliases,
             globalOptions,
-            environmentVariables);
+            environmentVariables,
+            _shellCompletionEnabled);
     }
 
     private void ValidateEnvironmentVariableScopes(

@@ -161,4 +161,18 @@ public sealed class ExtendedAppTests
         Assert.Contains("Interactive input not allowed", result.StdOut);
         Assert.Empty(result.StdErr);
     }
+
+    [Fact]
+    public async Task ShellCompletion_CompletesCommandNames()
+    {
+        // The hidden request a generated completion script sends for `roi-cities s<TAB>`.
+        var result = await TigerCliAppTestHost
+            .For(RoiCitiesApp.Create())
+            .WithArgs("--tigercli-complete", "bash", "_s")
+            .RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal((int)RoiCitiesExitCode.Ok, result.ExitCode);
+        Assert.Equal("show\n:none\n", result.StdOut);
+        Assert.Empty(result.StdErr);
+    }
 }

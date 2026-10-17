@@ -205,7 +205,7 @@ Providers are registered at app, group, or command scope and can depend on earli
 
 ### Command menu
 
-`UseCommandMenu([CommandMenuMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CommandMenuMode.html).Enabled)` makes a bare `roi-cities` open a picker over the registered commands — TigerCli's discoverable alternative to shell tab completion. The selected command then runs through the normal pipeline, so choosing `show` flows straight into the city select above:
+`UseCommandMenu([CommandMenuMode](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Enums.CommandMenuMode.html).Enabled)` makes a bare `roi-cities` open a picker over the registered commands — TigerCli's in-app way to discover commands. The selected command then runs through the normal pipeline, so choosing `show` flows straight into the city select above:
 
 ![roi-cities command menu](examples/png/roi-cities-extended-menu.png)
 
@@ -213,6 +213,20 @@ The menu is reached through an empty command path, so `roi-cities --non-interact
 command line — and the menu refuses it with a clean, mapped exit code instead of opening a picker.
 Automation should select a command and put the option after that command's required positionals
 ([command apps → command menu](guides/command-apps.md#command-menu)).
+
+### Shell completion
+
+`UseShellCompletion()` adds tab completion for the shell the user already works in. Activate it
+once per shell, for example in Bash:
+
+```bash
+source <(roi-cities --completion bash)
+```
+
+`roi-cities s<TAB>` then completes `show`, and `roi-cities show Galway --<TAB>` lists the
+framework options. Completion is static: it does not call the `cities` provider, so the city name
+itself is not completed — the provider-backed prompt covers that. See
+[shell completion](guides/shell-completion.md) for Zsh, Fish, and PowerShell.
 
 ### Typed exit codes
 
