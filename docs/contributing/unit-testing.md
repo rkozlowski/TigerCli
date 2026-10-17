@@ -141,12 +141,25 @@ Completion has two layers of tests:
   and the generated scripts' shape. They run everywhere.
 - **Real-host PowerShell tests** (`CommandParserTest.Tests/PowerShellCompletionTests.cs`) evaluate
   the generated script for the built `parser-test` executable inside Windows PowerShell 5.1, and
-  inside PowerShell 7 when `pwsh` is on `PATH`. `PowerShellCompletionProbe.ps1` presses Tab
-  through `TabExpansion2` under an OEM console code page and writes what it observed to a JSON
-  result file. The tests assert the completer's session contract: decoded descriptions,
-  `$LASTEXITCODE`, `$Error`, the console code page, Constrained Language Mode, and an uninstalled
-  executable. Each host gets its own hidden console. On other platforms these tests have no data and
-  are skipped.
+  inside PowerShell 7 when `pwsh` is on `PATH`. They assert the completer's session contract:
+  decoded descriptions, `$LASTEXITCODE`, `$Error`, the console code page, Constrained Language Mode,
+  and an uninstalled executable. They also send a raw completion request, which must leave the
+  console code page alone.
+
+## Windows Console Tests
+
+`CommandParserTest.Tests/WindowsConsoleProbe.ps1` runs inside a real PowerShell host under OEM
+console code pages and writes what it observed to a JSON result file. `WindowsConsoleProbe.cs` starts
+it once per host and language mode, with its own hidden console and its standard handles left on
+that console, so the app it starts writes to a genuine console. Besides the completion scenarios
+above, `ConsoleOutputEncodingTests.cs` asserts the
+[console output encoding](../reference/console-output-encoding.md) contract for normal execution:
+non-ASCII output, errors, and themed help read back from the screen buffer; redirected output and
+errors as PowerShell decodes them; and an unchanged console code page after each run. On other
+platforms these tests have no data and are skipped.
+
+To put an app on a genuine console from a harness, let it inherit console handles. A `cmd`
+redirection to `CONOUT$` opens a write-only handle, which .NET reports as redirected.
 
 When checking non-ASCII completion text by hand, compare code points rather than reading console
 output: two mismatched decodings can cancel out on the way to your terminal and make broken text

@@ -1,7 +1,9 @@
 using ItTiger.TigerCli.Commands;
 using ItTiger.TigerCli.Enums;
 using ItTiger.TigerCli.Primitives;
+using ItTiger.TigerCli.Terminal;
 using ItTiger.TigerCli.Testing;
+using ItTiger.TigerCli.Tui.Themes;
 
 namespace ItTiger.TigerCli.Tests;
 
@@ -547,6 +549,36 @@ public sealed class TigerCliShellCompletionTests
         Assert.Equal(0, result.ExitCode);
         Assert.Equal("deploy\n:none\n", result.StdOut);
         Assert.Empty(result.StdErr);
+    }
+
+    private sealed class CompletionOnlyTheme : ThemeBase
+    {
+        public override string Name => "completion-boundary-test-theme";
+
+        protected override CliCellStyle Text => new(new CliCharStyle(CliColor.Gray));
+        protected override CliCellStyle MutedText => new(new CliCharStyle(CliColor.DarkGray));
+        protected override CliCellStyle Accent => new(new CliCharStyle(CliColor.Cyan));
+        protected override CliCellStyle Frame => new(new CliCharStyle(CliColor.Gray));
+        protected override CliCellStyle Selected => new(new CliCharStyle(CliColor.Black, CliColor.Green));
+        protected override CliCellStyle Background => new(new CliCharStyle(null, CliColor.Black));
+    }
+
+    [Fact]
+    public async Task CompletionRequest_OffersCustomThemesWithoutRegisteringThem()
+    {
+        var app = CreateApp(configure: builder => builder.ConfigureThemes(themes => themes
+            .AddTheme(new CompletionOnlyTheme())
+            .DisableTheme("tiger-blue")));
+
+        var result = await RunAsync(app, RequestToken, "bash", "_deploy", "_prod", "_--theme", "_");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("completion-boundary-test-theme\n", result.StdOut);
+        Assert.Contains("light\n", result.StdOut);
+        Assert.DoesNotContain("tiger-blue", result.StdOut);
+        // A completion request reads the app's theme configuration; it never applies it to the
+        // process-wide theme registry.
+        Assert.DoesNotContain("completion-boundary-test-theme", TigerConsole.GetThemeNames());
     }
 
     [Fact]

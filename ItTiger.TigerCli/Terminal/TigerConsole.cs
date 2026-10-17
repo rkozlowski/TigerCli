@@ -19,17 +19,27 @@ public static partial class TigerConsole
     /// <summary>Optional logger used for render diagnostics.</summary>
     public static ILogger? Logger { get; set; }
 
-    private static Encoding _outputEncoding = Encoding.UTF8;
-
-    static TigerConsole()
-    {
-        Console.OutputEncoding = _outputEncoding;
-    }
+    private static Encoding? _outputEncoding;
 
     /// <summary>
-    /// Output encoding assigned to <see cref="Console.OutputEncoding"/>. Defaults to UTF-8.
+    /// An encoding the app chooses for standard output and error, or <c>null</c> (the default) to let
+    /// TigerCli choose one that changes no state shared with other processes. Setting a non-null
+    /// value assigns it to <see cref="Console.OutputEncoding"/> immediately.
     /// </summary>
-    public static Encoding OutputEncoding
+    /// <remarks>
+    /// <para>
+    /// With <c>null</c>, TigerCli writes UTF-16 to an interactive Windows console, so every character
+    /// renders whatever the console code page is. When a stream is redirected it keeps the console's
+    /// output code page, which is the encoding the invoking shell decodes redirected output with. On
+    /// other platforms it uses UTF-8. The choice is made when TigerCli first writes to the console.
+    /// </para>
+    /// <para>
+    /// On Windows, assigning any encoding other than UTF-16 changes the console code page, which every
+    /// process attached to the console shares and which stays changed after this process exits.
+    /// Setting the property back to <c>null</c> does not undo an assignment already made.
+    /// </para>
+    /// </remarks>
+    public static Encoding? OutputEncoding
     {
         get
         {
@@ -38,7 +48,8 @@ public static partial class TigerConsole
         set
         {
             _outputEncoding = value;
-            Console.OutputEncoding = _outputEncoding;
+            if (value != null)
+                Console.OutputEncoding = value;
         }
     }
 

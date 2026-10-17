@@ -25,20 +25,25 @@ those captured artifacts and fails `DocExamplesDriftTests`, so expect this whene
 Polish descriptions correctly, which suggested that decoding worked. A direct check showed that the
 completer had mis-decoded them all along.
 
-**Cause:** the TigerCli app writes UTF-8. PowerShell decoded it with its cached OEM
+**Cause:** the app wrote UTF-8. PowerShell decoded it with its cached OEM
 `[Console]::OutputEncoding`, then the probe printed the mojibake back out in that same OEM
 encoding, which re-created the original UTF-8 bytes, so the outer terminal showed correct text. Two
-mismatched decodings cancelled out. Related traps found the same day: `chcp` reports the console's
-*input* code page, not its output code page, and a TigerCli app changes the console's output code
-page to UTF-8 as a side effect of running.
+mismatched decodings cancelled out. Related traps:
+- `chcp` reports the console's *input* code page, not its output code page.
+- A `cmd` redirection to `CONOUT$` gives the app a write-only console handle, which .NET reports as
+  redirected, so the app takes its redirected-output path on what looks like the console.
+- On Windows, assigning `Console.OutputEncoding` anything but UTF-16 changes the shared console
+  code page; see `docs/reference/console-output-encoding.md`.
 
-**Do not:** judge encoding correctness from text a child process printed, or read the console code
-page with `chcp`.
+**Do not:** judge encoding correctness from text a child process printed, read the console code
+page with `chcp`, or put an app "on the console" with a `CONOUT$` redirection.
 
 **Use instead:** compare code points inside the process that decoded the text, or write results to a
-file with an explicit encoding. Read the output code page with `GetConsoleOutputCP`.
+file with an explicit encoding. Read the output code page with `GetConsoleOutputCP` and the screen
+with `ReadConsoleOutputCharacterW`. Let the app inherit genuine console handles.
 
-**Prevented by:** `CommandParserTest.Tests/PowerShellCompletionTests.cs`. Its probe writes the
-descriptions the PowerShell host decoded to a JSON file, and the test compares them exactly.
+**Prevented by:** `CommandParserTest.Tests/WindowsConsoleProbe.ps1` and the tests that start it
+(`PowerShellCompletionTests.cs`, `ConsoleOutputEncodingTests.cs`). The probe writes what the host
+decoded and what the screen shows to a JSON file, and the tests compare them exactly.
 
 **Generalization candidate:** TigerWinLab (evidence collection from Windows console processes)

@@ -108,6 +108,7 @@ public class CliRenderBuffer
         {
             return;
         }
+        ConsoleOutputEncoding.EnsureApplied();
         var oldX = Console.CursorLeft;
         var oldY = Console.CursorTop;        
         var oldFg = Console.ForegroundColor;

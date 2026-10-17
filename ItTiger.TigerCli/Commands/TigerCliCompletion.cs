@@ -406,8 +406,9 @@ internal static class TigerCliCompletionScripts
             # encoding, so it gets plain-string candidates and the current encoding.
             $fullLanguage = $ExecutionContext.SessionState.LanguageMode -eq 'FullLanguage'
 
-            # A Tab press leaves the session as it found it: $LASTEXITCODE and the console code page
-            # are restored. The app answers in UTF-8, so its output is decoded as UTF-8.
+            # The app answers in the console's output encoding. Selecting UTF-8 for the call makes it
+            # answer, and PowerShell decode, in UTF-8, so every character survives. A Tab press leaves
+            # the session as it found it: $LASTEXITCODE and the console encoding are restored.
             $hadExitCode = Test-Path -Path 'variable:global:LASTEXITCODE'
             $savedExitCode = $global:LASTEXITCODE
             $savedEncoding = $null

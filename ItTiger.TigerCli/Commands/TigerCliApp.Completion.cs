@@ -1,13 +1,16 @@
 using System.Globalization;
 using ItTiger.TigerCli.Resources;
+using ItTiger.TigerCli.Terminal;
 
 namespace ItTiger.TigerCli.Commands;
 
 // Shell completion: the framework-owned `--completion <shell>` script option, the hidden
 // `--tigercli-complete` protocol request, and the static completion engine behind it. The engine
 // reads command metadata only. It never constructs handlers, calls command factories, applies
-// contributed global options, prompts, or calls providers, so completing a command line has no
-// side effects beyond writing the response.
+// contributed global options or app theme configuration, prompts, or calls providers, so completing
+// a command line has no side effects beyond writing the response. Writing it is the only console
+// interaction (WriteCompletionOutput): no sink, theme, colour mode, terminal title, or cancellation
+// handler is set up. A future dynamic value source must keep to the same boundary.
 public sealed partial class TigerCliApp
 {
     private readonly bool _shellCompletionEnabled;
@@ -65,8 +68,7 @@ public sealed partial class TigerCliApp
         }
 
         var commandName = string.IsNullOrWhiteSpace(_applicationName) ? "app" : _applicationName;
-        Console.Out.Write(TigerCliCompletionScripts.Generate(shell, commandName));
-        Console.Out.Flush();
+        WriteCompletionOutput(TigerCliCompletionScripts.Generate(shell, commandName));
         return _exitCodePolicy.Resolve(TigerCliExitKind.Success);
     }
 
@@ -75,17 +77,26 @@ public sealed partial class TigerCliApp
         if (request.Length == 0 || !TigerCliCompletionProtocol.TryParseShell(request[0], out var shell))
             return _exitCodePolicy.Resolve(TigerCliExitKind.InvalidArguments);
 
-        // Custom themes join the selectable theme list only once registered for the run.
-        ApplyThemeConfiguration();
-
         var words = request[1..].Select(TigerCliCompletionProtocol.DecodeWord).ToArray();
         var result = words.Length == 0
             ? Complete([], string.Empty)
             : Complete(words[..^1], words[^1]);
 
-        Console.Out.Write(TigerCliCompletionProtocol.FormatResponse(shell, result));
-        Console.Out.Flush();
+        WriteCompletionOutput(TigerCliCompletionProtocol.FormatResponse(shell, result));
         return _exitCodePolicy.Resolve(TigerCliExitKind.Success);
+    }
+
+    /// <summary>
+    /// Writes a completion script or response to stdout in TigerCli's standard output encoding. A
+    /// request normally arrives on a redirected stdout, so on Windows that is the console's output
+    /// code page: the encoding the invoking shell chose and decodes with. Nothing else about the
+    /// console is set up or changed.
+    /// </summary>
+    private static void WriteCompletionOutput(string text)
+    {
+        ConsoleOutputEncoding.EnsureApplied();
+        Console.Out.Write(text);
+        Console.Out.Flush();
     }
 
     /// <summary>

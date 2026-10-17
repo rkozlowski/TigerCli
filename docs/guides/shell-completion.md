@@ -118,10 +118,15 @@ Tab -> shell script -> my-tool --tigercli-complete <shell> _word1 ... _wordN -> 
 - The script passes every word after the program name up to and including the word under the
   cursor. Each word is prefixed with `_`, so an empty current word, a literal `--`, and option-like
   words survive every shell's argument passing.
-- The app answers in UTF-8 with one candidate per line in that shell's format and a final `:none`,
-  `:files`, or `:directories` fallback line.
-- The PowerShell script decodes that answer as UTF-8 whatever the console code page is. It restores
-  `$LASTEXITCODE` and the console encoding after each Tab press and records nothing in `$Error`.
+- The app answers with one candidate per line in that shell's format and a final `:none`,
+  `:files`, or `:directories` fallback line. It writes in its normal
+  [console output encoding](../reference/console-output-encoding.md): UTF-8 outside Windows, and
+  on Windows the console's output code page, which a request never changes.
+- The PowerShell script selects UTF-8 for each request, so descriptions survive any console code
+  page. It restores `$LASTEXITCODE` and the console encoding after each Tab press and records
+  nothing in `$Error`.
+- A request sets up no console state: no colour mode, theme registration, terminal title, or
+  cancellation handler. It only reads metadata and writes the answer.
 - `--tigercli-complete` is a hidden, framework-owned entry point. It is not listed in help and
   exists only while completion is enabled.
 

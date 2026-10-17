@@ -395,6 +395,11 @@ public sealed partial class TigerCliApp
         if (TryRunShellCompletion(args, out var completionExitCode))
             return completionExitCode;
 
+        // 00a. Console output encoding: chosen once, before the first byte any stage or handler writes,
+        // so TigerCli rendering and handler Console writes share one encoding. It never changes the
+        // console code page shared with other processes; see ConsoleOutputEncoding.
+        ConsoleOutputEncoding.EnsureApplied();
+
         // 0a. Raw trailing arguments: the first `--` splits the command line into the head TigerCli
         // parses and a tail that belongs verbatim to the command that declares one. Splitting here,
         // before every other stage, is what makes the tail safe: command resolution, positional
@@ -1806,11 +1811,15 @@ public sealed partial class TigerCliApp
     }
 
     /// <summary>
-    /// The themes selectable by this app: every registered theme minus the app's disabled themes.
-    /// Disabled themes behave like unknown themes for <c>--theme</c>, <c>TIGERCLI_THEME</c>, and help.
+    /// The themes selectable by this app: every registered theme plus the app's own custom themes,
+    /// minus the app's disabled themes. Disabled themes behave like unknown themes for <c>--theme</c>,
+    /// <c>TIGERCLI_THEME</c>, and help. Custom themes are listed from the app's configuration, so
+    /// callers that must not register them (shell completion) see the same list as a normal run.
     /// </summary>
     private IReadOnlyList<string> GetEnabledThemeNames()
         => TigerConsole.GetThemeNames()
+            .Concat(_themeConfiguration.CustomThemes.Select(theme => theme.Name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(name => !IsThemeDisabled(name))
             .ToArray();
 

@@ -32,6 +32,7 @@ internal static class ConsoleSinkFactory
     // terminal directly; only TextWriterSink, which is generic by default, is told its target here.
     private static ICliRenderSink Create(CliColorMode mode, bool isError)
     {
+        ConsoleOutputEncoding.EnsureApplied();
         var target = isError ? CliSinkTarget.ErrorTerminal : CliSinkTarget.Terminal;
 
         switch (mode)

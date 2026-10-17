@@ -68,8 +68,8 @@ editions by `CommandParserTest.Tests/PowerShellCompletionTests.cs`:
 
 - `$LASTEXITCODE` keeps its value, or stays unset.
 - The console output code page and `[Console]::OutputEncoding` are restored. The app answers in
-  UTF-8, and the completer switches decoding to UTF-8 only for the call, so non-ASCII descriptions
-  survive an OEM code page such as 437 or 852.
+  the console's output code page without changing it. The completer selects UTF-8 only for the
+  call, so non-ASCII descriptions survive an OEM code page such as 437 or 852.
 - Nothing is added to `$Error`. When the command can no longer be found (for example after
   uninstall), the completer returns nothing and PowerShell offers its own path completion.
 - Under Constrained Language Mode (AppLocker or WDAC policy) candidates are returned as plain
@@ -91,7 +91,7 @@ unless a row says otherwise.
 | Shell startup cost | Dot-sourcing a saved script: about 7 ms. `app --completion pwsh \| Out-String \| Invoke-Expression`: about 110 ms, one app start per new session. One Tab press: about 125 ms. (A small framework-dependent app, Debug build.) |
 | Command lookup | Completion needs the command to resolve by name. An `App Paths` registration does not make an executable resolvable in either edition; a `PATH` entry does. Path-qualified invocations (`.\my-tool.exe`, a full path, `& 'C:\...\my-tool.exe'`) also complete. |
 | Bare `-` or `--` | Windows PowerShell 5.1 never calls a native completer for a word that is only `-` or `--`; type at least one more character. PowerShell 7 calls it. |
-| Console encoding | PowerShell decodes a native command's output with its cached `[Console]::OutputEncoding`, which is the OEM code page in a default Windows PowerShell console. A TigerCli app switches the console output code page to UTF-8 whenever it renders. The completer handles both; see the session contract. |
+| Console encoding | PowerShell decodes a native command's output with its cached `[Console]::OutputEncoding`, which is the OEM code page in a default console. A TigerCli app writes redirected output in the console's output code page and never changes it; see [console output encoding](console-output-encoding.md). |
 
 ### Activation Options
 

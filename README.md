@@ -139,7 +139,7 @@ The [getting started](docs/getting-started.md) guide is built around two small e
 
 [`CommandParserTest/`](CommandParserTest/) is the broad dogfooding sample: command groups, positional arguments and options, parser-driven prompts, provider-backed choices (including a `[Flags]` multi-select), dependent providers, typed exit codes with `--help-errors`, en-US/pl-PL localization, and shell completion. The name reflects its dogfooding origin; it is a runnable sample app, not a test suite.
 
-[`CommandParserTest.Tests/`](CommandParserTest.Tests/) is its matching app-boundary test project: it runs the real app through `TigerCliAppTestHost` and asserts arguments, output, errors, localization, and exit codes — the approach described in [app testing](docs/guides/app-testing.md). On Windows it also drives the generated PowerShell completer for the built `parser-test` executable in real Windows PowerShell 5.1 and PowerShell 7 hosts.
+[`CommandParserTest.Tests/`](CommandParserTest.Tests/) is its matching app-boundary test project: it runs the real app through `TigerCliAppTestHost` and asserts arguments, output, errors, localization, and exit codes — the approach described in [app testing](docs/guides/app-testing.md). On Windows it also runs the built `parser-test` executable in real Windows PowerShell 5.1 and PowerShell 7 hosts, checking its console output encoding and the generated PowerShell completer.
 
 ```bash
 dotnet run --project RoiCities.Extended -- --help
