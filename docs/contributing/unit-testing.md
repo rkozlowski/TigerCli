@@ -161,6 +161,28 @@ platforms these tests have no data and are skipped.
 To put an app on a genuine console from a harness, let it inherit console handles. A `cmd`
 redirection to `CONOUT$` opens a write-only handle, which .NET reports as redirected.
 
+## Real-Shell Checks
+
+Two scripts under `internal/tools/shell-completion/` press real keys in real interactive shells. They
+are not part of `dotnet test`, because they need environments a test run cannot assume. Run them
+when a change touches shell completion, the generated scripts, or console output encoding:
+
+- `Invoke-WindowsRealTabCheck.ps1` starts an interactive Windows PowerShell 5.1 session, and a
+  PowerShell 7 session when `pwsh` is installed. Each runs in a hidden console of its own, with
+  `parser-test` completion activated. The script writes key events into that console's input buffer
+  (typed text including non-ASCII letters, Tab, Ctrl+Space, Enter) and reads PSReadLine's rendering
+  back from the screen.
+- `Invoke-LinuxShellCheck.ps1` publishes `parser-test` for linux-x64 and runs
+  `linux-real-shell-check.sh` in WSL. That script drives Bash, Zsh, and Fish in tmux with real Tab
+  presses, runs the app at a terminal, and checks the bytes it writes when redirected under UTF-8 and
+  POSIX locales. `-FetchMissing` unpacks zsh, fish, and ICU from the distribution's packages into a
+  private prefix when they are not installed, without root. The shell script also runs on any Linux
+  machine with tmux, given a linux-x64 `parser-test` directory.
+
+Both print PASS/FAIL lines and exit non-zero on any failure. The checks cover Unicode completion
+candidates (`--city` values), a non-ASCII prefix, localized descriptions, and non-ASCII terminal
+output.
+
 When checking non-ASCII completion text by hand, compare code points rather than reading console
 output: two mismatched decodings can cancel out on the way to your terminal and make broken text
 look correct. `chcp` reports the console's input code page, not its output code page.

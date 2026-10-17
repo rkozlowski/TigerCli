@@ -60,6 +60,9 @@ public static string ReadScreen() {
 }
 '@
 
+# Non-ASCII literals are built from code points: Windows PowerShell 5.1 reads a BOM-less script as ANSI.
+$lodz = -join [char[]](0x141, 0xF3, 0x64, 0x17A)   # Łódź
+
 function Set-ProbeCodePage([int]$CodePage) { [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding($CodePage) }
 
 function Get-ConsoleCodePage {
@@ -103,6 +106,7 @@ $interactive = @{
     Output = Invoke-OnConsole '--culture pl-PL'
     Error = Invoke-OnConsole '--culture pl-PL --bogus'
     Help = Invoke-OnConsole '--culture pl-PL --help'
+    UnicodeArgument = Invoke-OnConsole "--city $lodz"
 }
 
 # Redirected: code page 852 has the Polish letters, so text written in the console's code page decodes
@@ -110,12 +114,14 @@ $interactive = @{
 Set-ProbeCodePage 852
 $captured = @(parser-test --culture pl-PL)
 $output = @{ ExitCode = $LASTEXITCODE; Text = ($captured -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
+$capturedCity = @(parser-test --city $lodz)
+$unicodeArgument = @{ ExitCode = $LASTEXITCODE; Text = ($capturedCity -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
 # Windows PowerShell turns redirected stderr lines into error records, which 'Stop' would make fatal.
 $ErrorActionPreference = 'Continue'
 $capturedError = @(parser-test --culture pl-PL --bogus 2>&1 | ForEach-Object { "$_" })
 $errorOutput = @{ ExitCode = $LASTEXITCODE; Text = ($capturedError -join "`n"); ConsoleCodePage = Get-ConsoleCodePage }
 $ErrorActionPreference = 'Stop'
-$redirected = @{ Output = $output; Error = $errorOutput }
+$redirected = @{ Output = $output; Error = $errorOutput; UnicodeArgument = $unicodeArgument }
 
 # A raw completion request as a completer sends it, without the generated script's encoding switch:
 # the app must answer in the console code page and leave it alone.
@@ -129,6 +135,8 @@ Invoke-Expression $activation
 $tabs = @(
     Measure-Tab 'parser-test ec'
     Measure-Tab 'parser-test --culture pl-PL --h'
+    Measure-Tab 'parser-test --city '
+    Measure-Tab ('parser-test --city ' + [char]0x141)
 )
 
 # After uninstall the registered completer must stay silent: no candidates, no recorded errors.

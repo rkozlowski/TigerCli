@@ -99,6 +99,7 @@
   <data name="Cmd_Raw_Description" xml:space="preserve"><value>Returns a raw integer exit code.</value></data>
 
   <data name="Opt_Default_Name_Description" xml:space="preserve"><value>Name to greet.</value></data>
+  <data name="Opt_Default_City_Description" xml:space="preserve"><value>City to greet when no name is given.</value></data>
   <data name="Opt_Echo_Message_Description" xml:space="preserve"><value>Message to echo.</value></data>
   <data name="Arg_PromptSmoke_Name_Description" xml:space="preserve"><value>Name to process.</value></data>
   <data name="Opt_PromptSmoke_Mode_Description" xml:space="preserve"><value>Mode to use.</value></data>

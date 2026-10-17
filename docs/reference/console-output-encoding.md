@@ -37,7 +37,14 @@ The rule above renders the same characters without that side effect:
 `CommandParserTest.Tests/ConsoleOutputEncodingTests.cs` runs the real `parser-test` executable in
 Windows PowerShell 5.1 and PowerShell 7 under OEM code pages. It checks interactive output, errors,
 and themed help on the screen, and redirected output and errors as PowerShell decodes them. It also
-checks that the console code page is unchanged afterwards.
+checks that the console code page is unchanged afterwards. The
+[real-shell checks](../contributing/unit-testing.md#real-shell-checks) repeat this with real
+keypresses in interactive PowerShell sessions, and in Bash, Zsh, and Fish on Linux.
+
+In an interactive PowerShell session, PSReadLine sets the console to UTF-8 while it edits a line and
+restores the previous encoding before a command runs. An app changing the code page is therefore
+hidden at a PowerShell prompt. It shows wherever nothing resets it, `cmd.exe` among them: one run of
+an app that assigned UTF-8 left a `cmd` console at code page 65001.
 
 ## Limitations
 

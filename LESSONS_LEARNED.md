@@ -47,3 +47,37 @@ with `ReadConsoleOutputCharacterW`. Let the app inherit genuine console handles.
 decoded and what the screen shows to a JSON file, and the tests compare them exactly.
 
 **Generalization candidate:** TigerWinLab (evidence collection from Windows console processes)
+
+## Real-shell harnesses fail in ways that look like product defects
+
+**Area:** `internal/tools/shell-completion/` real-keypress checks (PowerShell, Bash, Zsh, Fish)
+
+**Status:** Active
+
+**Symptom:** each first run of the real-shell checks failed on harness behavior that looked like a
+TigerCli defect: shells reporting `parser-test: command not found`, typed `Łódź` arriving as `Lódz`,
+completion menus that never appeared, and a console at code page 65001 with no TigerCli code
+involved.
+
+**Cause:**
+- tmux replaces `PATH` in a new session's environment; other `-e` variables survive.
+- A P/Invoke struct without `CharSet = CharSet.Unicode` marshals a `char` field as one ANSI byte,
+  so injected key events lose letters outside code page 1252.
+- PSReadLine draws its completion menu below the input line while the cursor stays on it; reading
+  the screen only up to the cursor row misses the menu.
+- PSReadLine sets the console to UTF-8 while it edits a line and restores the previous encoding
+  before a command runs, so the code page seen at an idle PowerShell prompt is PSReadLine's. This
+  also hides an app that changes the code page, which `cmd.exe` exposes.
+- Bash and Zsh spend the first Tab inserting a common prefix; the listing comes on a later press.
+
+**Do not:** read a failing first real-shell run as a product regression before ruling these out, or
+assert console code-page preservation at an interactive PSReadLine prompt.
+
+**Use instead:** carry the app directory in its own variable (`TIGERCLI_APP_DIR`), declare console
+structs `CharSet.Unicode`, read through the bottom of the visible window, type up to the common
+prefix, and assert strict code-page preservation in a non-interactive host
+(`CommandParserTest.Tests`).
+
+**Prevented by:** the fixes in `windows-real-tab-check.ps1` and `linux-real-shell-check.sh`.
+
+**Generalization candidate:** TigerWinLab and TigerLinuxLab (interactive console and terminal evidence)

@@ -9,6 +9,7 @@ namespace CommandParserTest.Tests;
 public sealed class PowerShellCompletionTests
 {
     private const string PolishHelpDescription = "Wyświetl pomoc";
+    private static readonly string[] PolishCities = ["Kraków", "Łódź", "Gdańsk"];
 
     [Theory(SkipTestWithoutData = true)]
     [MemberData(nameof(Hosts), MemberType = typeof(WindowsConsoleProbe))]
@@ -31,6 +32,10 @@ public sealed class PowerShellCompletionTests
         // the completer selects UTF-8 for the app's answer.
         var help = Assert.Single(Matches(result, 1), match => match.Text == "--help");
         Assert.Equal(PolishHelpDescription, help.ToolTip);
+
+        // Unicode candidates, and a non-ASCII prefix that filters them.
+        Assert.Equal(PolishCities, Matches(result, 2).Select(match => match.Text));
+        Assert.Equal("Łódź", Assert.Single(Matches(result, 3)).Text);
     }
 
     // A completion request is answered without console setup: in the console code page the invoking
@@ -62,6 +67,11 @@ public sealed class PowerShellCompletionTests
 
         var echo = Assert.Single(Matches(result, 0), match => match.Text == "echo");
         Assert.Equal("Text", echo.Type);
+
+        // Constrained Language Mode cannot switch the completer to UTF-8, so Unicode candidates
+        // survive only because the app answers in the console code page (852 has these letters).
+        Assert.Equal(PolishCities, Matches(result, 2).Select(match => match.Text));
+        Assert.Equal("Łódź", Assert.Single(Matches(result, 3)).Text);
     }
 
     [Theory(SkipTestWithoutData = true)]

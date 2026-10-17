@@ -10,6 +10,7 @@ public sealed class ConsoleOutputEncodingTests
     private const string PolishGreeting = "Witaj, Świecie!";
     private const string PolishUnknownOption = "Błąd: Nieznana opcja: '--bogus'";
     private const string PolishHelpDescription = "Wyświetl pomoc";
+    private const string GreetingLodz = "Hello, Łódź!";
 
     // Code page 437 has neither 'Ś' nor 'ł', so they reach the screen only when written as Unicode.
     [Theory(SkipTestWithoutData = true)]
@@ -37,6 +38,12 @@ public sealed class ConsoleOutputEncodingTests
         Assert.Contains(PolishHelpDescription, screen);
         Assert.DoesNotContain((char)0x1B, screen);
         Assert.Equal(437, help.GetProperty("ConsoleCodePage").GetInt32());
+
+        // A Unicode argument parsed into a Unicode enum value and written back.
+        var city = interactive.GetProperty("UnicodeArgument");
+        Assert.Equal(0, city.GetProperty("ExitCode").GetInt32());
+        Assert.Equal(GreetingLodz, city.GetProperty("Screen").GetString());
+        Assert.Equal(437, city.GetProperty("ConsoleCodePage").GetInt32());
     }
 
     // PowerShell decodes a program's redirected output with the console code page (852 here, which
@@ -56,5 +63,10 @@ public sealed class ConsoleOutputEncodingTests
         Assert.NotEqual(0, error.GetProperty("ExitCode").GetInt32());
         Assert.StartsWith(PolishUnknownOption, error.GetProperty("Text").GetString());
         Assert.Equal(852, error.GetProperty("ConsoleCodePage").GetInt32());
+
+        var city = redirected.GetProperty("UnicodeArgument");
+        Assert.Equal(0, city.GetProperty("ExitCode").GetInt32());
+        Assert.Equal(GreetingLodz, city.GetProperty("Text").GetString());
+        Assert.Equal(852, city.GetProperty("ConsoleCodePage").GetInt32());
     }
 }
