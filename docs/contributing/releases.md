@@ -161,9 +161,11 @@ in, because drafts are not public. The script downloads the draft's files into
 - `LICENSE` is the commit's blob, and every package names that commit;
 - nuget.org serves this release's packages: the same entries, apart from the signature;
 - GitHub Packages does too. This check needs a token with `read:packages`
-  (`gh auth refresh -s read:packages`) and is otherwise NOT RUN.
+  (`gh auth refresh -s read:packages`, or `GITHUB_PACKAGES_TOKEN`).
 
-It reports READY TO PUBLISH, BLOCKED, or the failure. It does not repeat the product acceptance
+It reports READY TO PUBLISH, BLOCKED, or the failure. Every check is required, and no later stage
+runs one it could not, so a check that cannot run (no `read:packages`, an unreachable feed) is
+BLOCKED, never READY TO PUBLISH. It does not repeat the product acceptance
 that preparation ran, and the workflow already smoke-tested these exact packages before it pushed
 them.
 
@@ -243,7 +245,8 @@ URL in the package metadata links the packages to this repository. See GitHub's
 
 Every gate reports `PASS`, `BLOCKED`, or `FAIL` and exits `0`, `2`, or `1`. A check that cannot run
 where the gate runs is reported `NOT RUN`, together with where it runs instead, and is never counted
-as a pass.
+as a pass. Release validation is the last stage, so nothing runs a check later: there a check that
+cannot run makes the gate `BLOCKED`.
 
 The release action is the only hosted work a release needs. The verification gate runs during
 preparation and is not repeated on the runner.

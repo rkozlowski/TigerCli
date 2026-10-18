@@ -19,11 +19,14 @@
       packages    every package names the record's commit
       nuget.org   each package on nuget.org is this release's: the same
                   entries, byte for byte, apart from the repository signature
-      GitHub      the same for GitHub Packages, when the session's token can
-                  read packages (read:packages); otherwise NOT RUN
+      GitHub      the same for GitHub Packages, which needs a token that can
+                  read packages (read:packages)
 
     A draft is visible only to an authenticated session with push access, so
-    gh must be logged in. Exit codes: 0 READY, 2 BLOCKED, 1 FAIL.
+    gh must be logged in. Every check is required: no later stage runs one this
+    script could not, so a check that cannot run here (no read:packages, an
+    unreachable feed) is BLOCKED, never READY. Exit codes: 0 READY, 2 BLOCKED,
+    1 FAIL.
 
     .EXAMPLE
     pwsh -File eng\release\Get-ReleaseArtifacts.ps1 -Version 0.9.5
@@ -47,7 +50,7 @@ if (-not $OutputDirectory) { $OutputDirectory = Join-Path $RepositoryRoot "artif
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 $checks = [Collections.Generic.List[object]]::new()
 function Add-Check([string] $Id, [string] $Status, [string] $Observed, [string] $Remediation = '') { $checks.Add((New-TigerCliReleaseCheck -Id $Id -Status $Status -Observed $Observed -Remediation $Remediation)) }
-function Finish { exit (Write-TigerCliReleaseReport -Title "Release validation for $($facts.Product) $Version" -Checks $checks.ToArray() -Next @('READY TO PUBLISH: review the draft and publish it.')) }
+function Finish { exit (Write-TigerCliReleaseReport -Title "Release validation for $($facts.Product) $Version" -Checks $checks.ToArray() -Next @('READY TO PUBLISH: review the draft and publish it.') -RequireEveryCheck) }
 
 try { $release = Get-TigerCliGitHubRelease -Tag $tag }
 catch { Add-Check 'release' BLOCKED $_.Exception.Message 'Authenticate gh (gh auth login) and rerun.'; Finish }
@@ -97,7 +100,7 @@ foreach ($package in $facts.Packages) {
     else { Add-Check "package/$($package.Id)" FAIL "names commit '$named', not $commit." }
 }
 
-$githubToken = if ($env:GITHUB_PACKAGES_TOKEN) { $env:GITHUB_PACKAGES_TOKEN } else { (Invoke-TigerCliGitHubCli @('auth', 'token')).output.Trim() }
+$githubToken = if ($env:GITHUB_PACKAGES_TOKEN) { $env:GITHUB_PACKAGES_TOKEN } else { $auth = Invoke-TigerCliGitHubCli @('auth', 'token'); if ($auth.ok) { $auth.output.Trim() } else { '' } }
 foreach ($feed in $facts.Feeds) {
     foreach ($package in $facts.Packages) {
         $state = Get-TigerCliFeedPackageState -Feed $feed -PackageId $package.Id -Version $Version -ExpectedPackage (Join-Path $OutputDirectory "$($package.Id).$Version.nupkg") -Token $(if ($feed.AuthenticatedRead) { $githubToken } else { '' })
@@ -107,7 +110,7 @@ foreach ($feed in $facts.Feeds) {
             'different' { Add-Check $id FAIL $state.observed 'The feed serves another build of this version; it is not this release.' }
             'absent' { Add-Check $id BLOCKED $state.observed 'The release action publishes before it drafts; wait for the feed to serve it, then rerun.' }
             default {
-                if ($feed.AuthenticatedRead) { Add-Check $id 'NOT RUN' "$($state.observed) A token with read:packages reads it (gh auth refresh -s read:packages)." }
+                if ($feed.AuthenticatedRead) { Add-Check $id BLOCKED $state.observed 'Give the session a token with read:packages (gh auth refresh -s read:packages, or GITHUB_PACKAGES_TOKEN), then rerun.' }
                 else { Add-Check $id BLOCKED $state.observed 'Rerun when the feed is reachable.' }
             }
         }

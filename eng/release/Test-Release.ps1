@@ -46,8 +46,11 @@
                    drafts with the nine files; a rerun uploads only what is
                    missing; a foreign asset, a published release and a tag at
                    another commit are refused
-      validation   Get-ReleaseArtifacts.ps1: READY for the drafted set, FAIL
-                   for a byte that is not GitHub's digest
+      validation   Get-ReleaseArtifacts.ps1: READY for the drafted set; BLOCKED
+                   without GitHub Packages credentials, for a token GitHub
+                   Packages refuses, for an unreachable nuget.org, and for any
+                   required check that did not run; FAIL for a byte that is not
+                   GitHub's digest
       transport    the real download path sends the User-Agent GitHub's API
                    requires, against a loopback server that refuses requests
                    without one
@@ -209,6 +212,7 @@ $global:TcrPushes = [Collections.Generic.List[string]]::new()
 $global:TcrPushConflicts = [Collections.Generic.List[string]]::new()
 $global:TcrReleases = [Collections.Generic.List[object]]::new()
 $global:TcrAssetFiles = @{}
+$global:TcrGhToken = 'stand-in-token'   # what gh auth token prints; empty: gh is not logged in
 $global:TcrFeedStore = New-Directory 'feed-store'
 
 function Reset-Stand-Ins {
@@ -248,7 +252,10 @@ Set-TigerCliReleaseDotNet {
 Set-TigerCliReleaseGitHubCli {
     $arguments = @($args | ForEach-Object { "$_" })
     $global:LASTEXITCODE = 0
-    if ($arguments[0] -ceq 'auth' -and $arguments[1] -ceq 'token') { return 'stand-in-token' }
+    if ($arguments[0] -ceq 'auth' -and $arguments[1] -ceq 'token') {
+        if ($global:TcrGhToken) { return $global:TcrGhToken }
+        $global:LASTEXITCODE = 1; return 'no oauth token found for github.com'
+    }
     if ($arguments[0] -ceq 'api' -and $arguments[1] -like 'repos/*/releases*') { return (ConvertTo-Json -InputObject @($global:TcrReleases) -Depth 6) }
     if ($arguments[0] -ceq 'release' -and $arguments[1] -ceq 'create') {
         $files = @($arguments | Select-Object -Skip ($arguments.IndexOf('--notes-file') + 2))
@@ -542,6 +549,21 @@ try {
     }
     $validation = @{ Version = $version; RepositoryRoot = $repo.clone; OutputDirectory = (Join-Path $script:root 'validation-out') }
     Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 0) 'the drafted set with the feeds serving it: READY'
+    # Every check is required: one that cannot run is BLOCKED, never READY.
+    $global:TcrGhToken = ''
+    Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 2) 'no credentials for GitHub Packages (gh not logged in): BLOCKED'
+    $global:TcrGhToken = 'stand-in-token'
+    $githubCore = Get-TigerCliFeedPackageUrl -Feed $github -PackageId 'ItTiger.Core' -Version $version
+    $global:TcrHttpStatus[$githubCore] = 403
+    Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 2) 'a token without read:packages (GitHub Packages answers 403): BLOCKED'
+    $global:TcrHttpStatus = @{ (Get-TigerCliFeedPackageUrl -Feed $nugetOrg -PackageId 'ItTiger.Core' -Version $version) = 503 }
+    Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 2) 'an unreachable nuget.org: BLOCKED'
+    $global:TcrHttpStatus = @{}
+    $report = @{ Title = 'gate'; Checks = @((New-TigerCliReleaseCheck -Id 'ran' -Status PASS -Observed 'ran'), (New-TigerCliReleaseCheck -Id 'elsewhere' -Status 'NOT RUN' -Observed 'runs elsewhere')); Next = @('READY TO PUBLISH') }
+    $output = @(Write-TigerCliReleaseReport @report -RequireEveryCheck 6>&1)
+    Assert-True ($output[-1] -eq 2 -and ($output -join "`n") -notmatch 'READY TO PUBLISH' -and "$($output[0])" -match ' - BLOCKED$') 'a required check that did not run: BLOCKED, with no READY'
+    $output = @(Write-TigerCliReleaseReport @report 6>&1)
+    Assert-True ($output[-1] -eq 0 -and "$($output[0])" -match 'PASS, 1 NOT RUN$') 'a gate whose NOT RUN check runs in a later stage: PASS, named NOT RUN'
     $global:TcrReleases[0].assets[0].digest = 'sha256:' + ('0' * 64)
     Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 1) "a byte that is not GitHub's digest: FAIL"
 
@@ -584,7 +606,7 @@ finally {
     Set-TigerCliReleaseDotNet $null
     Set-TigerCliReleaseGitHubCli $null
     foreach ($name in $savedEnvironment.Keys) { [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name]) }
-    Remove-Variable -Name TcrFeed, TcrHttpStatus, TcrPushes, TcrPushConflicts, TcrReleases, TcrAssetFiles, TcrFeedStore -Scope Global -ErrorAction SilentlyContinue
+    Remove-Variable -Name TcrFeed, TcrHttpStatus, TcrPushes, TcrPushConflicts, TcrReleases, TcrAssetFiles, TcrGhToken, TcrFeedStore -Scope Global -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $script:root -Recurse -Force -ErrorAction SilentlyContinue
 }
 

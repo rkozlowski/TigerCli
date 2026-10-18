@@ -150,19 +150,22 @@ function Write-TigerCliReleaseReport {
         Prints a gate's checks, appends them to the workflow summary when there
         is one, and returns the exit code: 0 PASS, 2 BLOCKED, 1 FAIL. NOT RUN
         checks are named in the verdict ("PASS, n NOT RUN"), never hidden.
+        -RequireEveryCheck is for a gate no later stage repeats (release
+        validation): there a NOT RUN check makes the verdict BLOCKED.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [string] $Title,
         [Parameter(Mandatory)] [object[]] $Checks,
         [string[]] $Next = @(),
-        [string] $StepSummaryPath = $env:GITHUB_STEP_SUMMARY
+        [string] $StepSummaryPath = $env:GITHUB_STEP_SUMMARY,
+        [switch] $RequireEveryCheck
     )
 
-    $status = if (@($Checks | Where-Object status -CEQ 'FAIL').Count) { 'FAIL' }
-    elseif (@($Checks | Where-Object status -CEQ 'BLOCKED').Count) { 'BLOCKED' }
-    else { 'PASS' }
     $notRun = @($Checks | Where-Object status -CEQ 'NOT RUN').Count
+    $status = if (@($Checks | Where-Object status -CEQ 'FAIL').Count) { 'FAIL' }
+    elseif (@($Checks | Where-Object status -CEQ 'BLOCKED').Count -or ($RequireEveryCheck -and $notRun)) { 'BLOCKED' }
+    else { 'PASS' }
     $verdict = if ($status -ceq 'PASS' -and $notRun) { "PASS, $notRun NOT RUN" } else { $status }
 
     $lines = [Collections.Generic.List[string]]::new()
