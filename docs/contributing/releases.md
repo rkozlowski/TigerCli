@@ -239,7 +239,7 @@ URL in the package metadata links the packages to this repository. See GitHub's
 | `eng/release/Publish-Packages.ps1` | 3 | publishes the recorded packages; `-PlanOnly` reads the feeds and changes nothing |
 | `eng/release/Publish-DraftRelease.ps1` | 3 | the tag and the draft; `-PlanOnly` reports and changes nothing |
 | `eng/release/Get-ReleaseArtifacts.ps1` | 4 | retrieves and proves a release's set and the feeds' copies |
-| `eng/release/Test-Release.ps1` | 1 | the tooling's tests: synthetic repositories and stand-ins for `gh`, `dotnet`, and the feeds; no network |
+| `eng/release/Test-Release.ps1` | 1 | the tooling's tests: synthetic repositories and stand-ins for `gh`, `dotnet`, and the feeds; no network beyond a loopback server that checks the real download path |
 
 Every gate reports `PASS`, `BLOCKED`, or `FAIL` and exits `0`, `2`, or `1`. A check that cannot run
 where the gate runs is reported `NOT RUN`, together with where it runs instead, and is never counted

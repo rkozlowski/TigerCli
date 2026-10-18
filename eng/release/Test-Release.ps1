@@ -7,6 +7,7 @@
     directory - local bare repositories stand in for origin - and against
     scripted stand-ins for gh, dotnet and the package feeds, so no test
     reaches GitHub or a feed, builds anything, or touches the real checkout.
+    Only the transport scenario uses the network stack, on loopback.
     Git identity comes from the environment for the duration of the run,
     because a CI runner has none. The real package build and smoke test are
     proven by `Build-ReleaseArtifacts.ps1 -Rehearsal`, not here.
@@ -47,6 +48,9 @@
                    another commit are refused
       validation   Get-ReleaseArtifacts.ps1: READY for the drafted set, FAIL
                    for a byte that is not GitHub's digest
+      transport    the real download path sends the User-Agent GitHub's API
+                   requires, against a loopback server that refuses requests
+                   without one
 
     .EXAMPLE
     pwsh -File eng\release\Test-Release.ps1
@@ -540,6 +544,40 @@ try {
     Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 0) 'the drafted set with the feeds serving it: READY'
     $global:TcrReleases[0].assets[0].digest = 'sha256:' + ('0' * 64)
     Assert-True ((Invoke-Script 'Get-ReleaseArtifacts.ps1' $validation) -eq 1) "a byte that is not GitHub's digest: FAIL"
+
+    # ----- transport -----
+    # The real download path, not the stand-in: a loopback server answers as GitHub's API does,
+    # 403 to a request without a User-Agent. Last, because it removes the HTTP stand-in.
+    Start-Scenario 'transport'
+    Set-TigerCliReleaseHttp $null
+    $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
+    $listener.Start()
+    $server = $null
+    try {
+        $server = Start-ThreadJob -ArgumentList $listener -ScriptBlock {
+            param($Listener)
+            $client = $Listener.AcceptTcpClient()
+            try {
+                $stream = $client.GetStream()
+                $reader = [IO.StreamReader]::new($stream, [Text.Encoding]::ASCII)
+                $lines = [Collections.Generic.List[string]]::new()
+                while ($line = $reader.ReadLine()) { $lines.Add($line) }
+                $agent = @($lines | Where-Object { $_ -match '^User-Agent:\s*\S' }).Count -gt 0
+                $status, $body = if ($agent) { '200 OK', 'asset' } else { '403 Forbidden', 'Request forbidden by administrative rules.' }
+                $bytes = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 $status`r`nContent-Length: $($body.Length)`r`nConnection: close`r`n`r`n$body")
+                $stream.Write($bytes, 0, $bytes.Length)
+                $stream.Flush()
+            }
+            finally { $client.Dispose() }
+        }
+        $file = Join-Path $script:root 'transport-asset'
+        $code = Invoke-TigerCliDownload -Uri "http://127.0.0.1:$($listener.LocalEndpoint.Port)/asset" -OutFile $file -Headers @{ Accept = 'application/octet-stream' }
+        Assert-True ($code -eq 200 -and [IO.File]::ReadAllText($file) -ceq 'asset') "a download sends the User-Agent GitHub's API requires (HTTP $code)"
+    }
+    finally {
+        $listener.Stop()
+        if ($server) { $null = Wait-Job $server -Timeout 10; Remove-Job $server -Force }
+    }
 }
 finally {
     Set-TigerCliReleaseHttp $null

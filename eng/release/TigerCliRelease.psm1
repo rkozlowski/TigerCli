@@ -977,7 +977,8 @@ function Invoke-TigerCliDownload {
     <#
         .SYNOPSIS
         GETs a URL into a file, straight to disk. Returns the HTTP status code;
-        the file exists only when it is 200. A network failure throws.
+        the file exists only when it is 200. A network failure throws. Every
+        request carries a User-Agent, which GitHub's API requires (403 without).
     #>
     [CmdletBinding()]
     param(
@@ -989,6 +990,7 @@ function Invoke-TigerCliDownload {
     $client = [Net.Http.HttpClient]::new()
     try {
         $client.Timeout = [TimeSpan]::FromMinutes(5)
+        $client.DefaultRequestHeaders.UserAgent.ParseAdd('TigerCli-release-tooling')
         $request = [Net.Http.HttpRequestMessage]::new([Net.Http.HttpMethod]::Get, $Uri)
         foreach ($name in $Headers.Keys) { $null = $request.Headers.TryAddWithoutValidation($name, [string] $Headers[$name]) }
         $response = $client.Send($request, [Net.Http.HttpCompletionOption]::ResponseHeadersRead)
