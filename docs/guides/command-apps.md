@@ -916,7 +916,7 @@ For the full prompting rules, see [interaction modes](interaction-modes.md) and 
 
 ## Command Menu
 
-The command menu is the TigerCli alternative to shell tab completion: an opt-in, discoverable picker that lists eligible commands, lets the user choose one, and then runs it through the **normal** parse/bind/prompt/validate/execute pipeline. It is a UX layer *above* prompting, not a separate execution system:
+The command menu is TigerCli's in-app counterpart to [shell tab completion](shell-completion.md): an opt-in, discoverable picker that lists eligible commands, lets the user choose one, and then runs it through the **normal** parse/bind/prompt/validate/execute pipeline. It is a UX layer *above* prompting, not a separate execution system:
 
 - **commands** — the user knows what to type.
 - **prompting** — the user knows the command; TigerCli asks for missing values.
@@ -978,6 +978,27 @@ Using `CommandMenuMode.Inherit` at the app level turns the menu surface on while
   invalid command line; automation selects a command and places `--non-interactive` after that
   command's required positionals.
 - An empty eligible set shows a clear "No commands are available." message.
+
+## Shell Completion
+
+`UseShellCompletion()` enables static tab completion for Bash, Zsh, Fish, and PowerShell. Users
+activate it with the framework-owned root option `app --completion <shell>`, which prints a small
+script that asks the app for candidates on each Tab press:
+
+```csharp
+builder.UseShellCompletion();
+```
+
+```bash
+source <(my-tool --completion bash)
+```
+
+Commands, groups, aliases, options, enum values, and framework option values are completed from the
+same metadata as help, following the same grammar, and nothing after `--` is completed. Completion
+never runs handlers, factories, contribution callbacks, prompts, or providers. See
+[shell completion](shell-completion.md) for activation per shell, the exact rules, and limitations,
+and [shell completion installation](../reference/shell-completion-installation.md) for the contract
+installers rely on.
 
 ## Edit Commands
 

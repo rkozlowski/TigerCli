@@ -177,11 +177,12 @@ option more than once is also an error; TigerCli does not choose a last value.
 
 ## Shell Completion Boundary
 
-TigerCli does not currently implement a shell-completion entry point, completion-script generator,
-or completion-specific provider adapter. Consequently, TigerCli has no shell-completion request that
-can invoke contributed global-option callbacks, command handlers, selector providers, option
-providers, or edit providers. It also does not parse or expose contributed global-option values to
-a shell-completion process.
+With [shell completion](shell-completion.md) enabled, a completion request offers a contributed
+global option by name, with its description, wherever the grammar accepts it, and falls back to the
+shell's file completion for its value. Completion is static: it never invokes contributed
+global-option callbacks, command handlers, command factories, selector providers, option providers,
+or edit providers, and it does not expose a supplied global-option value to anything. There is no
+completion-specific provider adapter.
 
 Help is an informational path, not shell completion. A command-help request may contain a valid
 contributed global option and value; TigerCli extracts them while recognizing the request, then
@@ -199,9 +200,9 @@ have already happened; providers do not receive a special shell-completion conte
 Provider callbacks are application code and may perform I/O or other side effects whenever normal
 prompting or provider validation needs them, including non-interactive validation of a supplied
 provider-backed value. Keep discovery-style provider work cancellable and preferably idempotent.
-Do not assume that a future TigerCli shell-completion design would apply contributions before
-calling providers; that contract does not exist today. Any shell completion implemented directly
-by an application is outside TigerCli and should keep its discovery path read-only where practical.
+Do not assume that a future dynamic-completion design would apply contributions before calling
+providers; that contract does not exist today. Use `UseShellCompletion()` rather than implementing
+shell completion directly in an application.
 
 ## Global Option Constraints
 

@@ -132,6 +132,76 @@ Prefer automated tests for:
 - validation and `CanConfirm` behavior.
 - status/hint row behavior.
 
+## Shell Completion Tests
+
+Completion has two layers of tests:
+
+- **Engine and protocol tests** (`ItTiger.TigerCli.Tests/TigerCliShellCompletionTests.cs`) send
+  `--tigercli-complete` requests through `TigerCliAppTestHost` and assert candidates, fallbacks,
+  and the generated scripts' shape. They run everywhere.
+- **Real-host PowerShell tests** (`CommandParserTest.Tests/PowerShellCompletionTests.cs`) evaluate
+  the generated script for the built `parser-test` executable inside Windows PowerShell 5.1, and
+  inside PowerShell 7 when `pwsh` is on `PATH`. They assert the completer's session contract:
+  decoded descriptions, `$LASTEXITCODE`, `$Error`, the console code page, Constrained Language Mode,
+  and an uninstalled executable. They also send a raw completion request, which must leave the
+  console code page alone.
+
+## Windows Console Tests
+
+`CommandParserTest.Tests/WindowsConsoleProbe.ps1` runs inside a real PowerShell host under OEM
+console code pages and writes what it observed to a JSON result file. `WindowsConsoleProbe.cs` starts
+it once per host and language mode, with its own hidden console and its standard handles left on
+that console, so the app it starts writes to a genuine console. Besides the completion scenarios
+above, `ConsoleOutputEncodingTests.cs` asserts the
+[console output encoding](../reference/console-output-encoding.md) contract for normal execution:
+- non-ASCII output, errors, and themed help read back from the screen buffer;
+- redirected output and errors as UTF-8, in files and in PowerShell after it selects UTF-8;
+- both mixed cases, one stream redirected and the other on the console;
+- an unchanged console code page after each run.
+
+On other platforms these tests have no data and are skipped.
+
+Two more test files cover the parts that need neither PowerShell nor a console:
+
+- `CommandParserTest.Tests/RedirectedOutputEncodingTests.cs` starts `parser-test` with redirected
+  streams on any platform and requires exact UTF-8 bytes, including characters no legacy Windows
+  code page has.
+- `ItTiger.TigerCli.Tests/ConsoleOutputEncodingTests.cs` checks in-process that writers installed with
+  `Console.SetOut`/`SetError` are never replaced.
+
+Together they guard the compatibility mechanism described in that reference: a .NET change to the
+runtime behavior it relies on fails one of them.
+
+To put an app on a genuine console from a harness, let it inherit console handles. A `cmd`
+redirection to `CONOUT$` opens a write-only handle, which .NET reports as redirected.
+
+## Real-Shell Checks
+
+Two scripts under `internal/tools/shell-completion/` press real keys in real interactive shells. They
+are not part of `dotnet test`, because they need environments a test run cannot assume. Run them
+when a change touches shell completion, the generated scripts, or console output encoding:
+
+- `Invoke-WindowsRealTabCheck.ps1` starts an interactive Windows PowerShell 5.1 session, and a
+  PowerShell 7 session when `pwsh` is installed. Each runs in a hidden console of its own, with
+  `parser-test` completion activated. The script writes key events into that console's input buffer
+  (typed text including non-ASCII letters, Tab, Ctrl+Space, Enter) and reads PSReadLine's rendering
+  back from the screen.
+- `Invoke-LinuxShellCheck.ps1` publishes `parser-test` for linux-x64 and runs
+  `linux-real-shell-check.sh` in WSL. That script drives Bash, Zsh, and Fish in tmux with real Tab
+  presses, runs the app at a terminal, and checks the bytes it writes when redirected under UTF-8 and
+  POSIX locales. `-FetchMissing` unpacks zsh, fish, and ICU from the distribution's packages into a
+  private prefix when they are not installed, without root. It also runs the Windows build of
+  `parser-test` through WSL interoperability and checks that Linux tools receive UTF-8. The shell
+  script also runs on any Linux machine with tmux, given a linux-x64 `parser-test` directory.
+
+Both print PASS/FAIL lines and exit non-zero on any failure. The checks cover Unicode completion
+candidates (`--city` values), a non-ASCII prefix, localized descriptions, and non-ASCII terminal
+output.
+
+When checking non-ASCII completion text by hand, compare code points rather than reading console
+output: two mismatched decodings can cancel out on the way to your terminal and make broken text
+look correct. `chcp` reports the console's input code page, not its output code page.
+
 ## What To Keep Manual Or Smoke-Tested
 
 Some behavior still needs human review or manual harnesses:

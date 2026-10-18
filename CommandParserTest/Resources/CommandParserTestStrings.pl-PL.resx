@@ -99,6 +99,7 @@
   <data name="Cmd_Raw_Description" xml:space="preserve"><value>Zwraca surowy całkowity kod wyjścia.</value></data>
 
   <data name="Opt_Default_Name_Description" xml:space="preserve"><value>Imię do powitania.</value></data>
+  <data name="Opt_Default_City_Description" xml:space="preserve"><value>Miasto do powitania, gdy nie podano imienia.</value></data>
   <data name="Opt_Echo_Message_Description" xml:space="preserve"><value>Wiadomość do wyświetlenia.</value></data>
   <data name="Arg_PromptSmoke_Name_Description" xml:space="preserve"><value>Nazwa do przetworzenia.</value></data>
   <data name="Opt_PromptSmoke_Mode_Description" xml:space="preserve"><value>Tryb do użycia.</value></data>

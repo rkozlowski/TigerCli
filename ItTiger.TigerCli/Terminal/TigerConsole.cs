@@ -20,15 +20,27 @@ public static partial class TigerConsole
     public static ILogger? Logger { get; set; }
 
     private static Encoding _outputEncoding = Encoding.UTF8;
-
-    static TigerConsole()
-    {
-        Console.OutputEncoding = _outputEncoding;
-    }
+    private static bool _outputEncodingAppChosen;
 
     /// <summary>
-    /// Output encoding assigned to <see cref="Console.OutputEncoding"/>. Defaults to UTF-8.
+    /// The encoding of TigerCli's redirected standard output and error. Defaults to UTF-8.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// By default TigerCli writes UTF-8 to redirected output (files, pipes, captured processes) on every
+    /// platform, and UTF-16 to an interactive Windows console, so every character renders whatever the
+    /// console code page is. It never changes the console code page, and never replaces a writer
+    /// installed with <see cref="Console.SetOut"/> or <see cref="Console.SetError"/>. The encoding is
+    /// set up when an app run starts or TigerCli first writes to the console.
+    /// </para>
+    /// <para>
+    /// Setting this property replaces that default with the app's own choice: the value is assigned to
+    /// <see cref="Console.OutputEncoding"/> immediately and used for redirected output. On Windows,
+    /// assigning any encoding other than UTF-16 changes the console code page, which every process
+    /// attached to the console shares and which stays changed after this process exits. Set it at the
+    /// start of <c>Main</c>, before TigerCli writes.
+    /// </para>
+    /// </remarks>
     public static Encoding OutputEncoding
     {
         get
@@ -37,10 +49,15 @@ public static partial class TigerConsole
         }
         set
         {
+            ArgumentNullException.ThrowIfNull(value);
             _outputEncoding = value;
-            Console.OutputEncoding = _outputEncoding;
+            _outputEncodingAppChosen = true;
+            ConsoleOutputEncoding.ApplyAppChoice(value);
         }
     }
+
+    /// <summary>Whether the app set <see cref="OutputEncoding"/>, replacing TigerCli's default.</summary>
+    internal static bool IsOutputEncodingAppChosen => _outputEncodingAppChosen;
 
     private static bool _treatDbNullAsNull = true;
 

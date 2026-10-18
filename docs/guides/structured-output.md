@@ -561,6 +561,9 @@ falls back to a deterministic width of **120 columns** (`TerminalCapabilities.De
 - This is a **layout/wrapping** fallback only. It does **not** imply ANSI/color support — color is
   decided independently by the color-mode model, which still suppresses ANSI on a redirected stream
   under `Auto`. Clickable links remain visible/copyable regardless.
+- Redirected output is UTF-8 on every platform, so files, pipes, and machine-readable output keep
+  every character. Windows PowerShell and PowerShell 7 callers select UTF-8 before capturing it;
+  see [console output encoding](../reference/console-output-encoding.md).
 
 This matters for CLI tools because it gives you:
 

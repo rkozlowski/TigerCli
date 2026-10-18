@@ -1,431 +1,122 @@
-name: Publish NuGet packages
+name: Release TigerCli
+run-name: Release TigerCli ${{ inputs.version }}
 
-run-name: Publish NuGet packages ${{ inputs.version }}
+# The one release action (docs/contributing/releases.md). Started by hand on main
+# for the version the release commit records: it builds that commit's release set
+# once, inspects and smoke-tests it, records it, publishes those exact packages to
+# GitHub Packages and nuget.org, tags the commit and creates the draft GitHub
+# Release carrying the set. Every decision is an eng/release script a maintainer
+# can run and test locally; this file only orders them and moves the set between
+# jobs. The verification gate and release acceptance ran on dev before promotion
+# and are not repeated here.
+#
+# The file name and the `release` environment are named by the nuget.org Trusted
+# Publishing policy; keep both. The version reaches the scripts through
+# RELEASE_VERSION, never through expression interpolation into a shell.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: Package version already recorded in Version.props
+        description: The <Major>.<Minor>.<Patch> version the release commit records in Version.props
         required: true
-        default: "0.9.4"
+        default: "0.9.5"
         type: string
 
 permissions:
   contents: read
 
+env:
+  RELEASE_VERSION: ${{ inputs.version }}
+
 concurrency:
-  group: publish-packages-${{ inputs.version }}
+  group: release-tigercli-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
-  validate:
-    name: Build, test, pack, and inspect
+  # Only what the authoritative build needs to start safely.
+  prerequisites:
+    name: Version, notes, promotion, tag and packages free
     runs-on: windows-latest
-    permissions:
-      contents: read
+    timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Check out the commit
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Prove the commit may be released as this version
+        shell: pwsh
+        run: |
+          ./eng/release/Assert-ReleaseCommitReady.ps1 -Version $env:RELEASE_VERSION -CommitSha $env:GITHUB_SHA
+          exit $LASTEXITCODE
+
+  build:
+    name: Build, inspect, smoke-test and record the release set
+    needs: prerequisites
+    runs-on: windows-latest
+    timeout-minutes: 45
+    outputs:
+      record_sha256: ${{ steps.build.outputs.record_sha256 }}
+    steps:
+      - name: Check out the commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.0.x"
 
-      - name: Validate requested version
+      - name: Build, check and record the release set
+        id: build
         shell: pwsh
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
         run: |
-          $ErrorActionPreference = "Stop"
+          ./eng/release/Build-ReleaseArtifacts.ps1 -Version $env:RELEASE_VERSION -CommitSha $env:GITHUB_SHA -OutputDirectory artifacts/release -GitHubOutput $env:GITHUB_OUTPUT
+          exit $LASTEXITCODE
 
-          if ($env:RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
-              throw "Invalid release version '$env:RELEASE_VERSION'."
-          }
+      - name: The build changed no committed file
+        run: git diff --exit-code
 
-          [xml]$versionProps = Get-Content -Raw Version.props
-          $configuredVersion = [string]$versionProps.Project.PropertyGroup.Version
-          if ($configuredVersion -ne $env:RELEASE_VERSION) {
-              throw "Workflow input '$env:RELEASE_VERSION' does not match Version.props '$configuredVersion'."
-          }
-
-      - name: Restore .NET tools
-        run: dotnet tool restore
-
-      - name: Build Release
-        run: dotnet build TigerCli.sln -c Release
-
-      - name: Test Release
-        run: dotnet test TigerCli.sln -c Release --no-build
-
-      - name: Check DocSamples artifacts
-        run: dotnet run --project internal/DocSamples --configuration Release --no-build -- check
-
-      - name: Run DocExamples drift test
-        run: >-
-          dotnet test ItTiger.TigerCli.Tests/ItTiger.TigerCli.Tests.csproj
-          -c Release
-          --no-build
-          --filter "FullyQualifiedName~DocExamplesDriftTests"
-
-      # GitHub-hosted runners provide the normal, unrestricted process environment required by
-      # AGENTS.md. Release validation uses Windows because the test suite covers Windows path
-      # semantics and DocSamples performs its canonical PNG comparison on Windows.
-      - name: Build DocFX site
-        run: dotnet docfx docs/api-docfx/docfx.json
-
-      - name: Check generated API map
-        run: dotnet run --project internal/DocSamples --configuration Release --no-build -- api-map check
-
-      - name: Pack ItTiger.Core
-        run: >-
-          dotnet pack ItTiger.Core/ItTiger.Core.csproj
-          -c Release
-          --no-build
-          --no-restore
-          --output artifacts/packages
-
-      - name: Pack ItTiger.TigerCli
-        run: >-
-          dotnet pack ItTiger.TigerCli/ItTiger.TigerCli.csproj
-          -c Release
-          --no-build
-          --no-restore
-          --output artifacts/packages
-
-      - name: Pack ItTiger.TigerCli.PngSink
-        run: >-
-          dotnet pack ItTiger.TigerCli.PngSink/ItTiger.TigerCli.PngSink.csproj
-          -c Release
-          --no-build
-          --no-restore
-          --output artifacts/packages
-
-      - name: List produced packages
-        shell: pwsh
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          $expected = @(
-              "ItTiger.Core.$env:RELEASE_VERSION.nupkg"
-              "ItTiger.Core.$env:RELEASE_VERSION.snupkg"
-              "ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg"
-              "ItTiger.TigerCli.$env:RELEASE_VERSION.snupkg"
-              "ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg"
-              "ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.snupkg"
-          ) | Sort-Object
-          $actual = @(
-              Get-ChildItem -LiteralPath artifacts/packages -File |
-                  Where-Object { $_.Extension -in ".nupkg", ".snupkg" } |
-                  Select-Object -ExpandProperty Name
-          ) | Sort-Object
-
-          $difference = Compare-Object -ReferenceObject $expected -DifferenceObject $actual
-          if ($difference) {
-              $difference | Format-Table | Out-String | Write-Host
-              throw "Produced package files do not match the expected release set."
-          }
-
-          Get-ChildItem -LiteralPath artifacts/packages -File |
-              Sort-Object Name |
-              Format-Table Name, Length
-
-      - name: Inspect packages
-        shell: pwsh
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          $packages = @(
-              @{
-                  Id = "ItTiger.Core"
-                  Icon = "ItTiger-head-128.png"
-              },
-              @{
-                  Id = "ItTiger.TigerCli"
-                  Icon = "TigerCli.png"
-              },
-              @{
-                  Id = "ItTiger.TigerCli.PngSink"
-                  Icon = "TigerCli.png"
-              }
-          )
-
-          foreach ($package in $packages) {
-              $id = $package.Id
-              $packagePath = "artifacts/packages/$id.$env:RELEASE_VERSION.nupkg"
-              $symbolsPath = "artifacts/packages/$id.$env:RELEASE_VERSION.snupkg"
-
-              if (-not (Test-Path -LiteralPath $packagePath -PathType Leaf)) {
-                  throw "Missing package: $packagePath"
-              }
-              if (-not (Test-Path -LiteralPath $symbolsPath -PathType Leaf)) {
-                  throw "Missing symbol package: $symbolsPath"
-              }
-
-              $archive = [System.IO.Compression.ZipFile]::OpenRead(
-                  (Resolve-Path -LiteralPath $packagePath)
-              )
-              try {
-                  $nuspecEntry = $archive.GetEntry("$id.nuspec")
-                  if ($null -eq $nuspecEntry) {
-                      throw "$packagePath does not contain $id.nuspec."
-                  }
-
-                  $reader = [System.IO.StreamReader]::new($nuspecEntry.Open())
-                  try {
-                      [xml]$nuspec = $reader.ReadToEnd()
-                  }
-                  finally {
-                      $reader.Dispose()
-                  }
-
-                  $metadata = $nuspec.package.metadata
-                  if ([string]$metadata.id -ne $id) {
-                      throw "$packagePath has package ID '$($metadata.id)', expected '$id'."
-                  }
-                  if ([string]$metadata.version -ne $env:RELEASE_VERSION) {
-                      throw "$packagePath has version '$($metadata.version)', expected '$env:RELEASE_VERSION'."
-                  }
-                  if ([string]$metadata.readme -ne "README.md" -or $null -eq $archive.GetEntry("README.md")) {
-                      throw "$packagePath does not contain the configured root README.md."
-                  }
-                  if ([string]$metadata.icon -ne $package.Icon -or $null -eq $archive.GetEntry($package.Icon)) {
-                      throw "$packagePath does not contain the configured root icon '$($package.Icon)'."
-                  }
-                  if ([string]::IsNullOrWhiteSpace([string]$metadata.authors) -or
-                      [string]::IsNullOrWhiteSpace([string]$metadata.description) -or
-                      [string]$metadata.projectUrl -ne "https://www.ittiger.net/projects/tigercli/") {
-                      throw "$packagePath has incomplete authors, description, or project URL metadata."
-                  }
-                  if ($metadata.license.GetAttribute("type") -ne "expression" -or
-                      [string]$metadata.license.InnerText -ne "MIT") {
-                      throw "$packagePath does not contain the expected MIT license expression."
-                  }
-                  if ($metadata.repository.GetAttribute("type") -ne "git" -or
-                      $metadata.repository.GetAttribute("url") -ne "https://github.com/rkozlowski/TigerCli") {
-                      throw "$packagePath does not contain the expected repository metadata."
-                  }
-                  if ($null -eq $archive.GetEntry("lib/net10.0/$id.dll") -or
-                      $null -eq $archive.GetEntry("lib/net10.0/$id.xml")) {
-                      throw "$packagePath does not contain the expected net10.0 assembly and XML documentation."
-                  }
-
-                  if ($id -eq "ItTiger.TigerCli.PngSink") {
-                      $expectedEntries = @(
-                          "assets/tc_term_ico.png"
-                          "assets/tc_window_symbols.png"
-                          "fonts/OFL.txt"
-                          "fonts/CASCADIA-LICENSE.txt"
-                          "fonts/SOURCE.md"
-                      )
-                      foreach ($expectedEntry in $expectedEntries) {
-                          if ($null -eq $archive.GetEntry($expectedEntry)) {
-                              throw "$packagePath does not contain '$expectedEntry'."
-                          }
-                      }
-
-                      $assemblyEntry = $archive.GetEntry("lib/net10.0/$id.dll")
-                      $assemblyStream = [System.IO.MemoryStream]::new()
-                      try {
-                          $assemblyEntry.Open().CopyTo($assemblyStream)
-                          $assembly = [System.Reflection.Assembly]::Load($assemblyStream.ToArray())
-                          $resources = @($assembly.GetManifestResourceNames())
-                      }
-                      finally {
-                          $assemblyStream.Dispose()
-                      }
-
-                      $expectedFonts = @(
-                          "CascadiaMono-Bold.ttf"
-                          "CascadiaMono-BoldItalic.ttf"
-                          "CascadiaMono-Italic.ttf"
-                          "CascadiaMono-Regular.ttf"
-                          "NotoSans-Bold.ttf"
-                          "NotoSans-BoldItalic.ttf"
-                          "NotoSans-Italic.ttf"
-                          "NotoSans-Regular.ttf"
-                          "NotoSansSymbols2-Regular.ttf"
-                      )
-                      foreach ($expectedFont in $expectedFonts) {
-                          $resourceName = "ItTiger.TigerCli.PngSink.Fonts.$expectedFont"
-                          if ($resourceName -notin $resources) {
-                              throw "$packagePath does not embed font '$expectedFont'."
-                          }
-                      }
-                  }
-
-                  if ($id -eq "ItTiger.TigerCli") {
-                      $coreDependency = @(
-                          $nuspec.SelectNodes("//*[local-name()='dependency']") |
-                              Where-Object { $_.GetAttribute("id") -eq "ItTiger.Core" }
-                      )
-                      if ($coreDependency.Count -ne 1) {
-                          throw "$packagePath must contain exactly one ItTiger.Core dependency."
-                      }
-                      if ($coreDependency[0].GetAttribute("version") -ne $env:RELEASE_VERSION) {
-                          throw "$packagePath depends on ItTiger.Core '$($coreDependency[0].GetAttribute("version"))', expected '$env:RELEASE_VERSION'."
-                      }
-                  }
-                  elseif ($id -eq "ItTiger.TigerCli.PngSink") {
-                      $tigerCliDependency = @(
-                          $nuspec.SelectNodes("//*[local-name()='dependency']") |
-                              Where-Object { $_.GetAttribute("id") -eq "ItTiger.TigerCli" }
-                      )
-                      if ($tigerCliDependency.Count -ne 1) {
-                          throw "$packagePath must contain exactly one ItTiger.TigerCli dependency."
-                      }
-                      if ($tigerCliDependency[0].GetAttribute("version") -ne $env:RELEASE_VERSION) {
-                          throw "$packagePath depends on ItTiger.TigerCli '$($tigerCliDependency[0].GetAttribute("version"))', expected '$env:RELEASE_VERSION'."
-                      }
-                  }
-              }
-              finally {
-                  $archive.Dispose()
-              }
-
-              $symbolsArchive = [System.IO.Compression.ZipFile]::OpenRead(
-                  (Resolve-Path -LiteralPath $symbolsPath)
-              )
-              try {
-                  if (-not @($symbolsArchive.Entries | Where-Object { $_.FullName -like "*.pdb" })) {
-                      throw "$symbolsPath does not contain a portable PDB."
-                  }
-              }
-              finally {
-                  $symbolsArchive.Dispose()
-              }
-
-              Write-Host "Validated $packagePath and $symbolsPath"
-          }
-
-      - name: Smoke-test local packages
-        shell: pwsh
-        env:
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          function Assert-PackageAsset([string]$assetsPath, [string]$packageIdentity) {
-              if (-not (Select-String -LiteralPath $assetsPath -SimpleMatch -Quiet -Pattern "`"$packageIdentity`"")) {
-                  throw "$assetsPath does not contain $packageIdentity."
-              }
-          }
-
-          $smokeRoot = Join-Path $env:RUNNER_TEMP "TigerCli-package-smoke"
-          $localFeed = New-Item -ItemType Directory -Path (Join-Path $smokeRoot "packages") -Force
-          Copy-Item "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.nupkg" $localFeed
-          Copy-Item "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg" $localFeed
-          Copy-Item "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg" $localFeed
-
-          $nugetConfig = Join-Path $smokeRoot "NuGet.Config"
-          @"
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSources>
-              <clear />
-              <add key="local-release" value="$($localFeed.FullName)" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-            </packageSources>
-            <packageSourceMapping>
-              <packageSource key="local-release">
-                <package pattern="ItTiger.*" />
-              </packageSource>
-              <packageSource key="nuget.org">
-                <package pattern="*" />
-              </packageSource>
-            </packageSourceMapping>
-          </configuration>
-          "@ | Set-Content -LiteralPath $nugetConfig -Encoding utf8
-
-          Push-Location $smokeRoot
-          try {
-              dotnet new console -n TigerCliSmoke -f net10.0 --no-restore
-              dotnet add TigerCliSmoke/TigerCliSmoke.csproj package ItTiger.TigerCli --version $env:RELEASE_VERSION --no-restore
-              @'
-          using ItTiger.TigerCli.Commands;
-          using ItTiger.TigerCli.Terminal;
-
-          return await TigerCliApp.CreateBuilder()
-              .AddDefaultCommand(static () =>
-              {
-                  TigerConsole.MarkupLine("[Success]TigerCli package smoke test[/]");
-                  return TigerCliExitKind.Success;
-              })
-              .Build()
-              .RunAsync(args);
-          '@ | Set-Content TigerCliSmoke/Program.cs -Encoding utf8
-              dotnet restore TigerCliSmoke/TigerCliSmoke.csproj --configfile $nugetConfig --force --no-http-cache
-              Assert-PackageAsset "TigerCliSmoke/obj/project.assets.json" "ItTiger.TigerCli/$env:RELEASE_VERSION"
-              Assert-PackageAsset "TigerCliSmoke/obj/project.assets.json" "ItTiger.Core/$env:RELEASE_VERSION"
-              dotnet run --project TigerCliSmoke/TigerCliSmoke.csproj -c Release --no-restore -- --non-interactive
-
-              dotnet new console -n PngSinkSmoke -f net10.0 --no-restore
-              dotnet add PngSinkSmoke/PngSinkSmoke.csproj package ItTiger.TigerCli.PngSink --version $env:RELEASE_VERSION --no-restore
-              @'
-          using ItTiger.TigerCli.PngSink;
-          using ItTiger.TigerCli.Rendering;
-
-          var grid = new CliGrid(1, 1);
-          grid.Set(0, 0, "TigerCli PNG smoke test");
-          PngRenderer.RenderGridToFile(
-              grid,
-              "smoke.png",
-              new PngSinkOptions { Columns = 30, Rows = 2 });
-          '@ | Set-Content PngSinkSmoke/Program.cs -Encoding utf8
-              dotnet restore PngSinkSmoke/PngSinkSmoke.csproj --configfile $nugetConfig --force --no-http-cache
-              Assert-PackageAsset "PngSinkSmoke/obj/project.assets.json" "ItTiger.TigerCli.PngSink/$env:RELEASE_VERSION"
-              Assert-PackageAsset "PngSinkSmoke/obj/project.assets.json" "ItTiger.TigerCli/$env:RELEASE_VERSION"
-              Assert-PackageAsset "PngSinkSmoke/obj/project.assets.json" "ItTiger.Core/$env:RELEASE_VERSION"
-              dotnet run --project PngSinkSmoke/PngSinkSmoke.csproj -c Release --no-restore
-              if (-not (Test-Path -LiteralPath smoke.png -PathType Leaf)) {
-                  throw "PngSink smoke test did not create smoke.png."
-              }
-          }
-          finally {
-              Pop-Location
-          }
-
-      - name: Upload validated packages
+      - name: Hand the set to the publish job
         uses: actions/upload-artifact@v7
         with:
-          name: NuGet-packages-${{ inputs.version }}
-          path: |
-            artifacts/packages/ItTiger.Core.${{ inputs.version }}.nupkg
-            artifacts/packages/ItTiger.Core.${{ inputs.version }}.snupkg
-            artifacts/packages/ItTiger.TigerCli.${{ inputs.version }}.nupkg
-            artifacts/packages/ItTiger.TigerCli.${{ inputs.version }}.snupkg
-            artifacts/packages/ItTiger.TigerCli.PngSink.${{ inputs.version }}.nupkg
-            artifacts/packages/ItTiger.TigerCli.PngSink.${{ inputs.version }}.snupkg
+          name: TigerCli-release-${{ inputs.version }}-${{ github.sha }}
+          path: artifacts/release/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
 
   publish:
-    name: Approve and publish
-    needs: validate
+    name: Publish the packages, tag the commit and create the draft release
+    needs: build
     runs-on: windows-latest
+    timeout-minutes: 30
     environment: release
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
     steps:
+      - name: Check out the commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.0.x"
 
-      - name: Download validated packages
+      - name: Receive the set
         uses: actions/download-artifact@v7
         with:
-          name: NuGet-packages-${{ inputs.version }}
-          path: artifacts/packages
+          name: TigerCli-release-${{ inputs.version }}-${{ github.sha }}
+          path: artifacts/release
 
-      - name: Verify NuGet.org Trusted Publishing configuration
+      - name: Verify the NuGet.org Trusted Publishing configuration
         shell: pwsh
         env:
           NUGET_USER: ${{ vars.NUGET_USER }}
@@ -435,94 +126,28 @@ jobs:
               exit 1
           }
 
-      # Configure a nuget.org Trusted Publishing policy for owner rkozlowski, repository TigerCli,
-      # workflow publish-packages.yml, and environment release before running this job.
-      - name: Get short-lived NuGet.org API key
+      - name: Get a short-lived NuGet.org API key
         id: nuget-login
         uses: NuGet/login@v1
         with:
           user: ${{ vars.NUGET_USER }}
 
-      - name: Publish ItTiger.Core to GitHub Packages
+      - name: Publish the recorded packages
         shell: pwsh
         env:
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          dotnet nuget push "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.nupkg" `
-            --source https://nuget.pkg.github.com/rkozlowski/index.json `
-            --api-key "$env:GITHUB_PACKAGES_TOKEN" `
-            --skip-duplicate `
-            --no-symbols
-
-      - name: Publish ItTiger.TigerCli to GitHub Packages
-        shell: pwsh
-        env:
-          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg" `
-            --source https://nuget.pkg.github.com/rkozlowski/index.json `
-            --api-key "$env:GITHUB_PACKAGES_TOKEN" `
-            --skip-duplicate `
-            --no-symbols
-
-      - name: Publish ItTiger.TigerCli.PngSink to GitHub Packages
-        shell: pwsh
-        env:
-          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg" `
-            --source https://nuget.pkg.github.com/rkozlowski/index.json `
-            --api-key "$env:GITHUB_PACKAGES_TOKEN" `
-            --skip-duplicate `
-            --no-symbols
-
-      - name: Publish ItTiger.Core to NuGet.org
-        shell: pwsh
-        env:
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          RELEASE_VERSION: ${{ inputs.version }}
+          RECORD_SHA256: ${{ needs.build.outputs.record_sha256 }}
         run: |
-          dotnet nuget push "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.nupkg" `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key "$env:NUGET_API_KEY" `
-            --skip-duplicate `
-            --no-symbols
-          dotnet nuget push "artifacts/packages/ItTiger.Core.$env:RELEASE_VERSION.snupkg" `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key "$env:NUGET_API_KEY" `
-            --skip-duplicate
+          ./eng/release/Publish-Packages.ps1 -Version $env:RELEASE_VERSION -ArtifactDirectory artifacts/release -CommitSha $env:GITHUB_SHA -ExpectedRecordSha256 $env:RECORD_SHA256
+          exit $LASTEXITCODE
 
-      - name: Publish ItTiger.TigerCli to NuGet.org
+      - name: Tag the commit and create the draft release with the exact set
         shell: pwsh
         env:
-          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          RELEASE_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          RECORD_SHA256: ${{ needs.build.outputs.record_sha256 }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.nupkg" `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key "$env:NUGET_API_KEY" `
-            --skip-duplicate `
-            --no-symbols
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.$env:RELEASE_VERSION.snupkg" `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key "$env:NUGET_API_KEY" `
-            --skip-duplicate
-
-      - name: Publish ItTiger.TigerCli.PngSink to NuGet.org
-        shell: pwsh
-        env:
-          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          RELEASE_VERSION: ${{ inputs.version }}
-        run: |
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.nupkg" `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key "$env:NUGET_API_KEY" `
-            --skip-duplicate `
-            --no-symbols
-          dotnet nuget push "artifacts/packages/ItTiger.TigerCli.PngSink.$env:RELEASE_VERSION.snupkg" `
-            --source https://api.nuget.org/v3/index.json `
-            --api-key "$env:NUGET_API_KEY" `
-            --skip-duplicate
+          ./eng/release/Publish-DraftRelease.ps1 -Version $env:RELEASE_VERSION -ArtifactDirectory artifacts/release -CommitSha $env:GITHUB_SHA -ExpectedRecordSha256 $env:RECORD_SHA256 -RunUrl $env:RUN_URL
+          exit $LASTEXITCODE

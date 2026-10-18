@@ -28,6 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="WindowsConsoleProbe.ps1" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
 

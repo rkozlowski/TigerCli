@@ -30,7 +30,7 @@ terminal-bounded by default, so help and other structured output wrap during lay
 TigerCli currently targets .NET 10.
 
 ```bash
-dotnet add package ItTiger.TigerCli --version 0.9.4
+dotnet add package ItTiger.TigerCli --version 0.9.5
 ```
 
 ## Minimal app
@@ -100,6 +100,9 @@ command groups, localization, reusable handlers, and application-specific exit c
 - Automation-safe `--non-interactive` behavior with no surprise prompts
 - Handler-visible caller and process cancellation through `TigerCliSettings.CancellationToken`
 - Command-declared raw trailing arguments after `--` for literal child-tool pass-through
+- Opt-in static [shell completion](https://github.com/rkozlowski/TigerCli/blob/main/docs/guides/shell-completion.md)
+  for Bash, Zsh, Fish, and PowerShell through `UseShellCompletion()` and `app --completion <shell>`,
+  with an [installer contract](https://github.com/rkozlowski/TigerCli/blob/main/docs/reference/shell-completion-installation.md)
 - Opt-in app contributions for constrained, reusable-library global string options
 - Configurable exit-code policy and portable `TigerCliExitKind` outcomes
 - App-level test hosting and deterministic TUI test infrastructure

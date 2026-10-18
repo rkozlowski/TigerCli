@@ -617,6 +617,7 @@ TigerCli owns several framework options. They should not be defined as app optio
 | `--culture <culture>` | Select the active framework UI culture for the current run. `--culture=pl-PL` also works. |
 | `--theme <theme>` | Select the theme for the current run. |
 | `--color auto\|never\|16\|256`, `--no-color` | Select the output color mode for the current run. |
+| `--completion bash\|zsh\|fish\|pwsh` | Print a shell completion activation script. Only when the app calls `UseShellCompletion()`; root-only and must stand alone. See [shell completion](shell-completion.md). |
 
 The informational options are valid at the app root only when they form a root request, such as
 `app --help`, `app --help-env`, or `app --version`. For a command, write `app command --help`,
@@ -664,7 +665,7 @@ Exit-code help is documented in [exit codes](exit-codes.md).
 - Do not rely on localized enum labels for CLI parsing. Use enum member names on the command line.
 - Do not manually check `--non-interactive` in handlers. TigerCli owns interaction policy before handler execution.
 - Use [TigerConsole](https://rkozlowski.github.io/TigerCli/api/ItTiger.TigerCli.Terminal.TigerConsole.html) `MarkupLine(...)` or `MarkupErrorLine(...)` instead of `Console.WriteLine(...)`, so tests and terminal rendering stay on the TigerCli path.
-- Do not define framework-owned options such as `--help`, `--help-errors`, `--help-env`, `--version`, `--version-full`, `--non-interactive`, or `--culture` on settings classes.
+- Do not define framework-owned options such as `--help`, `--help-errors`, `--help-env`, `--version`, `--version-full`, `--non-interactive`, `--culture`, or (with shell completion enabled) `--completion` on settings classes.
 - Do not use short-option bundles such as `-abc` unless you have defined `-abc` as a single alias.
 - Do not hand-roll pass-through handling with a repeated string option or a manual `--` scan. Declare [`[TigerCliRawArguments]`](#raw-trailing-arguments) so the tail is split before parsing and reaches the command intact.
 
